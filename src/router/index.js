@@ -98,6 +98,21 @@ export const constantRoutes = [
       }
     ]
   },
+  {
+    path: '/rental',
+    component: Layout,
+    redirect: '/rental/goods',
+    name: 'Rental',
+    meta: { title: '租赁管理', icon: 'table' },
+    children: [
+      {
+        path: 'goods',
+        name: 'RentalGoods',
+        component: () => import('@/views/rental/goods/index.vue'),
+        meta: { title: '租赁商品管理', icon: 'table' }
+      }
+    ]
+  },
   // 404 page must be placed at the end !!!
   { path: '*', redirect: '/404', hidden: true }
 ]
