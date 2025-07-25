@@ -99,6 +99,20 @@ export const constantRoutes = [
     ]
   },
   {
+    path: '/system-config',
+    component: Layout, // Layout 需根据你的实际布局组件名调整
+    name: 'SystemConfig',
+    meta: { title: '系统配置', icon: 'setting' },
+    children: [
+      {
+        path: '',
+        name: 'SystemConfigMain',
+        component: () => import('@/views/system/config/index.vue'),
+        meta: { title: '系统配置', icon: 'setting' }
+      }
+    ]
+  },
+  {
     path: '/rental',
     component: Layout,
     redirect: '/rental/goods',
