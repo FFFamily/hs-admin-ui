@@ -68,10 +68,18 @@ export default {
       })
     },
     handleUploadSuccess(res, file, fileList) {
-      this.form.homeImg = fileList.map(f => f.url || process.env.VUE_APP_BASE_URL + f.response.fileUrl)
+        console.log(fileList)
+        
+      this.form.homeImg = fileList.map(f => {
+            if(f.response){
+                return process.env.VUE_APP_BASE_URL+ f.response.data.fileUrl
+            }
+            return f.url
+        })
+      console.log(this.form.homeImg)
     },
     handleRemove(file, fileList) {
-      this.form.homeImg = fileList.map(f => f.url || process.env.VUE_APP_BASE_URL + f.response.fileUrl)
+      this.form.homeImg = fileList.map(f => f.url)
     },
     beforeUpload(file) {
       const isImage = file.type.startsWith('image/')
@@ -92,9 +100,9 @@ export default {
         // 拼接成字符串
         homeImg: this.form.homeImg.join('、')
       }
-      console.log(config)
-      console.log(this.form)
-      console.log(this.form.homeImg.join('、'))
+    //   console.log(config)
+    //   console.log(this.form)
+    //   console.log(this.form.homeImg.join('、'))
       updateHomeConfig(config.id,config).then(res => {
         this.$message.success('保存成功')
       })
