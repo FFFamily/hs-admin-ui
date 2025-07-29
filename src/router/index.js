@@ -51,9 +51,15 @@ export const constantRoutes = [
     children: [
       {
         path: 'user',
-        name: 'AdminUser',
-        component: () => import('@/views/admin/user/index.vue'),
+        name: 'User',
+        component: () => import('@/views/user/index.vue'),
         meta: { title: '用户管理', icon: 'user' }
+      },
+      {
+        path: 'adminUser',
+        name: 'AdminUser',
+        component: () => import('@/views/user/index.vue'),
+        meta: { title: '后台用户管理', icon: 'user' }
       },
       {
         path: 'role',
@@ -124,6 +130,18 @@ export const constantRoutes = [
         name: 'RentalGoods',
         component: () => import('@/views/rental/goods/index.vue'),
         meta: { title: '租赁商品管理', icon: 'table' }
+      },
+      {
+        path: 'contract',
+        name: 'RentalContract',
+        component: () => import('@/views/rental/contract/index.vue'),
+        meta: { title: '合同管理', icon: 'form' }
+      },
+      {
+        path: 'recycle',
+        name: 'RentalRecycle',
+        component: () => import('@/views/rental/recycle/index.vue'),
+        meta: { title: '回收订单管理', icon: 'tree' }
       }
     ]
   },

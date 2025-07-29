@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export function getAdminUserList(params) {
   return request({
-    url: '/admin/user/page',
+    url: '/ad/user/page',
     method: 'get',
     params
   })
@@ -10,7 +10,7 @@ export function getAdminUserList(params) {
 
 export function addAdminUser(data) {
   return request({
-    url: '/admin/user/add',
+    url: '/ad/user/add',
     method: 'post',
     data
   })
@@ -18,7 +18,7 @@ export function addAdminUser(data) {
 
 export function updateAdminUser(data) {
   return request({
-    url: '/admin/user/update',
+    url: '/ad/user/update',
     method: 'post',
     data
   })
@@ -26,14 +26,14 @@ export function updateAdminUser(data) {
 
 export function deleteAdminUser(id) {
   return request({
-    url: `/admin/user/delete/${id}`,
+    url: `/ad/user/delete/${id}`,
     method: 'delete'
   })
 }
 
 export function getAdminUserInfo(id) {
   return request({
-    url: `/admin/user/info/${id}`,
+    url: `/ad/user/info/${id}`,
     method: 'get'
   })
 }

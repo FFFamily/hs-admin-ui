@@ -21,3 +21,21 @@ export function logout() {
     method: 'post'
   })
 }
+
+// 创建用户
+export function createWxUser(data) {
+  return request({
+    url: '/wx/user/create',
+    method: 'post',
+    data
+  })
+}
+// 用户分页列表
+export function getUserPage(params) {
+  return request({
+    url: '/wx/user/page',
+    method: 'get',
+    params
+  })
+}
+
