@@ -19,16 +19,17 @@
             <span>{{ scope.row.type === 'company' ? '企业' : '个人' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="id" label="账号" width="200" />
+        <el-table-column prop="username" label="账号" width="200" />
         <el-table-column prop="phone" label="手机号" width="150" />
         <el-table-column prop="status" label="状态" width="100">
           <template slot-scope="scope">
-            <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" @change="handleStatusChange(scope.row)" />
+            <el-switch v-model="scope.row.status" active-value="use" inactive-value="disable" @change="handleStatusChange(scope.row)" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220">
+        <el-table-column label="操作" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button size="mini" @click="handleEditPassword(scope.row)">修改密码</el-button>
             <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
@@ -59,21 +60,21 @@
         <el-form-item v-if="form.type === 'person' || form.type === 'company'" label="手机号" prop="phone">
           <el-input v-model="form.phone" />
         </el-form-item>
-        <el-form-item v-if="form.type === 'person' || form.type === 'company'" label="身份证号" prop="id_card">
-          <el-input v-model="form.id_card" />
+        <el-form-item v-if="form.type === 'person' || form.type === 'company'" label="身份证号" prop="idCard">
+          <el-input v-model="form.idCard" />
         </el-form-item>
         <template v-if="form.type === 'company'">
           <el-form-item label="用户评分系数" prop="score">
             <el-input v-model="form.score" />
           </el-form-item>
-          <el-form-item label="纳税人识别号" prop="tax_number">
-            <el-input v-model="form.tax_number" />
+          <el-form-item label="纳税人识别号" prop="taxNumber">
+            <el-input v-model="form.taxNumber" />
           </el-form-item>
-          <el-form-item label="开户行" prop="bank_name">
-            <el-input v-model="form.bank_name" />
+          <el-form-item label="开户行" prop="bankName">
+            <el-input v-model="form.bankName" />
           </el-form-item>
-          <el-form-item label="银行账号" prop="bank_account">
-            <el-input v-model="form.bank_account" />
+          <el-form-item label="银行账号" prop="bankAccount">
+            <el-input v-model="form.bankAccount" />
           </el-form-item>
           <el-form-item label="信用代码" prop="credit_code">
             <el-input v-model="form.credit_code" />
@@ -84,14 +85,14 @@
           <el-form-item label="联系电话" prop="contact_phone">
             <el-input v-model="form.contact_phone" />
           </el-form-item>
-          <el-form-item label="走款账户1" prop="bank_account1">
-            <el-input v-model="form.bank_account1" />
+          <el-form-item label="走款账户1" prop="payAccount1">
+            <el-input v-model="form.payAccount1" />
           </el-form-item>
-          <el-form-item label="走款账户2" prop="bank_account2">
-            <el-input v-model="form.bank_account2" />
+          <el-form-item label="走款账户2" prop="payAccount2">
+            <el-input v-model="form.payAccount2" />
           </el-form-item>
-          <el-form-item label="走款账户3" prop="bank_account3">
-            <el-input v-model="form.bank_account3" />
+          <el-form-item label="走款账户3" prop="payAccount3">
+            <el-input v-model="form.payAccount3" />
           </el-form-item>
         </template>
         <el-form-item label="密码" prop="password">
@@ -101,7 +102,7 @@
           <el-input v-model="form.nickname" />
         </el-form-item>
         <el-form-item label="状态">
-          <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
+          <el-switch v-model="form.status" :active-value="use" :inactive-value="disable" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -114,7 +115,7 @@
 
 <script>
 // 这里的接口方法请后续补充联动
-import { getUserPage, createWxUser } from '@/api/user'
+import { getUserPage, createWxUser, updateWxUser, changeWxUserStatus, deleteWxUser } from '@/api/user'
 export default {
   name: 'AdminUserList',
   data() {
@@ -137,17 +138,17 @@ export default {
         username: '',
         password: '',
         phone: '',
-        id_card: '',
+        idCard: '',
         score: '',
-        tax_number: '',
-        bank_name: '',
-        bank_account: '',
+        taxNumber: '',
+        bankName: '',
+        bankAccount: '',
         credit_code: '',
         address: '',
         contact_phone: '',
-        bank_account1: '',
-        bank_account2: '',
-        bank_account3: '',
+        payAccount1: '',
+        payAccount2: '',
+        payAccount3: '',
         nickname: '',
         status: 1
       },
@@ -159,7 +160,7 @@ export default {
           { required: true, message: '请输入手机号', trigger: 'blur' },
           { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的11位手机号', trigger: 'blur' }
         ],
-        id_card: [
+        idCard: [
           { required: true, message: '请输入身份证号', trigger: 'blur' },
           { pattern: /^(\d{15}|\d{17}[\dXx])$/, message: '请输入正确的身份证号', trigger: 'blur' }
         ]
@@ -188,17 +189,17 @@ export default {
         username: '',
         password: '',
         phone: '',
-        id_card: '',
+        idCard: '',
         score: '',
-        tax_number: '',
-        bank_name: '',
-        bank_account: '',
+        taxNumber: '',
+        bankName: '',
+        bankAccount: '',
         credit_code: '',
         address: '',
         contact_phone: '',
-        bank_account1: '',
-        bank_account2: '',
-        bank_account3: '',
+        payAccount1: '',
+        payAccount2: '',
+        payAccount3: '',
         nickname: '',
         status: 1
       }
@@ -209,36 +210,54 @@ export default {
       this.form = { ...row }
       this.dialogVisible = true
     },
+    handleEditPassword(row) {
+      this.dialogTitle = '修改密码'
+      this.form = { ...row }
+      this.dialogVisible = true
+    },
     handleDelete(row) {
-      // TODO: 接口联动
+      deleteWxUser(row.id).then(res => {
+        this.$message.success('删除成功')
+        this.fetchList()
+      })
     },
     handleSave() {
       this.$refs.form.validate(valid => {
         if (!valid) return
-        createWxUser(this.form).then(res => {
+        if (this.form.id) {
+          updateWxUser(this.form).then(res => {
+            this.$message.success('更新成功')
+            this.dialogVisible = false
+            this.fetchList()
+          })
+        } else {
+          createWxUser(this.form).then(res => {
           this.$message.success('新增成功')
           this.dialogVisible = false
           this.fetchList()
         })
-        this.dialogVisible = false
+      }
       })
     },
     handleStatusChange(row) {
-      // TODO: 启用/停用接口联动
+      changeWxUserStatus(row.id).then(res => {
+        this.$message.success('用户状态变更成功')
+        this.fetchList()
+      })
     },
     handleTypeChange() {
       // 切换类型时清空企业专属字段
       if (this.form.type === 'person') {
         this.form.score = ''
-        this.form.tax_number = ''
-        this.form.bank_name = ''
-        this.form.bank_account = ''
+        this.form.taxNumber = ''
+        this.form.bankName = ''
+        this.form.bankAccount = ''
         this.form.credit_code = ''
         this.form.address = ''
         this.form.contact_phone = ''
-        this.form.bank_account1 = ''
-        this.form.bank_account2 = ''
-        this.form.bank_account3 = ''
+        this.form.payAccount1 = ''
+        this.form.payAccount2 = ''
+        this.form.payAccount3 = ''
       }
     }
   }

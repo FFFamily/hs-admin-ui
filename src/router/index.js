@@ -53,7 +53,7 @@ export const constantRoutes = [
         path: 'user',
         name: 'User',
         component: () => import('@/views/user/index.vue'),
-        meta: { title: '用户管理', icon: 'user' }
+        meta: { title: '小程序用户管理', icon: 'user' }
       },
       {
         path: 'adminUser',

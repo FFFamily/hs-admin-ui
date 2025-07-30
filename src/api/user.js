@@ -30,6 +30,31 @@ export function createWxUser(data) {
     data
   })
 }
+// 更新用户
+export function updateWxUser(data) {
+  return request({
+    url: '/wx/user/update',
+    method: 'put',
+    data
+  })
+}
+// 变更用户状态
+export function changeWxUserStatus(userId) {
+  return request({
+    url: '/wx/user/changeStatus',
+    method: 'put',
+    params: {
+      id: userId
+    }
+  })
+}
+// 删除用户
+export function deleteWxUser(userId) {
+  return request({
+    url: '/wx/user/delete/' + userId,
+    method: 'delete'
+  })
+}
 // 用户分页列表
 export function getUserPage(params) {
   return request({
