@@ -23,13 +23,15 @@
         <el-table-column prop="phone" label="手机号" width="150" />
         <el-table-column prop="status" label="状态" width="100">
           <template slot-scope="scope">
-            <el-switch v-model="scope.row.status" active-value="use" inactive-value="disable" @change="handleStatusChange(scope.row)" />
+            <el-switch v-model="scope.row.status" active-value='use' inactive-value='disable' @change="handleStatusChange(scope.row)" />
           </template>
         </el-table-column>
         <el-table-column label="操作" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
             <el-button size="mini" @click="handleEditPassword(scope.row)">修改密码</el-button>
+            <el-button v-if="scope.row.useType === 'user'" size="mini" @click="handleChangeUseType(scope.row.id,'transport')">设为专人</el-button>
+            <el-button v-else size="mini" @click="handleChangeUseType(scope.row.id, 'user')">设为普通用户</el-button>
             <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
@@ -115,7 +117,7 @@
 
 <script>
 // 这里的接口方法请后续补充联动
-import { getUserPage, createWxUser, updateWxUser, changeWxUserStatus, deleteWxUser } from '@/api/user'
+import { getUserPage, createWxUser, updateWxUser, changeWxUserStatus, deleteWxUser, changeWxUserType } from '@/api/user'
 export default {
   name: 'AdminUserList',
   data() {
@@ -215,6 +217,13 @@ export default {
       this.form = { ...row }
       this.dialogVisible = true
     },
+    // 设置用户使用类型方法
+    handleChangeUseType(id,useType) {
+      changeWxUserType(id, useType).then(res => {
+        this.$message.success('设置成功')
+        this.fetchList()
+      })
+    },
     handleDelete(row) {
       deleteWxUser(row.id).then(res => {
         this.$message.success('删除成功')
@@ -268,4 +277,4 @@ export default {
 .filter-container {
   margin-bottom: 20px;
 }
-</style> 
+</style>

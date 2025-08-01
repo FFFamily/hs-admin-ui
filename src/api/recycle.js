@@ -21,10 +21,11 @@ export function deleteRecycle(id) {
     method: 'delete'
   })
 }
-
-export function approveRecycle(id) {
+// 分配专人
+export function assignRecycle(params) {
   return request({
-    url: `/recycle/order/${id}/approve`,
-    method: 'put'
+    url: `/recycle/order/assign`,
+    method: 'get',
+    params
   })
 } 

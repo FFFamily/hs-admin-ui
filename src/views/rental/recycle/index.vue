@@ -53,7 +53,8 @@
       </el-table-column>
       <el-table-column label="操作" width="250" align="center">
         <template slot-scope="scope">
-          <el-button size="mini" @click="handleDetail(scope.row)">查看详情</el-button>
+          <el-button size="mini" @click="handleDetail(scope.row)">查看</el-button>
+          
           <el-button v-if="scope.row.status === 'pending'" size="mini" type="success" @click="handleApprove(scope.row)">审批通过</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
         </template>
@@ -93,14 +94,70 @@
           <img :src="detailData.signImg" alt="签收图片" style="width:200px;height:200px;object-fit:cover;" />
         </div>
       </div>
+      <el-button size="mini" @click="handleAssignPerson">分配专人</el-button>
+    </el-dialog>
+   <el-dialog
+      title="选择用户"
+      :visible.sync="assignPersonVisible"
+      width="70%"
+      :close-on-click-modal="false"
+    >
+      <div class="search-container">
+        <el-input
+          v-model="searchQuery"
+          placeholder="输入用户名或手机号搜索"
+          style="width: 300px; margin-right: 10px;"
+          suffix-icon="el-icon-search"
+        />
+        <el-button type="primary" @click="fetchUserList">搜索</el-button>
+      </div>
+
+      <el-table
+        v-loading="loading"
+        :data="userList"
+        style="width: 100%; margin-top: 20px;"
+        border
+         @current-change="handleCurrentUser"
+      >
+        <el-table-column v-if="multiple" type="selection" width="55" />
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="username" label="用户名" width="180" />
+        <el-table-column prop="phone" label="手机号" width="150" />
+        <el-table-column prop="type" label="类型" width="100">
+          <template slot-scope="scope">
+            <span>{{ scope.row.type === 'company' ? '企业' : '个人' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="nickname" label="昵称" width="150" />
+      </el-table>
+
+      <div style="margin-top: 20px; text-align: right;">
+        <el-pagination
+          background
+          layout="total, prev, pager, next, jumper"
+          :total="total"
+          :page-size="pageSize"
+          :current-page.sync="currentPage"
+          @current-change="fetchUserList"
+        />
+      </div>
+
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="userDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmSelect">确认选择</el-button>
+      </div>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { getRecyclePage, getRecycleDetail, deleteRecycle, approveRecycle } from '@/api/recycle'
-
+import { getRecyclePage, getRecycleDetail, deleteRecycle, assignRecycle } from '@/api/recycle'
+import UserSelectSearch from '@/components/UserSelectSearch/UserSelectSearch.vue'
+import { getUserPage } from '@/api/user'
 export default {
+  components: {
+    UserSelectSearch
+  },
   data() {
     return {
       list: [],
@@ -116,7 +173,13 @@ export default {
         total: 0
       },
       detailVisible: false,
-      detailData: {}
+      detailData: {},
+      // 分配专人弹窗
+      assignPersonVisible: false,
+      // 被选中的专人
+      selectedProcessor: '',
+      // 用户列表
+      userList:[]
     }
   },
   created() {
@@ -143,6 +206,38 @@ export default {
     handleSearch() {
       this.pagination.page = 1
       this.fetchData()
+    },
+    // 分配
+    handleAssignPerson() {
+      getUserPage({
+        pageNum: 1,
+        pageSize: 10
+      }).then(response => {
+        this.userList = response.data.records || response.data || []
+      })
+      this.assignPersonVisible = true
+    },
+    // 选中用户
+    handleCurrentUser(row){
+      this.selectedProcessor = row.id
+    },
+    // 确认分配
+    confirmSelect(){
+      const orderId = this.detailData.id
+      const processorId = this.selectedProcessor
+      if (!processorId) {
+        this.$message.error('请选择一个用户')
+        return
+      }
+      assignRecycle({
+        orderId,
+        processor:processorId
+      }).then(() => {
+        this.$message.success('分配成功')
+        this.fetchData()
+      }).catch(() => {
+        this.$message.error('分配失败')
+      })
     },
     handleReset() {
       this.searchForm = { orderNo: '', contractId: '', status: '' }

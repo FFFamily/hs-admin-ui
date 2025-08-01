@@ -146,7 +146,22 @@ export const constantRoutes = [
     ]
   },
   // 404 page must be placed at the end !!!
-  { path: '*', redirect: '/404', hidden: true }
+  { path: '*', redirect: '/404', hidden: true },
+  {
+    path: '/demo',
+    component: Layout,
+    redirect: '/demo/user-select',
+    name: 'Demo',
+    meta: { title: '组件演示', icon: 'example' },
+    children: [
+      {
+        path: 'user-select',
+        name: 'UserSelectDemo',
+        component: () => import('@/views/demo/UserSelectDemo.vue'),
+        meta: { title: '用户选择组件', icon: 'search' }
+      }
+    ]
+  }
 ]
 
 const createRouter = () => new Router({

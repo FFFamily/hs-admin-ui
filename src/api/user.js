@@ -55,6 +55,17 @@ export function deleteWxUser(userId) {
     method: 'delete'
   })
 }
+// 变更用户使用类型
+export function changeWxUserType(userId, type) {
+  return request({
+    url: '/wx/user/changeUseType',
+    method: 'put',
+    params: {
+      userId: userId,
+      useType: type
+    }
+  })
+}
 // 用户分页列表
 export function getUserPage(params) {
   return request({
