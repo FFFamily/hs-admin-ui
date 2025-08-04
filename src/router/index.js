@@ -7,6 +7,17 @@ Vue.use(Router)
 import Layout from '@/layout'
 
 export const constantRoutes = [
+  // 商品分类管理
+  {
+    path: '/categories',
+    component: Layout,
+    redirect: '/categories/index',
+    name: 'Categories',
+    meta: { title: '商品分类管理', icon: 'tree' },
+    children: [
+      
+    ]
+  },
   {
     path: '/login',
     component: () => import('@/views/login/index'),
@@ -47,7 +58,7 @@ export const constantRoutes = [
     component: Layout, // Layout 需根据你的实际布局组件名调整
     redirect: '/admin/user',
     name: 'Admin',
-    meta: { title: '后台管理', icon: 'user' },
+    meta: { title: '用户管理', icon: 'user' },
     children: [
       {
         path: 'user',
@@ -58,14 +69,8 @@ export const constantRoutes = [
       {
         path: 'adminUser',
         name: 'AdminUser',
-        component: () => import('@/views/user/index.vue'),
+        component: () => import('@/views/admin/user/index.vue'),
         meta: { title: '后台用户管理', icon: 'user' }
-      },
-      {
-        path: 'role',
-        name: 'AdminRole',
-        component: () => import('@/views/admin/role/index.vue'),
-        meta: { title: '角色管理', icon: 'tree' }
       }
     ]
   },
@@ -132,6 +137,12 @@ export const constantRoutes = [
         meta: { title: '租赁商品管理', icon: 'table' }
       },
       {
+        path: 'index',
+        name: 'CategoriesIndex',
+        component: () => import('@/views/categories/index.vue'),
+        meta: { title: '分类管理', icon: 'tree' }
+      },
+      {
         path: 'contract',
         name: 'RentalContract',
         component: () => import('@/views/rental/contract/index.vue'),
@@ -142,6 +153,12 @@ export const constantRoutes = [
         name: 'RentalRecycle',
         component: () => import('@/views/rental/recycle/index.vue'),
         meta: { title: '回收订单管理', icon: 'tree' }
+      },
+      {
+        path: 'order',
+        name: 'RentalOrder',
+        component: () => import('@/views/rental/order/index.vue'),
+        meta: { title: '租赁订单管理', icon: 'table' }
       }
     ]
   },

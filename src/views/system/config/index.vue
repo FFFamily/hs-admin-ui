@@ -29,6 +29,15 @@
           </el-upload>
           <div class="el-upload__tip" slot="tip" v-if="isEdit">支持多图上传，建议尺寸 750x360px</div>
         </el-form-item>
+        <el-form-item label="商城分类类型">
+          <div v-if="!isEdit">
+            <span>{{ getCategoryName(form.mallType) }}</span>
+          </div>
+          <el-select v-else v-model="form.mallType" placeholder="请选择商城类型" multiple>
+            <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id"></el-option>
+          </el-select>
+          <div class="el-upload__tip" slot="tip" v-if="isEdit">选择商城顶部分类栏的展示类型，可多选</div>
+        </el-form-item>
         <el-form-item>
           <el-button v-if="!isEdit" type="primary" @click="handleEdit">编辑</el-button>
           <template v-else>
@@ -44,28 +53,48 @@
 <script>
 import { getWxHomeConfig, updateHomeConfig } from '@/api/homeConfig'
 import { getToken } from '@/utils/auth'
+import { getCategoryList } from '@/api/categories'
 export default {
   name: 'SystemConfig',
   data() {
     return {
       form: {
-        homeImg: [] // 图片url数组
+        homeImg: [], // 图片url数组
+        mallType: [] // 商城分类类型，存储分类ID数组
       },
       fileList: [],
       isEdit: false,
       backup: null,
-      getToken: getToken
+      getToken: getToken,
+      categories: [] // 商品分类列表
     }
   },
   created() {
     this.getWxHomeConfig()
+    this.getCategoryList()
     this.fileList = this.form.homeImg.map((url, idx) => ({ name: `图片${idx+1}`, url:process.env.VUE_APP_BASE_URL+url }))
   },
   methods: {
     getWxHomeConfig() {
       getWxHomeConfig().then(res => {
         this.form = res.data
+        // 将字符串转换为数组（如果是字符串格式）
+        if (typeof this.form.mallType === 'string') {
+          this.form.mallType = this.form.mallType.split(',').filter(id => id)
+        }
       })
+    },
+    getCategoryList() {
+      getCategoryList().then(res => {
+        this.categories = res.data
+      })
+    },
+    getCategoryName(ids) {
+      if (!Array.isArray(ids)) return ''
+      return ids.map(id => {
+        const category = this.categories.find(cat => cat.id === id)
+        return category ? category.name : '未知分类'
+      }).join('、')
     },
     handleUploadSuccess(res, file, fileList) {
         console.log(fileList)
@@ -98,12 +127,10 @@ export default {
       let config = {
         ...this.form,
         // 拼接成字符串
-        homeImg: this.form.homeImg.join('、')
+        homeImg: this.form.homeImg.join('、'),
+        mallType: this.form.mallType.join(',') // 将数组转换为逗号分隔的字符串
       }
-    //   console.log(config)
-    //   console.log(this.form)
-    //   console.log(this.form.homeImg.join('、'))
-      updateHomeConfig(config.id,config).then(res => {
+      updateHomeConfig(config.id, config).then(res => {
         this.$message.success('保存成功')
       })
     },
@@ -121,4 +148,4 @@ export default {
 .system-config {
   padding: 20px;
 }
-</style> 
+</style>
