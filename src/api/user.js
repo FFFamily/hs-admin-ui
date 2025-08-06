@@ -8,6 +8,14 @@ export function login(data) {
   })
 }
 
+// 获取用户列表
+export function getUserList() {
+  return request({
+    url: '/wx/user/list',
+    method: 'get'
+  })
+}
+
 export function getInfo() {
   return request({
     url: '/ad/auth/getLoginInfo',

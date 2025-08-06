@@ -19,7 +19,7 @@ export function getLeaseOrderDetail(params) {
 
 export function addLeaseOrder(data) {
   return request({
-    url: '/lease/order/create',
+    url: '/lease/order/create/fromGood',
     method: 'post',
     data
   })

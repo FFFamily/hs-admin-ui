@@ -159,6 +159,7 @@
         </el-table>
         <div style="text-align: right; margin-top: 10px;">
           <el-button type="primary" @click="calculateTotalAmount">计算总金额</el-button>
+          <el-button type="success" @click="previewOrder" style="margin-left: 10px;">预览订单</el-button>
           <span style="margin-left: 20px; font-weight: bold;">订单总金额: {{ form.totalAmount }} 元</span>
         </div>
       </div>
@@ -335,7 +336,8 @@
 </template>
 
 <script>
-import { getLeaseOrderListPage, getLeaseOrderDetail, addLeaseOrder, updateLeaseOrder, deleteLeaseOrder, updateOrderStatus, getUserList, getGoodList, getOrderItemList, addOrderItem, updateOrderItem, deleteOrderItem, updateOrderLogistics } from '@/api/leaseOrder';
+import { getLeaseOrderListPage, getLeaseOrderDetail, addLeaseOrder, updateLeaseOrder, deleteLeaseOrder, updateOrderStatus, getGoodList, getOrderItemList, addOrderItem, updateOrderItem, deleteOrderItem, updateOrderLogistics } from '@/api/leaseOrder';
+import { getUserList } from '@/api/user';
 export default {
   components: {},
   data() {
@@ -491,6 +493,15 @@ export default {
       }
       this.orderItems = []
       this.dialogVisible = true
+      
+      // 提示用户操作步骤
+      this.$nextTick(() => {
+        this.$message({
+          message: '请按以下步骤创建订单：1.选择用户 2.填写收货信息 3.设置租赁时间 4.添加商品 5.预览订单 6.确认创建',
+          type: 'info',
+          duration: 5000
+        })
+      })
     },
     handleEdit(row) {
       this.dialogTitle = '编辑订单'
@@ -624,9 +635,16 @@ export default {
     calculateTotalAmount() {
       let total = 0
       this.orderItems.forEach(item => {
+        // 确保小计金额计算正确
+        if (item.goodPrice && item.quantity && item.leaseDays) {
+          item.subtotal = (item.goodPrice * item.quantity * item.leaseDays).toFixed(2)
+        }
         total += parseFloat(item.subtotal || 0)
       })
       this.form.totalAmount = total.toFixed(2)
+      
+      // 显示计算结果
+      this.$message.success(`订单总金额已更新：${this.form.totalAmount}元`)
     },
     handleAddItem() {
       this.itemDialogTitle = '新增商品'
@@ -653,23 +671,10 @@ export default {
     handleDeleteItem(row) {
       this.$confirm('确定要删除该商品吗？', '提示', { type: 'warning' })
         .then(() => {
-          if (row.id) {
-            // 删除已有商品
-            deleteOrderItem({ id: row.id })
-              .then(() => {
-                this.$message.success('删除成功')
-                this.getOrderItems(this.form.id)
-              })
-              .catch(error => {
-                console.error('删除商品失败:', error)
-                this.$message.error('删除商品失败')
-              })
-          } else {
-            // 删除未保存的商品
-            this.orderItems = this.orderItems.filter(item => item !== row)
-            this.calculateTotalAmount()
-            this.$message.success('删除成功')
-          }
+          // 无论是否保存，都从本地数组删除
+          this.orderItems = this.orderItems.filter(item => item.id !== row.id)
+          this.calculateTotalAmount()
+          this.$message.success('删除成功')
         })
         .catch(() => {})
     },
@@ -679,39 +684,60 @@ export default {
         this.$message.error('请选择商品')
         return
       }
+      if (!this.itemForm.goodName) {
+        this.$message.error('商品名称不能为空')
+        return
+      }
       if (!this.itemForm.leaseStartTime || !this.itemForm.leaseEndTime) {
         this.$message.error('请选择租赁时间')
         return
       }
+      if (!this.itemForm.quantity || this.itemForm.quantity <= 0) {
+        this.$message.error('租赁数量必须大于0')
+        return
+      }
+      if (!this.itemForm.leaseDays || this.itemForm.leaseDays <= 0) {
+        this.$message.error('租赁天数必须大于0')
+        return
+      }
+
+      // 验证租赁时间逻辑
+      const startTime = new Date(this.itemForm.leaseStartTime)
+      const endTime = new Date(this.itemForm.leaseEndTime)
+      if (startTime >= endTime) {
+        this.$message.error('租赁结束时间必须大于开始时间')
+        return
+      }
+
+      // 验证租赁时间是否在订单时间范围内
+      if (this.form.leaseStartTime && this.form.leaseEndTime) {
+        const orderStartTime = new Date(this.form.leaseStartTime)
+        const orderEndTime = new Date(this.form.leaseEndTime)
+        if (startTime < orderStartTime || endTime > orderEndTime) {
+          this.$message.error('商品租赁时间必须在订单租赁时间范围内')
+          return
+        }
+      }
 
       const formData = { ...this.itemForm }
-      formData.orderId = this.form.id || ''
 
       if (formData.id) {
-        // 编辑
-        updateOrderItem(formData)
-          .then(() => {
-            this.$message.success('编辑成功')
-            this.itemDialogVisible = false
-            this.getOrderItems(this.form.id)
-          })
-          .catch(error => {
-            console.error('编辑商品失败:', error)
-            this.$message.error('编辑商品失败')
-          })
+        // 编辑现有商品（本地）
+        const index = this.orderItems.findIndex(item => item.id === formData.id)
+        if (index !== -1) {
+          this.orderItems.splice(index, 1, formData)
+          this.$message.success('编辑成功')
+        }
       } else {
-        // 新增
-        addOrderItem(formData)
-          .then(() => {
-            this.$message.success('新增成功')
-            this.itemDialogVisible = false
-            this.getOrderItems(this.form.id)
-          })
-          .catch(error => {
-            console.error('新增商品失败:', error)
-            this.$message.error('新增商品失败')
-          })
+        // 新增商品（本地）
+        // 生成临时ID，避免与后端ID冲突
+        formData.id = 'temp_' + Date.now()
+        this.orderItems.push(formData)
+        this.$message.success('新增成功')
       }
+
+      this.calculateTotalAmount()
+      this.itemDialogVisible = false
     },
     handleSave() {
       // 表单验证
@@ -732,38 +758,122 @@ export default {
         return
       }
 
+      // 验证订单明细的完整性
+      for (let i = 0; i < this.orderItems.length; i++) {
+        const item = this.orderItems[i]
+        if (!item.goodId || !item.goodName) {
+          this.$message.error(`第${i + 1}个商品信息不完整，请检查`)
+          return
+        }
+        if (!item.leaseStartTime || !item.leaseEndTime) {
+          this.$message.error(`第${i + 1}个商品的租赁时间不完整，请检查`)
+          return
+        }
+        if (!item.quantity || item.quantity <= 0) {
+          this.$message.error(`第${i + 1}个商品的数量必须大于0`)
+          return
+        }
+      }
+
       const formData = { ...this.form }
 
       if (formData.id) {
-        // 编辑
-        updateLeaseOrder(formData)
-          .then(() => {
-            this.$message.success('编辑成功')
-            this.dialogVisible = false
-            this.fetchData()
-          })
-          .catch(error => {
-            console.error('编辑订单失败:', error)
-            this.$message.error('编辑订单失败')
-          })
-      } else {
-        // 新增
-        addLeaseOrder(formData)
-          .then(response => {
-            const orderId = response.data.id
-            // 保存订单明细
-            this.orderItems.forEach(item => {
-              item.orderId = orderId
-              addOrderItem(item)
+        // 编辑订单
+        this.$confirm('确定要保存订单信息吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          updateLeaseOrder(formData)
+            .then(() => {
+              // 处理商品更新
+              const promises = this.orderItems.map(item => {
+                item.orderId = formData.id
+                if (item.id && !item.id.startsWith('temp_')) {
+                  // 更新已有商品
+                  return updateOrderItem(item)
+                } else {
+                  // 添加新商品
+                  // 删除临时ID
+                  delete item.id
+                  return addOrderItem(item)
+                }
+              })
+
+              Promise.all(promises)
+                .then(() => {
+                  this.$message.success('编辑成功')
+                  this.dialogVisible = false
+                  this.fetchData()
+                })
+                .catch(error => {
+                  console.error('更新商品失败:', error)
+                  this.$message.error('更新商品失败，但订单已保存')
+                })
             })
-            this.$message.success('新增成功')
-            this.dialogVisible = false
-            this.fetchData()
+            .catch(error => {
+              console.error('编辑订单失败:', error)
+              this.$message.error('编辑订单失败')
+            })
+        }).catch(() => {})
+      } else {
+        // 新增订单 - 显示确认对话框
+        this.$confirm('确定要创建订单吗？请确认以下信息：\n' +
+          `用户：${this.userOptions.find(u => u.id === this.form.userId)?.name || '未知'}\n` +
+          `收货人：${this.form.receiverName}\n` +
+          `商品数量：${this.orderItems.length}个\n` +
+          `订单总金额：${this.form.totalAmount}元\n` +
+          `租赁时间：${this.form.leaseStartTime} 至 ${this.form.leaseEndTime}`, 
+          '确认创建订单', {
+          confirmButtonText: '确定创建',
+          cancelButtonText: '取消',
+          type: 'warning',
+          dangerouslyUseHTMLString: true
+        }).then(() => {
+          // 显示加载状态
+          const loading = this.$loading({
+            lock: true,
+            text: '正在创建订单...',
+            spinner: 'el-icon-loading',
+            background: 'rgba(0, 0, 0, 0.7)'
           })
-          .catch(error => {
-            console.error('新增订单失败:', error)
-            this.$message.error('新增订单失败')
-          })
+
+          // 准备订单数据
+          const orderData = {
+            ...formData,
+            orderItems: this.orderItems.map(item => ({
+              goodId: item.goodId,
+              goodName: item.goodName,
+              goodPrice: item.goodPrice,
+              quantity: item.quantity,
+              leaseStartTime: item.leaseStartTime,
+              leaseEndTime: item.leaseEndTime,
+              leaseDays: item.leaseDays,
+              subtotal: item.subtotal,
+              remark: item.remark
+            }))
+          }
+          
+          console.log('准备创建订单，数据：', orderData)
+          console.log('开始调用 addLeaseOrder 函数')
+          
+          // 调用创建订单接口
+          addLeaseOrder(orderData)
+            .then(response => {
+              loading.close()
+              console.log('订单创建成功，响应：', response)
+              this.$message.success('订单创建成功！')
+              this.dialogVisible = false
+              this.fetchData()
+            })
+            .catch(error => {
+              loading.close()
+              console.error('创建订单失败:', error)
+              this.$message.error('创建订单失败：' + (error.message || '未知错误'))
+            })
+        }).catch(() => {
+          console.log('用户取消创建订单')
+        })
       }
     },
     handleUpdateLogistics() {
@@ -842,6 +952,76 @@ export default {
         default:
           return '未知'
       }
+    },
+    previewOrder() {
+      // 验证基本信息
+      if (!this.form.userId) {
+        this.$message.error('请选择用户')
+        return
+      }
+      if (!this.form.receiverName || !this.form.receiverPhone || !this.form.receiverAddress) {
+        this.$message.error('请填写收货人信息')
+        return
+      }
+      if (!this.form.leaseStartTime || !this.form.leaseEndTime) {
+        this.$message.error('请选择租赁时间')
+        return
+      }
+      if (this.orderItems.length === 0) {
+        this.$message.error('请添加商品')
+        return
+      }
+
+      // 验证订单明细
+      for (let i = 0; i < this.orderItems.length; i++) {
+        const item = this.orderItems[i]
+        if (!item.goodId || !item.goodName) {
+          this.$message.error(`第${i + 1}个商品信息不完整`)
+          return
+        }
+        if (!item.leaseStartTime || !item.leaseEndTime) {
+          this.$message.error(`第${i + 1}个商品的租赁时间不完整`)
+          return
+        }
+      }
+
+      // 计算总金额
+      this.calculateTotalAmount()
+
+      // 构建预览信息
+      const user = this.userOptions.find(u => u.id === this.form.userId)
+      const previewInfo = `
+        <div style="text-align: left;">
+          <h3>订单预览</h3>
+          <p><strong>用户信息：</strong>${user ? user.name : '未知'} (ID: ${this.form.userId})</p>
+          <p><strong>收货人：</strong>${this.form.receiverName}</p>
+          <p><strong>联系电话：</strong>${this.form.receiverPhone}</p>
+          <p><strong>收货地址：</strong>${this.form.receiverAddress}</p>
+          <p><strong>归还地址：</strong>${this.form.returnAddress || '未设置'}</p>
+          <p><strong>租赁时间：</strong>${this.form.leaseStartTime} 至 ${this.form.leaseEndTime}</p>
+          <p><strong>租赁天数：</strong>${this.form.totalLeaseDays}天</p>
+          <p><strong>押金金额：</strong>${this.form.depositAmount}元</p>
+          <p><strong>订单总金额：</strong>${this.form.totalAmount}元</p>
+          <p><strong>商品数量：</strong>${this.orderItems.length}个</p>
+          <hr>
+          <h4>商品明细：</h4>
+          ${this.orderItems.map((item, index) => `
+            <div style="margin-bottom: 10px; padding: 10px; border: 1px solid #eee; border-radius: 4px;">
+              <p><strong>商品${index + 1}：</strong>${item.goodName}</p>
+              <p><strong>单价：</strong>${item.goodPrice}元/天</p>
+              <p><strong>数量：</strong>${item.quantity}</p>
+              <p><strong>租赁天数：</strong>${item.leaseDays}天</p>
+              <p><strong>小计：</strong>${item.subtotal}元</p>
+            </div>
+          `).join('')}
+        </div>
+      `
+
+      this.$alert(previewInfo, '订单预览', {
+        dangerouslyUseHTMLString: true,
+        confirmButtonText: '确定',
+        callback: () => {}
+      })
     }
   }
 }

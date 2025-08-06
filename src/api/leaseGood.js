@@ -19,7 +19,14 @@ export function changeGoodStatus(goodId, status) {
     }
   })
 }
-
+// 手动根据商品创建订单
+export function createLeaseOrder(data) {
+  return request({
+    url: '/lease/order/create/fromGood',
+    method: 'post',
+    data
+  })
+}
 export function getLeaseGoodDetail(params) {
   return request({
     url: '/lease/good/detail',
@@ -38,7 +45,7 @@ export function addLeaseGood(data) {
 export function updateLeaseGood(data) {
   return request({
     url: '/lease/good/update',
-    method: 'post',
+    method: 'put',
     data
   })
 }
