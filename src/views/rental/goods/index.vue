@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-form :inline="true" :model="searchForm" class="demo-form-inline" @submit.native.prevent>
-      <el-form-item label="商品名">
+      <!-- <el-form-item label="商品名">
         <el-input v-model="searchForm.name" placeholder="请输入商品名" />
       </el-form-item>
       <el-form-item label="状态">
@@ -10,10 +10,10 @@
             <el-option label="上架" value="up" />
             <el-option label="下架" value="down" />
           </el-select>
-      </el-form-item>
+      </el-form-item> -->
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="handleReset">重置</el-button>
+        <!-- <el-button type="primary" @click="handleSearch">搜索</el-button> -->
+        <!-- <el-button @click="handleReset">重置</el-button> -->
       </el-form-item>
       <el-form-item style="float:right;">
         <el-button type="primary" @click="handleAdd">新增商品</el-button>
@@ -27,20 +27,25 @@
       highlight-current-row
       style="margin-top: 20px;"
     >
-      <el-table-column label="编号" prop="code" width="120" align="center" />
+      <el-table-column label="编号" prop="code" width="120" align="center" sortable />
       <el-table-column label="分类" width="120" align="center">
         <template slot-scope="scope">
-          {{ getCategoryName(scope.row.categoryId) || '未分类' }}
+          {{ scope.row.typeName || '未分类' }}
         </template>
       </el-table-column>
-      <el-table-column label="商品名" prop="name" />
+      <el-table-column label="商品名" prop="name" sortable />
       <el-table-column label="图片" width="100" align="center">
         <template slot-scope="scope">
-          <img :src="scope.row.image" alt="图片" style="width:60px;height:60px;object-fit:cover;" />
+          <el-image 
+            :src="scope.row.image" 
+            style="width:60px;height:60px;object-fit:cover;"
+            :preview-src-list="[scope.row.image]"
+            fit="cover"
+          />
         </template>
       </el-table-column>
-      <el-table-column label="价格(元/天)" prop="price" width="100" align="center" />
-      <el-table-column label="使用年限" prop="useLimitYear" width="100" align="center" />
+      <el-table-column label="价格(元/天)" prop="price" width="100" align="center" sortable />
+      <el-table-column label="使用年限" prop="useLimitYear" width="100" align="center" sortable />
       <el-table-column label="状态" prop="status" width="100" align="center">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'up' ? 'success' : 'info'">
@@ -76,13 +81,13 @@
     </el-dialog>
     
     <!-- 新增/编辑弹窗 -->
-    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible">
-      <el-form :model="form" label-width="80px">
-        <el-form-item label="商品名">
-          <el-input v-model="form.name" />
+    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="800px">
+      <el-form :model="form" :rules="rules" ref="form" label-width="120px">
+        <el-form-item label="商品名" prop="name">
+          <el-input v-model="form.name" placeholder="请输入商品名称" />
         </el-form-item>
-        <el-form-item label="编号">
-          <el-input v-model="form.code" />
+        <el-form-item label="编号" prop="code">
+          <el-input v-model="form.code" placeholder="请输入商品编号" />
         </el-form-item>
         <el-form-item label="图片">
           <el-upload
@@ -102,20 +107,17 @@
             <i class="el-icon-plus"></i>
           </el-upload>
         </el-form-item>
-        <el-form-item label="价格">
-          <el-input-number v-model="form.price" :min="0" />
+        <el-form-item label="价格" prop="price">
+          <el-input-number v-model="form.price" :min="0" :precision="2" placeholder="请输入价格" />
         </el-form-item>
-        <!-- <el-form-item label="库存">
-          <el-input-number v-model="form.stock" :min="0" />
-        </el-form-item> -->
-        <el-form-item label="状态">
-          <el-select v-model="form.status">
-              <el-option label="上架" value="up" />
-              <el-option label="下架" value="down" />
-            </el-select>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="form.status" placeholder="请选择状态">
+            <el-option label="上架" value="up" />
+            <el-option label="下架" value="down" />
+          </el-select>
         </el-form-item>
-        <el-form-item label="分类">
-          <el-select v-model="form.categoryId" placeholder="请选择分类">
+        <el-form-item label="分类" prop="type">
+          <el-select v-model="form.type" placeholder="请选择分类">
             <el-option v-for="category in categoryOptions" :key="category.id" :label="category.name" :value="category.id" />
           </el-select>
         </el-form-item>
@@ -127,36 +129,50 @@
         </el-form-item>
         <el-form-item label="设备参数">
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
-            <el-radio v-model="fieldTypes.parameter" label="text">文字</el-radio>
-            <el-radio v-model="fieldTypes.parameter" label="image" style="margin-left: 20px;">图片</el-radio>
+            <el-radio v-model="form.dynamicFields.parameter.type" label="text">文字</el-radio>
+            <el-radio v-model="form.dynamicFields.parameter.type" label="image" style="margin-left: 20px;">图片</el-radio>
           </div>
-          <div v-if="fieldTypes.parameter === 'text'">
-            <el-input v-model="form.parameter.data" type="textarea" placeholder="请输入设备参数" />
+          <div v-if="form.dynamicFields.parameter.type === 'text'">
+            <el-input 
+              v-model="form.dynamicFields.parameter.data" 
+              type="textarea" 
+              :rows="4"
+              placeholder="请输入设备参数，支持换行" 
+            />
           </div>
           <div v-else>
             <el-upload
-            class="upload-demo"
-            action="/api/system/file/upload"
-            list-type="picture-card"
-            :headers="{'Token-Key': getToken()}"
-            :on-preview="handlePictureCardPreview"
-            :on-remove="(file, fileList) => handleRemove(file, fileList, 'parameter')"
-            :before-upload="beforeUpload"
-            :on-success="(response, file, fileList) => handleUploadSuccess(response, file, fileList, 'parameter')"
-            :on-error="handleUploadError"
-            :file-list="form.parameterImages.map(url => ({ name: '参数图片', url }))"
-          >
-            <i class="el-icon-plus"></i>
-          </el-upload>
+              class="upload-demo"
+              action="/api/system/file/upload"
+              list-type="picture-card"
+              :headers="{'Token-Key': getToken()}"
+              :on-preview="handlePictureCardPreview"
+              :on-remove="(file, fileList) => handleRemove(file, fileList, 'parameter')"
+              :before-upload="beforeUpload"
+              :on-success="(response, file, fileList) => handleUploadSuccess(response, file, fileList, 'parameter')"
+              :on-error="handleUploadError"
+              :file-list="getFileList('parameter')"
+              :limit="5"
+            >
+              <i class="el-icon-plus"></i>
+            </el-upload>
+            <div style="color: #909399; font-size: 12px; margin-top: 5px;">
+              最多上传5张图片，每张不超过2MB
+            </div>
           </div>
         </el-form-item>
         <el-form-item label="服务内容">
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
-            <el-radio v-model="fieldTypes.serviceContent" label="text">文字</el-radio>
-            <el-radio v-model="fieldTypes.serviceContent" label="image" style="margin-left: 20px;">图片</el-radio>
+            <el-radio v-model="form.dynamicFields.serviceContent.type" label="text">文字</el-radio>
+            <el-radio v-model="form.dynamicFields.serviceContent.type" label="image" style="margin-left: 20px;">图片</el-radio>
           </div>
-          <div v-if="fieldTypes.serviceContent === 'text'">
-            <el-input v-model="form.serviceContent.data" type="textarea" placeholder="请输入服务内容" />
+          <div v-if="form.dynamicFields.serviceContent.type === 'text'">
+            <el-input 
+              v-model="form.dynamicFields.serviceContent.data" 
+              type="textarea" 
+              :rows="4"
+              placeholder="请输入服务内容，支持换行" 
+            />
           </div>
           <div v-else>
             <el-upload
@@ -169,19 +185,28 @@
               :before-upload="beforeUpload"
               :on-success="(response, file, fileList) => handleUploadSuccess(response, file, fileList, 'serviceContent')"
               :on-error="handleUploadError"
-              :file-list="form.serviceContentImages.map(url => ({ name: '服务内容图片', url }))"
+              :file-list="getFileList('serviceContent')"
+              :limit="5"
             >
               <i class="el-icon-plus"></i>
             </el-upload>
+            <div style="color: #909399; font-size: 12px; margin-top: 5px;">
+              最多上传5张图片，每张不超过2MB
+            </div>
           </div>
         </el-form-item>
         <el-form-item label="注意事项">
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
-            <el-radio v-model="fieldTypes.precaution" label="text">文字</el-radio>
-            <el-radio v-model="fieldTypes.precaution" label="image" style="margin-left: 20px;">图片</el-radio>
+            <el-radio v-model="form.dynamicFields.precaution.type" label="text">文字</el-radio>
+            <el-radio v-model="form.dynamicFields.precaution.type" label="image" style="margin-left: 20px;">图片</el-radio>
           </div>
-          <div v-if="fieldTypes.precaution === 'text'">
-            <el-input v-model="form.precaution.data" type="textarea" placeholder="请输入注意事项" />
+          <div v-if="form.dynamicFields.precaution.type === 'text'">
+            <el-input 
+              v-model="form.dynamicFields.precaution.data" 
+              type="textarea" 
+              :rows="4"
+              placeholder="请输入注意事项，支持换行" 
+            />
           </div>
           <div v-else>
             <el-upload
@@ -194,10 +219,14 @@
               :before-upload="beforeUpload"
               :on-success="(response, file, fileList) => handleUploadSuccess(response, file, fileList, 'precaution')"
               :on-error="handleUploadError"
-              :file-list="form.precautionImages.map(url => ({ name: '注意事项图片', url }))"
+              :file-list="getFileList('precaution')"
+              :limit="5"
             >
               <i class="el-icon-plus"></i>
             </el-upload>
+            <div style="color: #909399; font-size: 12px; margin-top: 5px;">
+              最多上传5张图片，每张不超过2MB
+            </div>
           </div>
         </el-form-item>
       </el-form>
@@ -229,24 +258,36 @@ export default {
       dialogVisible: false,
       dialogTitle: '新增商品',
       form: {
-          id: null,
-          name: '',
-          code: '',
-          image: '',
-          imageList: [],
-          price: 0,
-          status: 'up',
-          categoryId: '',  // 商品分类ID
-          type: '',        // 商品分类
-          baseInfo: '',    // 基本信息
-          useLimitYear: 0, // 使用年限
-          parameter: '',   // 设备参数(文字)
-          parameterImages: [], // 设备参数(图片)
-          serviceContent: '', // 服务内容(文字)
-          serviceContentImages: [], // 服务内容(图片)
-          precaution: '',   // 注意事项(文字)
-          precautionImages: [], // 注意事项(图片)
-        },
+        id: null,
+        name: '',
+        code: '',
+        image: '',
+        imageList: [],
+        price: 0,
+        status: 'up',
+        type: '',
+        categoryId: '',
+        baseInfo: '',
+        useLimitYear: 0,
+        // 优化后的动态字段结构
+        dynamicFields: {
+          parameter: {
+            type: 'text',
+            data: '',
+            images: []
+          },
+          serviceContent: {
+            type: 'text', 
+            data: '',
+            images: []
+          },
+          precaution: {
+            type: 'text',
+            data: '',
+            images: []
+          }
+        }
+      },
       categoryOptions: [],  // 分类选项
       // 控制字段类型(文字/图片)
       fieldTypes: {
@@ -256,16 +297,82 @@ export default {
       },
       // 图片预览相关
       previewImage: '',
-      dialogImageVisible: false
+      dialogImageVisible: false,
+      
+      // 表单验证规则
+      rules: {
+        name: [
+          { required: true, message: '请输入商品名称', trigger: 'blur' },
+          { min: 2, max: 50, message: '商品名称长度在 2 到 50 个字符', trigger: 'blur' }
+        ],
+        code: [
+          { required: true, message: '请输入商品编号', trigger: 'blur' },
+          { pattern: /^[A-Za-z0-9-]+$/, message: '商品编号只能包含字母、数字和连字符', trigger: 'blur' }
+        ],
+        price: [
+          { required: true, message: '请输入商品价格', trigger: 'blur' },
+          { type: 'number', min: 0, message: '价格必须大于等于0', trigger: 'blur' }
+        ],
+        categoryId: [
+          { required: true, message: '请选择商品分类', trigger: 'change' }
+        ],
+        useLimitYear: [
+          { type: 'number', min: 0, max: 50, message: '使用年限必须在0-50年之间', trigger: 'blur' }
+        ]
+      }
     }
   },
   created() {
     this.fetchData()
     this.getCategoryOptions()
   },
+  
+  watch: {
+    // 监听动态字段类型变化，清空对应的数据
+    'form.dynamicFields.parameter.type'(newType) {
+      if (newType === 'text') {
+        this.form.dynamicFields.parameter.images = []
+      } else {
+        this.form.dynamicFields.parameter.data = ''
+      }
+    },
+    'form.dynamicFields.serviceContent.type'(newType) {
+      if (newType === 'text') {
+        this.form.dynamicFields.serviceContent.images = []
+      } else {
+        this.form.dynamicFields.serviceContent.data = ''
+      }
+    },
+    'form.dynamicFields.precaution.type'(newType) {
+      if (newType === 'text') {
+        this.form.dynamicFields.precaution.images = []
+      } else {
+        this.form.dynamicFields.precaution.data = ''
+      }
+    }
+  },
   methods: {
     getToken() {
       return getToken()
+    },
+    
+    // 获取文件列表，用于上传组件显示
+    getFileList(field) {
+      const images = this.form.dynamicFields[field].images || []
+      return images.map(url => ({ 
+        name: this.getFieldDisplayName(field), 
+        url: url 
+      }))
+    },
+    
+    // 获取字段显示名称
+    getFieldDisplayName(field) {
+      const nameMap = {
+        parameter: '参数图片',
+        serviceContent: '服务内容图片',
+        precaution: '注意事项图片'
+      }
+      return nameMap[field] || '图片'
     },  
     getCategoryOptions() {
       getCategoriesList()
@@ -283,10 +390,10 @@ export default {
       getLeaseGoodListPage({
         pageNum: this.currentPage,
         pageSize: this.pageSize,
+        ...this.searchForm // 添加搜索条件
       })
         .then(response => {
           this.list = response.data.records || []
-          console.log(this.list)
           this.total = response.data.total || 0
           this.listLoading = false
         })
@@ -325,64 +432,98 @@ export default {
         type: '',
         baseInfo: '',
         useLimitYear: 0,
-        parameter: '',
-        parameterImages: [],
-        serviceContent: '',
-        serviceContentImages: [],
-        precaution: '',
-        precautionImages: []
-      }
-      // 重置字段类型
-      this.fieldTypes = {
-        parameter: 'text',
-        serviceContent: 'text',
-        precaution: 'text'
+        dynamicFields: {
+          parameter: {
+            type: 'text',
+            data: '',
+            images: []
+          },
+          serviceContent: {
+            type: 'text',
+            data: '',
+            images: []
+          },
+          precaution: {
+            type: 'text',
+            data: '',
+            images: []
+          }
+        }
       }
       this.dialogVisible = true
     },
     handleEdit(row) {
       this.dialogTitle = '编辑商品'
-      row.parameter = JSON.parse(row.parameter)
-      row.serviceContent = JSON.parse(row.serviceContent)
-      row.precaution = JSON.parse(row.precaution)
+      
+      // 解析JSON数据，处理兼容性问题
+      let parameter, serviceContent, precaution
+      
+      try {
+        parameter = JSON.parse(row.parameter || '{"type":"text","data":"","images":[]}')
+        serviceContent = JSON.parse(row.serviceContent || '{"type":"text","data":"","images":[]}')
+        precaution = JSON.parse(row.precaution || '{"type":"text","data":"","images":[]}')
+      } catch (e) {
+        console.warn('解析JSON数据失败，使用默认值:', e)
+        parameter = { type: 'text', data: '', images: [] }
+        serviceContent = { type: 'text', data: '', images: [] }
+        precaution = { type: 'text', data: '', images: [] }
+      }
+      
+      // 处理旧版本数据结构兼容
+      if (parameter && !parameter.images && parameter.data && Array.isArray(parameter.data)) {
+        parameter.images = parameter.data
+        parameter.data = ''
+      }
+      if (serviceContent && !serviceContent.images && serviceContent.data && Array.isArray(serviceContent.data)) {
+        serviceContent.images = serviceContent.data
+        serviceContent.data = ''
+      }
+      if (precaution && !precaution.images && precaution.data && Array.isArray(precaution.data)) {
+        precaution.images = precaution.data
+        precaution.data = ''
+      }
+      
+      // 处理主图片数据
+      let imageList = []
+      if (row.image) {
+        imageList = [{ name: '商品图片', url: row.image }]
+      }
+      
       this.form = {
         ...row,
         categoryId: row.categoryId || '',
         type: row.type || '',
         baseInfo: row.baseInfo || '',
         useLimitYear: row.useLimitYear || 0,
-        parameter: row.parameter || '',
-        parameterImages: row.parameterImages || [],
-        serviceContent: row.serviceContent || '',
-        serviceContentImages: row.serviceContentImages || [],
-        precaution: row.precaution || '',
-        precautionImages: row.precautionImages || [],
         image: row.image || '',
-        imageList: row.imageList || []
+        imageList: imageList,
+        dynamicFields: {
+          parameter: {
+            type: parameter.type || 'text',
+            data: parameter.data || '',
+            images: parameter.images || []
+          },
+          serviceContent: {
+            type: serviceContent.type || 'text',
+            data: serviceContent.data || '',
+            images: serviceContent.images || []
+          },
+          precaution: {
+            type: precaution.type || 'text',
+            data: precaution.data || '',
+            images: precaution.images || []
+          }
+        }
       }
-      // 设置字段类型，如果有图片则默认为图片模式
-      this.fieldTypes = {
-        parameter: row.parameter.type,
-        serviceContent: row.serviceContent.type,
-        precaution: row.precaution.type
-      }
-      // 如果类型为图片则转换
-      if (this.fieldTypes.parameter === 'image') {
-        this.form.parameterImages = this.form.parameter.data
-      }
-      if (this.fieldTypes.serviceContent === 'image') {
-        this.form.serviceContentImages = this.form.serviceContent.data
-      }
-      if (this.fieldTypes.precaution === 'image') {
-        this.form.precautionImages = this.form.precaution.data
-      }
+      
+      console.log('编辑表单数据:', this.form)
       this.dialogVisible = true
     },
     handleDelete(row) {
       this.$confirm('确定要删除该商品吗？', '提示', { type: 'warning' })
         .then(() => {
           // 调用API删除商品
-          deleteLeaseGood({ id: row.id })
+          deleteLeaseGood(row.id)
             .then(() => {
               this.$message.success('删除成功')
               this.fetchData()
@@ -444,19 +585,26 @@ export default {
 
     // 处理图片上传成功
     handleUploadSuccess(response, file, fileList, field) {
-      console.log(response);
+      console.log('上传成功:', response, field);
+      if(response.code !== 200) {
+        this.$message.error('上传失败');
+        return;
+      }
       const imgUrl = process.env.VUE_APP_BASE_API + response.data.fileUrl;
+      
       if (field === 'image') {
         // 对于主图片，我们只需要第一张
         this.form.image = imgUrl;
         this.form.imageList = [{ name: '商品图片', url: imgUrl }];
       } else if (field === 'parameter') {
-        this.form.parameterImages.push(imgUrl);
+        this.form.dynamicFields.parameter.images.push(imgUrl);
       } else if (field === 'serviceContent') {
-        this.form.serviceContentImages.push(imgUrl);
+        this.form.dynamicFields.serviceContent.images.push(imgUrl);
       } else if (field === 'precaution') {
-        this.form.precautionImages.push(imgUrl);
+        this.form.dynamicFields.precaution.images.push(imgUrl);
       }
+      
+      console.log('上传后的表单数据:', this.form)
       this.$message.success('上传成功');
     },
 
@@ -468,78 +616,111 @@ export default {
 
     // 删除图片
     handleRemove(file, fileList, field) {
+      console.log('删除图片:', field, file, fileList)
+      
       if (field === 'image') {
         this.form.imageList = fileList;
+        // 更新主图片URL
+        if (fileList.length > 0) {
+          this.form.image = fileList[0].url;
+        } else {
+          this.form.image = '';
+        }
       } else if (field === 'parameter') {
-        this.form.parameterImages = fileList;
+        this.form.dynamicFields.parameter.images = fileList.map(item => item.url);
       } else if (field === 'serviceContent') {
-        this.form.serviceContentImages = fileList;
+        this.form.dynamicFields.serviceContent.images = fileList.map(item => item.url);
       } else if (field === 'precaution') {
-        this.form.precautionImages = fileList;
+        this.form.dynamicFields.precaution.images = fileList.map(item => item.url);
       }
+      
+      console.log('删除后的数据:', this.form)
     },
     
     handleSave() {
-      // 处理表单数据
-      const formData = { ...this.form };
-      
-      // 处理设备参数
-      formData.parameter = JSON.stringify({
-        type: this.fieldTypes.parameter,
-        data: this.fieldTypes.parameter === 'text' ? this.form.parameter.data : this.form.parameterImages.map(img => img)
-      });
-      
-      // 处理服务内容
-      formData.serviceContent = JSON.stringify({
-        type: this.fieldTypes.serviceContent,
-        data: this.fieldTypes.serviceContent === 'text' ? this.form.serviceContent.data : this.form.serviceContentImages.map(img => img)
-      });
-      
-      // 处理注意事项
-      formData.precaution = JSON.stringify({
-        type: this.fieldTypes.precaution,
-        data: this.fieldTypes.precaution === 'text' ? this.form.precaution.data : this.form.precautionImages.map(img => img)
-      });
-      
-      // 确保主图片数据正确
-      
-      if (this.form.imageList && this.form.imageList.length > 0) {
-        formData.image = this.form.imageList[0].url;
-      } else {
-        formData.image = '';
-      }
+      // 表单验证
+      this.$refs.form.validate((valid) => {
+        if (!valid) {
+          this.$message.error('请检查表单信息');
+          return;
+        }
+        
+        // 处理表单数据
+        const formData = { ...this.form };
+        
+        // 处理动态字段数据
+        formData.parameter = JSON.stringify({
+          type: this.form.dynamicFields.parameter.type,
+          data: this.form.dynamicFields.parameter.type === 'text' 
+            ? this.form.dynamicFields.parameter.data 
+            : this.form.dynamicFields.parameter.images
+        });
+        
+        formData.serviceContent = JSON.stringify({
+          type: this.form.dynamicFields.serviceContent.type,
+          data: this.form.dynamicFields.serviceContent.type === 'text' 
+            ? this.form.dynamicFields.serviceContent.data 
+            : this.form.dynamicFields.serviceContent.images
+        });
+        
+        formData.precaution = JSON.stringify({
+          type: this.form.dynamicFields.precaution.type,
+          data: this.form.dynamicFields.precaution.type === 'text' 
+            ? this.form.dynamicFields.precaution.data 
+            : this.form.dynamicFields.precaution.images
+        });
+        
+        console.log('准备提交的数据:', formData)
+        
+        // 确保主图片数据正确
+        if (this.form.imageList && this.form.imageList.length > 0) {
+          formData.image = this.form.imageList[0].url;
+        } else {
+          formData.image = '';
+        }
 
-      // 删除不需要提交的字段
-      delete formData.imageList;
-      delete formData.parameterImages;
-      delete formData.serviceContentImages;
-      delete formData.precautionImages;
-      
-      if (this.form.id) {
-        // 编辑
-        updateLeaseGood(formData)
-          .then(() => {
-            this.$message.success('编辑成功');
-            this.dialogVisible = false;
-            this.fetchData();
-          })
-          .catch(error => {
-            console.error('编辑商品失败:', error);
-            this.$message.error('编辑商品失败');
-          });
-      } else {
-        // 新增
-        addLeaseGood(formData)
-          .then(() => {
-            this.$message.success('新增成功');
-            this.dialogVisible = false;
-            this.fetchData();
-          })
-          .catch(error => {
-            console.error('新增商品失败:', error);
-            this.$message.error('新增商品失败');
-          });
-      }
+        // 删除不需要提交的字段
+        delete formData.imageList;
+        delete formData.dynamicFields;
+        
+        // 显示加载状态
+        const loading = this.$loading({
+          lock: true,
+          text: this.form.id ? '正在更新商品...' : '正在创建商品...',
+          spinner: 'el-icon-loading',
+          background: 'rgba(0, 0, 0, 0.7)'
+        });
+        
+        if (this.form.id) {
+          // 编辑
+          updateLeaseGood(formData)
+            .then(() => {
+              loading.close();
+              this.$message.success('编辑成功');
+              this.dialogVisible = false;
+              this.fetchData();
+            })
+            .catch(error => {
+              loading.close();
+              console.error('编辑商品失败:', error);
+              this.$message.error('编辑商品失败：' + (error.message || '未知错误'));
+            });
+        } else {
+          // 新增
+          addLeaseGood(formData)
+            .then(() => {
+              loading.close();
+              this.$message.success('新增成功');
+              this.dialogVisible = false;
+              this.fetchData();
+            })
+            .catch(error => {
+              loading.close();
+              console.error('新增商品失败:', error);
+              this.$message.error('新增商品失败：' + (error.message || '未知错误'));
+            });
+        }
+      });
     }
   }
 }

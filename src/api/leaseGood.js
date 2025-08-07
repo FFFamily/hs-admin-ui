@@ -49,11 +49,10 @@ export function updateLeaseGood(data) {
     data
   })
 }
-export function deleteLeaseGood(params) {
+export function deleteLeaseGood(id) {
   return request({
-    url: '/lease/good/delete',
-    method: 'get',
-    params
+    url: `/lease/good/delete/${id}`,
+    method: 'delete'
   })
 }
 // 获取商品分类列表
