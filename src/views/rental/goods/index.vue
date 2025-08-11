@@ -1,19 +1,18 @@
 <template>
   <div class="app-container">
     <el-form :inline="true" :model="searchForm" class="demo-form-inline" @submit.native.prevent>
-      <!-- <el-form-item label="商品名">
+      <el-form-item label="商品名">
         <el-input v-model="searchForm.name" placeholder="请输入商品名" />
       </el-form-item>
       <el-form-item label="状态">
         <el-select v-model="searchForm.status" placeholder="请选择状态">
-            <el-option label="全部" value="" />
             <el-option label="上架" value="up" />
             <el-option label="下架" value="down" />
           </el-select>
-      </el-form-item> -->
+      </el-form-item>
       <el-form-item>
-        <!-- <el-button type="primary" @click="handleSearch">搜索</el-button> -->
-        <!-- <el-button @click="handleReset">重置</el-button> -->
+        <el-button type="primary" @click="handleSearch">搜索</el-button>
+        <el-button @click="handleReset">重置</el-button>
       </el-form-item>
       <el-form-item style="float:right;">
         <el-button type="primary" @click="handleAdd">新增商品</el-button>
@@ -36,10 +35,10 @@
       <el-table-column label="商品名" prop="name" sortable />
       <el-table-column label="图片" width="100" align="center">
         <template slot-scope="scope">
-          <el-image 
-            :src="scope.row.image" 
+          <el-image
+            :src="displayUrl(scope.row.image)"
             style="width:60px;height:60px;object-fit:cover;"
-            :preview-src-list="[scope.row.image]"
+            :preview-src-list="[displayUrl(scope.row.image)]"
             fit="cover"
           />
         </template>
@@ -90,22 +89,12 @@
           <el-input v-model="form.code" placeholder="请输入商品编号" />
         </el-form-item>
         <el-form-item label="图片">
-          <el-upload
-            class="upload-demo"
-            action="/api/system/file/upload"
-            :headers="{'Token-Key': getToken()}"
-            :on-preview="handlePictureCardPreview"
-            :on-remove="(file, fileList) => handleRemove(file, fileList, 'image')"
-            :before-upload="beforeUpload"
-            :on-success="(response, file, fileList) => handleUploadSuccess(response, file, fileList, 'image')"
-            :on-error="handleUploadError"
-            list-type="picture-card"
-            :file-list="form.imageList"
+          <ImageUploader
+            v-model="form.image"
+            :multiple="false"
             :limit="1"
-            :on-exceed="(files, fileList) => this.$message.warning('只能上传一张主图片')"
-          >
-            <i class="el-icon-plus"></i>
-          </el-upload>
+            @preview="handlePictureCardPreview"
+          />
         </el-form-item>
         <el-form-item label="价格" prop="price">
           <el-input-number v-model="form.price" :min="0" :precision="2" placeholder="请输入价格" />
@@ -141,24 +130,13 @@
             />
           </div>
           <div v-else>
-            <el-upload
-              class="upload-demo"
-              action="/api/system/file/upload"
-              list-type="picture-card"
-              :headers="{'Token-Key': getToken()}"
-              :on-preview="handlePictureCardPreview"
-              :on-remove="(file, fileList) => handleRemove(file, fileList, 'parameter')"
-              :before-upload="beforeUpload"
-              :on-success="(response, file, fileList) => handleUploadSuccess(response, file, fileList, 'parameter')"
-              :on-error="handleUploadError"
-              :file-list="getFileList('parameter')"
+            <ImageUploader
+              v-model="form.dynamicFields.parameter.images"
+              :multiple="true"
               :limit="5"
-            >
-              <i class="el-icon-plus"></i>
-            </el-upload>
-            <div style="color: #909399; font-size: 12px; margin-top: 5px;">
-              最多上传5张图片，每张不超过2MB
-            </div>
+              @preview="handlePictureCardPreview"
+              tips="最多上传5张图片，每张不超过2MB"
+            />
           </div>
         </el-form-item>
         <el-form-item label="服务内容">
@@ -175,24 +153,13 @@
             />
           </div>
           <div v-else>
-            <el-upload
-              class="upload-demo"
-              action="/api/system/file/upload"
-              list-type="picture-card"
-              :headers="{'Token-Key': getToken()}"
-              :on-preview="handlePictureCardPreview"
-              :on-remove="(file, fileList) => handleRemove(file, fileList, 'serviceContent')"
-              :before-upload="beforeUpload"
-              :on-success="(response, file, fileList) => handleUploadSuccess(response, file, fileList, 'serviceContent')"
-              :on-error="handleUploadError"
-              :file-list="getFileList('serviceContent')"
+            <ImageUploader
+              v-model="form.dynamicFields.serviceContent.images"
+              :multiple="true"
               :limit="5"
-            >
-              <i class="el-icon-plus"></i>
-            </el-upload>
-            <div style="color: #909399; font-size: 12px; margin-top: 5px;">
-              最多上传5张图片，每张不超过2MB
-            </div>
+              @preview="handlePictureCardPreview"
+              tips="最多上传5张图片，每张不超过2MB"
+            />
           </div>
         </el-form-item>
         <el-form-item label="注意事项">
@@ -209,24 +176,13 @@
             />
           </div>
           <div v-else>
-            <el-upload
-              class="upload-demo"
-              action="/api/system/file/upload"
-              list-type="picture-card"
-              :headers="{'Token-Key': getToken()}"
-              :on-preview="handlePictureCardPreview"
-              :on-remove="(file, fileList) => handleRemove(file, fileList, 'precaution')"
-              :before-upload="beforeUpload"
-              :on-success="(response, file, fileList) => handleUploadSuccess(response, file, fileList, 'precaution')"
-              :on-error="handleUploadError"
-              :file-list="getFileList('precaution')"
+            <ImageUploader
+              v-model="form.dynamicFields.precaution.images"
+              :multiple="true"
               :limit="5"
-            >
-              <i class="el-icon-plus"></i>
-            </el-upload>
-            <div style="color: #909399; font-size: 12px; margin-top: 5px;">
-              最多上传5张图片，每张不超过2MB
-            </div>
+              @preview="handlePictureCardPreview"
+              tips="最多上传5张图片，每张不超过2MB"
+            />
           </div>
         </el-form-item>
       </el-form>
@@ -240,10 +196,9 @@
 
 <script>
 import { getCategoriesList,changeGoodStatus, getLeaseGoodListPage, addLeaseGood, updateLeaseGood, deleteLeaseGood } from '@/api/leaseGood';
-import { uploadFile } from '@/api/upload';
-import { getToken } from '@/utils/auth'
+import ImageUploader from '@/components/ImageUploader/index.vue'
 export default {
-  components: {},
+  components: { ImageUploader },
   data() {
     return {
       list: [],
@@ -262,7 +217,6 @@ export default {
         name: '',
         code: '',
         image: '',
-        imageList: [],
         price: 0,
         status: 'up',
         type: '',
@@ -289,12 +243,7 @@ export default {
         }
       },
       categoryOptions: [],  // 分类选项
-      // 控制字段类型(文字/图片)
-      fieldTypes: {
-        parameter: 'text', // 'text' 或 'image'
-        serviceContent: 'text',
-        precaution: 'text'
-      },
+      
       // 图片预览相关
       previewImage: '',
       dialogImageVisible: false,
@@ -320,6 +269,11 @@ export default {
           { type: 'number', min: 0, max: 50, message: '使用年限必须在0-50年之间', trigger: 'blur' }
         ]
       }
+    }
+  },
+  computed: {
+    baseUrl() {
+      return process.env.VUE_APP_BASE_URL || ''
     }
   },
   created() {
@@ -352,28 +306,15 @@ export default {
     }
   },
   methods: {
-    getToken() {
-      return getToken()
+    displayUrl(raw) {
+      if (!raw) return ''
+      const isAbsolute = /^(?:[a-z]+:)?\/\//i.test(raw) || /^data:/i.test(raw)
+      if (isAbsolute) return raw
+      const base = (this.baseUrl || '').replace(/\/$/, '')
+      const path = String(raw).startsWith('/') ? raw : `/${raw}`
+      return `${base}${path}`
     },
     
-    // 获取文件列表，用于上传组件显示
-    getFileList(field) {
-      const images = this.form.dynamicFields[field].images || []
-      return images.map(url => ({ 
-        name: this.getFieldDisplayName(field), 
-        url: url 
-      }))
-    },
-    
-    // 获取字段显示名称
-    getFieldDisplayName(field) {
-      const nameMap = {
-        parameter: '参数图片',
-        serviceContent: '服务内容图片',
-        precaution: '注意事项图片'
-      }
-      return nameMap[field] || '图片'
-    },  
     getCategoryOptions() {
       getCategoriesList()
         .then(response => {
@@ -387,11 +328,11 @@ export default {
     fetchData() {
       this.listLoading = true
       // 调用API获取商品列表
+      console.log(this.searchForm)
       getLeaseGoodListPage({
         pageNum: this.currentPage,
         pageSize: this.pageSize,
-        ...this.searchForm // 添加搜索条件
-      })
+      },this.searchForm)
         .then(response => {
           this.list = response.data.records || []
           this.total = response.data.total || 0
@@ -425,7 +366,6 @@ export default {
         name: '',
         code: '',
         image: '',
-        imageList: [],
         price: 0,
         status: 'up',
         categoryId: '',
@@ -483,12 +423,6 @@ export default {
         precaution.data = ''
       }
       
-      // 处理主图片数据
-      let imageList = []
-      if (row.image) {
-        imageList = [{ name: '商品图片', url: row.image }]
-      }
-      
       this.form = {
         ...row,
         categoryId: row.categoryId || '',
@@ -496,7 +430,6 @@ export default {
         baseInfo: row.baseInfo || '',
         useLimitYear: row.useLimitYear || 0,
         image: row.image || '',
-        imageList: imageList,
         dynamicFields: {
           parameter: {
             type: parameter.type || 'text',
@@ -563,79 +496,12 @@ export default {
     
     // 图片预览
     handlePictureCardPreview(file) {
-      this.previewImage = file.url || file.response.data.url;
+      const raw = file.url || (file.response && file.response.data && (file.response.data.url || file.response.data.fileUrl))
+      this.previewImage = this.displayUrl(raw)
       this.dialogImageVisible = true;
     },
 
-    // 删除图片
-    // 通用图片上传前校验
-    beforeUpload(file) {
-      const isJPG = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/gif';
-      const isLt2M = file.size / 1024 / 1024 < 2;
-
-      if (!isJPG) {
-        this.$message.error('上传图片只能是 JPG、PNG 或 GIF 格式!');
-      }
-      if (!isLt2M) {
-        this.$message.error('上传图片大小不能超过 2MB!');
-      }
-
-      return isJPG && isLt2M;
-    },
-
-    // 处理图片上传成功
-    handleUploadSuccess(response, file, fileList, field) {
-      console.log('上传成功:', response, field);
-      if(response.code !== 200) {
-        this.$message.error('上传失败');
-        return;
-      }
-      const imgUrl = process.env.VUE_APP_BASE_API + response.data.fileUrl;
-      
-      if (field === 'image') {
-        // 对于主图片，我们只需要第一张
-        this.form.image = imgUrl;
-        this.form.imageList = [{ name: '商品图片', url: imgUrl }];
-      } else if (field === 'parameter') {
-        this.form.dynamicFields.parameter.images.push(imgUrl);
-      } else if (field === 'serviceContent') {
-        this.form.dynamicFields.serviceContent.images.push(imgUrl);
-      } else if (field === 'precaution') {
-        this.form.dynamicFields.precaution.images.push(imgUrl);
-      }
-      
-      console.log('上传后的表单数据:', this.form)
-      this.$message.success('上传成功');
-    },
-
-    // 处理图片上传失败
-    handleUploadError(err, file, fileList) {
-      console.error('上传失败:', err);
-      this.$message.error('上传失败');
-    },
-
-    // 删除图片
-    handleRemove(file, fileList, field) {
-      console.log('删除图片:', field, file, fileList)
-      
-      if (field === 'image') {
-        this.form.imageList = fileList;
-        // 更新主图片URL
-        if (fileList.length > 0) {
-          this.form.image = fileList[0].url;
-        } else {
-          this.form.image = '';
-        }
-      } else if (field === 'parameter') {
-        this.form.dynamicFields.parameter.images = fileList.map(item => item.url);
-      } else if (field === 'serviceContent') {
-        this.form.dynamicFields.serviceContent.images = fileList.map(item => item.url);
-      } else if (field === 'precaution') {
-        this.form.dynamicFields.precaution.images = fileList.map(item => item.url);
-      }
-      
-      console.log('删除后的数据:', this.form)
-    },
+    
     
     handleSave() {
       // 表单验证
@@ -673,14 +539,9 @@ export default {
         console.log('准备提交的数据:', formData)
         
         // 确保主图片数据正确
-        if (this.form.imageList && this.form.imageList.length > 0) {
-          formData.image = this.form.imageList[0].url;
-        } else {
-          formData.image = '';
-        }
+        formData.image = this.form.image || ''
 
         // 删除不需要提交的字段
-        delete formData.imageList;
         delete formData.dynamicFields;
         
         // 显示加载状态

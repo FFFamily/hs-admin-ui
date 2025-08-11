@@ -11,9 +11,8 @@ export function getLeaseOrderListPage(params) {
 
 export function getLeaseOrderDetail(params) {
   return request({
-    url: '/lease/order/detail',
-    method: 'get',
-    params
+    url: '/lease/order/detail/' + params.id,
+    method: 'get'
   })
 }
 
@@ -27,7 +26,7 @@ export function addLeaseOrder(data) {
 
 export function updateLeaseOrder(data) {
   return request({
-    url: '/lease/order/update',
+    url: '/lease/order/update/' + data.id,
     method: 'post',
     data
   })
@@ -108,6 +107,41 @@ export function getGoodList(params) {
 export function updateOrderLogistics(data) {
   return request({
     url: '/lease/order/updateLogistics',
+    method: 'post',
+    data
+  })
+}
+
+// 获取订单状态枚举
+export function getOrderStatusAll() {
+  return request({
+    url: '/lease/order/status/all',
+    method: 'get'
+  })
+}
+
+// 审核订单
+export function approveOrder(data) {
+  return request({
+    url: '/lease/order/approve/' + data.id,
+    method: 'post',
+    data
+  })
+}
+
+// 绑定合同
+export function bindContract(data) {
+  return request({
+    url: '/lease/order/bindContract',
+    method: 'post',
+    data
+  })
+}
+
+// 解绑合同
+export function unbindContract(data) {
+  return request({
+    url: '/lease/order/unbindContract',
     method: 'post',
     data
   })

@@ -123,25 +123,14 @@ export const constantRoutes = [
       }
     ]
   },
+  // 回收管理
   {
-    path: '/rental',
+    path: '/recycle',
     component: Layout,
-    redirect: '/rental/goods',
-    name: 'Rental',
-    meta: { title: '租赁管理', icon: 'table' },
+    redirect: '/recycle/goods',
+    name: 'Recycle',
+    meta: { title: '回收管理', icon: 'table' },
     children: [
-      {
-        path: 'goods',
-        name: 'RentalGoods',
-        component: () => import('@/views/rental/goods/index.vue'),
-        meta: { title: '租赁商品管理', icon: 'table' }
-      },
-      {
-        path: 'index',
-        name: 'CategoriesIndex',
-        component: () => import('@/views/categories/index.vue'),
-        meta: { title: '分类管理', icon: 'tree' }
-      },
       {
         path: 'contract',
         name: 'RentalContract',
@@ -153,12 +142,33 @@ export const constantRoutes = [
         name: 'RentalRecycle',
         component: () => import('@/views/rental/recycle/index.vue'),
         meta: { title: '回收订单管理', icon: 'tree' }
+      }
+    ]
+  },
+  {
+    path: '/rental',
+    component: Layout,
+    redirect: '/rental/goods',
+    name: 'Rental',
+    meta: { title: '租赁管理', icon: 'table' },
+    children: [
+      {
+        path: 'goods',
+        name: 'RentalGoods',
+        component: () => import('@/views/rental/goods/index.vue'),
+        meta: { title: '商品管理', icon: 'table' }
+      },
+      {
+        path: 'index',
+        name: 'CategoriesIndex',
+        component: () => import('@/views/categories/index.vue'),
+        meta: { title: '分类管理', icon: 'tree' }
       },
       {
         path: 'order',
         name: 'RentalOrder',
         component: () => import('@/views/rental/order/index.vue'),
-        meta: { title: '租赁订单管理', icon: 'table' }
+        meta: { title: '租赁台账', icon: 'table' }
       }
     ]
   },
