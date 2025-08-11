@@ -12,11 +12,15 @@
         <el-input v-model="searchForm.recognitionCode" placeholder="请输入合同识别号" />
       </el-form-item>
       <el-form-item label="合同类型">
-        <el-input v-model="searchForm.type" placeholder="请输入合同类型" />
+        <el-select v-model="searchForm.type" placeholder="请选择合同类型" clearable>
+          <el-option label="回收合同" value="RECYCLE" />
+          <el-option label="租赁合同" value="LEASE" />
+          <el-option label="混合合同" value="MIXED" />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <!-- <el-button @click="handleReset">重置</el-button> -->
+        <el-button @click="handleReset">重置</el-button>
         <el-button type="primary" @click="handleAdd">新增合同</el-button>
       </el-form-item>
     </el-form>
@@ -30,22 +34,27 @@
       highlight-current-row
       style="margin-top: 20px;"
     >
-      <el-table-column label="ID" prop="id" width="120" align="center" />
       <el-table-column label="合同名" prop="name" />
       <el-table-column label="合同识别号" prop="recognitionCode" />
       <el-table-column label="合同编号" prop="code" />
-      <el-table-column label="合同类型" prop="type" />
+      <el-table-column label="合同类型" prop="type">
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.type === 'RECYCLE'" type="success">回收合同</el-tag>
+          <el-tag v-else-if="scope.row.type === 'LEASE'" type="warning">租赁合同</el-tag>
+          <el-tag v-else-if="scope.row.type === 'MIXED'" type="info">混合合同</el-tag>
+          <span v-else>{{ scope.row.type }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="起始日期" prop="startDate" />
       <el-table-column label="结束日期" prop="endDate" />
-      <el-table-column label="运输模式" prop="transportMode" />
-      <el-table-column label="运费承担方式" prop="freightResponsibility" />
       <el-table-column label="付款方式" prop="paymentMethod" />
       <el-table-column label="开票方式" prop="invoiceMethod" />
-      <el-table-column label="甲方信息" prop="partyA" />
-      <el-table-column label="乙方信息" prop="partyB" />
-      <el-table-column label="操作" width="200" align="center">
+      <el-table-column label="签署用户" prop="userId" />
+      <el-table-column label="创建时间" prop="createTime" />
+      <el-table-column label="操作" width="280" align="center">
         <template slot-scope="scope">
           <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button size="mini" type="success" @click="handleViewItems(scope.row)">明细</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
@@ -64,49 +73,155 @@
     />
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible">
+    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px">
       <el-form :model="form" :rules="rules" ref="form" label-width="100px">
         <el-form-item label="合同名" prop="name">
-          <el-input v-model="form.name" />
+          <el-input v-model="form.name" placeholder="请输入合同名称" />
         </el-form-item>
         <el-form-item label="合同识别号" prop="recognitionCode">
-          <el-input v-model="form.recognitionCode" />
+          <el-input v-model="form.recognitionCode" placeholder="请输入合同识别号" />
         </el-form-item>
         <el-form-item label="合同编号" prop="code">
-          <el-input v-model="form.code" />
+          <el-input v-model="form.code" placeholder="请输入合同编号" />
         </el-form-item>
         <el-form-item label="合同类型" prop="type">
-          <el-input v-model="form.type" />
+          <el-select v-model="form.type" placeholder="请选择合同类型" style="width: 100%;">
+            <el-option label="回收合同" value="RECYCLE" />
+            <el-option label="租赁合同" value="LEASE" />
+            <el-option label="混合合同" value="MIXED" />
+          </el-select>
         </el-form-item>
         <el-form-item label="起始日期" prop="startDate">
-          <el-date-picker v-model="form.startDate" type="date" placeholder="选择起始日期" style="width: 100%;" />
+          <el-date-picker v-model="form.startDate" type="datetime" placeholder="选择起始日期" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="结束日期" prop="endDate">
-          <el-date-picker v-model="form.endDate" type="date" placeholder="选择结束日期" style="width: 100%;" />
-        </el-form-item>
-        <el-form-item label="运输模式" prop="transportMode">
-          <el-input v-model="form.transportMode" />
-        </el-form-item>
-        <el-form-item label="运费承担方式" prop="freightResponsibility">
-          <el-input v-model="form.freightResponsibility" />
+          <el-date-picker v-model="form.endDate" type="datetime" placeholder="选择结束日期" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="付款方式" prop="paymentMethod">
-          <el-input v-model="form.paymentMethod" />
+          <el-select v-model="form.paymentMethod" placeholder="请选择付款方式" style="width: 100%;">
+            <el-option label="现金" value="CASH" />
+            <el-option label="银行转账" value="BANK_TRANSFER" />
+            <el-option label="支票" value="CHECK" />
+            <el-option label="其他" value="OTHER" />
+          </el-select>
         </el-form-item>
         <el-form-item label="开票方式" prop="invoiceMethod">
-          <el-input v-model="form.invoiceMethod" />
-        </el-form-item>
-        <el-form-item label="甲方信息" prop="partyA">
-          <el-input v-model="form.partyA" />
-        </el-form-item>
-        <el-form-item label="乙方信息" prop="partyB">
-          <el-input v-model="form.partyB" />
+          <el-select v-model="form.invoiceMethod" placeholder="请选择开票方式" style="width: 100%;">
+            <el-option label="增值税普通发票" value="VAT_NORMAL" />
+            <el-option label="增值税专用发票" value="VAT_SPECIAL" />
+            <el-option label="电子发票" value="ELECTRONIC" />
+            <el-option label="不开票" value="NO_INVOICE" />
+          </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="handleSave">确 定</el-button>
       </div>
+    </el-dialog>
+
+    <!-- 合同明细弹窗 -->
+    <el-dialog title="合同明细" :visible.sync="itemsDialogVisible" width="900px">
+      <div style="margin-bottom: 20px;">
+        <el-button type="primary" size="small" @click="handleAddItem">新增明细</el-button>
+      </div>
+      
+      <!-- 回收货物明细 -->
+      <el-table :data="contractItems.filter(item => item.recycleGoodId)" border style="margin-bottom: 20px;">
+        <el-table-column label="回收货物明细" align="center" header-align="center">
+          <el-table-column label="货物名称" prop="recycleGoodName" />
+          <el-table-column label="规格型号" prop="recycleGoodSpecificationModel" />
+          <el-table-column label="运输模式" prop="recycleGoodTransportMode" />
+          <el-table-column label="金额" prop="recycleGoodSubtotal">
+            <template slot-scope="scope">
+              ¥{{ scope.row.recycleGoodSubtotal || 0 }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150" align="center">
+            <template slot-scope="scope">
+              <el-button size="mini" @click="handleEditItem(scope.row)">编辑</el-button>
+              <el-button size="mini" type="danger" @click="handleDeleteItem(scope.row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table-column>
+      </el-table>
+
+      <!-- 租赁设备明细 -->
+      <el-table :data="contractItems.filter(item => item.leaseGoodId)" border>
+        <el-table-column label="租赁设备明细" align="center" header-align="center">
+          <el-table-column label="设备名称" prop="leaseGoodName" />
+          <el-table-column label="押金" prop="leaseGoodDeposit">
+            <template slot-scope="scope">
+              ¥{{ scope.row.leaseGoodDeposit || 0 }}
+            </template>
+          </el-table-column>
+          <el-table-column label="金额" prop="leaseGoodSubtotal">
+            <template slot-scope="scope">
+              ¥{{ scope.row.leaseGoodSubtotal || 0 }}
+            </template>
+          </el-table-column>
+          <el-table-column label="安装日期" prop="leaseGoodInstallDate" />
+          <el-table-column label="操作" width="150" align="center">
+            <template slot-scope="scope">
+              <el-button size="mini" @click="handleEditItem(scope.row)">编辑</el-button>
+              <el-button size="mini" type="danger" @click="handleDeleteItem(scope.row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table-column>
+      </el-table>
+
+      <!-- 新增/编辑明细弹窗 -->
+      <el-dialog :title="itemDialogTitle" :visible.sync="itemDialogVisible" width="500px" append-to-body>
+        <el-form :model="itemForm" :rules="itemRules" ref="itemForm" label-width="120px">
+          <el-form-item label="明细类型" prop="itemType">
+            <el-radio-group v-model="itemForm.itemType">
+              <el-radio label="RECYCLE">回收货物</el-radio>
+              <el-radio label="LEASE">租赁设备</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          
+          <!-- 回收货物字段 -->
+          <template v-if="itemForm.itemType === 'RECYCLE'">
+            <el-form-item label="货物名称" prop="recycleGoodName">
+              <el-input v-model="itemForm.recycleGoodName" placeholder="请输入货物名称" />
+            </el-form-item>
+            <el-form-item label="规格型号" prop="recycleGoodSpecificationModel">
+              <el-input v-model="itemForm.recycleGoodSpecificationModel" placeholder="请输入规格型号" />
+            </el-form-item>
+            <el-form-item label="运输模式" prop="recycleGoodTransportMode">
+              <el-select v-model="itemForm.recycleGoodTransportMode" placeholder="请选择运输模式" style="width: 100%;">
+                <el-option label="公路运输" value="ROAD" />
+                <el-option label="铁路运输" value="RAIL" />
+                <el-option label="水路运输" value="WATER" />
+                <el-option label="航空运输" value="AIR" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="金额" prop="recycleGoodSubtotal">
+              <el-input-number v-model="itemForm.recycleGoodSubtotal" :precision="2" :step="0.01" style="width: 100%;" />
+            </el-form-item>
+          </template>
+
+          <!-- 租赁设备字段 -->
+          <template v-if="itemForm.itemType === 'LEASE'">
+            <el-form-item label="设备名称" prop="leaseGoodName">
+              <el-input v-model="itemForm.leaseGoodName" placeholder="请输入设备名称" />
+            </el-form-item>
+            <el-form-item label="押金" prop="leaseGoodDeposit">
+              <el-input-number v-model="itemForm.leaseGoodDeposit" :precision="2" :step="0.01" style="width: 100%;" />
+            </el-form-item>
+            <el-form-item label="金额" prop="leaseGoodSubtotal">
+              <el-input-number v-model="itemForm.leaseGoodSubtotal" :precision="2" :step="0.01" style="width: 100%;" />
+            </el-form-item>
+            <el-form-item label="安装日期" prop="leaseGoodInstallDate">
+              <el-date-picker v-model="itemForm.leaseGoodInstallDate" type="datetime" placeholder="选择安装日期" style="width: 100%;" />
+            </el-form-item>
+          </template>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="itemDialogVisible = false">取 消</el-button>
+          <el-button type="primary" @click="handleSaveItem">确 定</el-button>
+        </div>
+      </el-dialog>
     </el-dialog>
   </div>
 </template>
@@ -135,12 +250,8 @@ export default {
         type: '',
         startDate: '',
         endDate: '',
-        transportMode: '',
-        freightResponsibility: '',
         paymentMethod: '',
-        invoiceMethod: '',
-        partyA: '',
-        partyB: ''
+        invoiceMethod: ''
       },
       pagination: {
         page: 1,
@@ -154,10 +265,39 @@ export default {
           { required: true, message: '请输入合同编号', trigger: 'blur' },
           { pattern: /^[a-zA-Z0-9]+$/, message: '合同编号只能包含数字和字母', trigger: 'blur' }
         ],
-        type: [{ required: true, message: '请输入合同类型', trigger: 'blur' }],
+        type: [{ required: true, message: '请选择合同类型', trigger: 'change' }],
         startDate: [{ required: true, message: '请选择起始日期', trigger: 'change' }],
-        endDate: [{ required: true, message: '请选择结束日期', trigger: 'change' }]
-        // 其他字段可根据实际需求添加校验
+        endDate: [{ required: true, message: '请选择结束日期', trigger: 'change' }],
+        paymentMethod: [{ required: true, message: '请选择付款方式', trigger: 'change' }],
+        invoiceMethod: [{ required: true, message: '请选择开票方式', trigger: 'change' }]
+      },
+      // 合同明细相关
+      itemsDialogVisible: false,
+      contractItems: [],
+      currentContractId: null,
+      itemDialogVisible: false,
+      itemDialogTitle: '新增明细',
+      itemForm: {
+        id: null,
+        contractId: null,
+        itemType: 'RECYCLE',
+        // 回收货物字段
+        recycleGoodId: null,
+        recycleGoodName: '',
+        recycleGoodSpecificationModel: '',
+        recycleGoodTransportMode: '',
+        recycleGoodSubtotal: 0,
+        // 租赁设备字段
+        leaseGoodId: null,
+        leaseGoodName: '',
+        leaseGoodDeposit: 0,
+        leaseGoodSubtotal: 0,
+        leaseGoodInstallDate: ''
+      },
+      itemRules: {
+        itemType: [{ required: true, message: '请选择明细类型', trigger: 'change' }],
+        recycleGoodName: [{ required: true, message: '请输入货物名称', trigger: 'blur' }],
+        leaseGoodName: [{ required: true, message: '请输入设备名称', trigger: 'blur' }]
       }
     }
   },
@@ -202,12 +342,8 @@ export default {
         type: '',
         startDate: '',
         endDate: '',
-        transportMode: '',
-        freightResponsibility: '',
         paymentMethod: '',
-        invoiceMethod: '',
-        partyA: '',
-        partyB: ''
+        invoiceMethod: ''
       }
       this.dialogVisible = true
     },
@@ -249,6 +385,108 @@ export default {
             }).catch(() => {
               this.$message.error('新增失败')
             })
+          }
+        }
+      })
+    },
+    // 查看合同明细
+    handleViewItems(row) {
+      this.currentContractId = row.id
+      this.itemsDialogVisible = true
+      this.fetchContractItems(row.id)
+    },
+    // 获取合同明细
+    fetchContractItems(contractId) {
+      // 这里需要调用获取合同明细的API
+      // getContractItems(contractId).then(response => {
+      //   this.contractItems = response.data || []
+      // })
+      // 模拟数据
+      this.contractItems = [
+        {
+          id: '1',
+          contractId: contractId,
+          recycleGoodId: 'rg1',
+          recycleGoodName: '废旧钢材',
+          recycleGoodSpecificationModel: 'Q235',
+          recycleGoodTransportMode: 'ROAD',
+          recycleGoodSubtotal: 5000.00
+        },
+        {
+          id: '2',
+          contractId: contractId,
+          leaseGoodId: 'lg1',
+          leaseGoodName: '叉车',
+          leaseGoodDeposit: 2000.00,
+          leaseGoodSubtotal: 3000.00,
+          leaseGoodInstallDate: '2024-01-15 10:00:00'
+        }
+      ]
+    },
+    // 新增明细
+    handleAddItem() {
+      this.itemDialogTitle = '新增明细'
+      this.itemForm = {
+        id: null,
+        contractId: this.currentContractId,
+        itemType: 'RECYCLE',
+        recycleGoodId: null,
+        recycleGoodName: '',
+        recycleGoodSpecificationModel: '',
+        recycleGoodTransportMode: '',
+        recycleGoodSubtotal: 0,
+        leaseGoodId: null,
+        leaseGoodName: '',
+        leaseGoodDeposit: 0,
+        leaseGoodSubtotal: 0,
+        leaseGoodInstallDate: ''
+      }
+      this.itemDialogVisible = true
+    },
+    // 编辑明细
+    handleEditItem(row) {
+      this.itemDialogTitle = '编辑明细'
+      this.itemForm = { ...row }
+      this.itemForm.itemType = row.recycleGoodId ? 'RECYCLE' : 'LEASE'
+      this.itemDialogVisible = true
+    },
+    // 删除明细
+    handleDeleteItem(row) {
+      this.$confirm('确定要删除该明细吗？', '提示', { type: 'warning' })
+        .then(() => {
+          // 这里需要调用删除明细的API
+          // deleteContractItem(row.id).then(() => {
+          //   this.$message.success('删除成功')
+          //   this.fetchContractItems(this.currentContractId)
+          // })
+          this.$message.success('删除成功')
+          this.contractItems = this.contractItems.filter(item => item.id !== row.id)
+        }).catch(() => {})
+    },
+    // 保存明细
+    handleSaveItem() {
+      this.$refs.itemForm.validate((valid) => {
+        if (valid) {
+          if (this.itemForm.id) {
+            // 编辑明细
+            // updateContractItem(this.itemForm.id, this.itemForm).then(() => {
+            //   this.$message.success('编辑成功')
+            //   this.itemDialogVisible = false
+            //   this.fetchContractItems(this.currentContractId)
+            // })
+            this.$message.success('编辑成功')
+            this.itemDialogVisible = false
+            this.fetchContractItems(this.currentContractId)
+          } else {
+            // 新增明细
+            // addContractItem(this.itemForm).then(() => {
+            //   this.$message.success('新增成功')
+            //   this.itemDialogVisible = false
+            //   this.fetchContractItems(this.currentContractId)
+            // })
+            this.$message.success('新增成功')
+            this.itemDialogVisible = false
+            this.fetchContractItems(this.currentContractId)
           }
         }
       })
