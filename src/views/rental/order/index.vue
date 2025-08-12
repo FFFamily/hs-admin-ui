@@ -109,24 +109,6 @@
           >
           确认开票
           </el-button>
-          <!-- 绑定合同按钮 -->
-          <el-button 
-            v-if="scope.row.status === 'LEASING'" 
-            size="mini" 
-            type="info" 
-            @click="handleBindContract(scope.row)"
-          >
-            绑定合同
-          </el-button>
-          <!-- 解绑合同按钮 -->
-          <el-button 
-            v-if="scope.row.status === 'LEASING'" 
-            size="mini" 
-            type="warning" 
-            @click="handleUnbindContract(scope.row)"
-          >
-            解绑合同
-          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -150,7 +132,7 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="用户" prop="userName">
-              <el-input v-model="form.userName" disabled />
+              <el-input v-model="form.userName" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -158,7 +140,7 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="订单状态" prop="status">
-              <el-select v-model="form.status" disabled style="width: 100%">
+              <el-select v-model="form.status" style="width: 100%">
                 <el-option 
                   v-for="item in statusOptions" 
                   :key="item.value" 
@@ -361,94 +343,6 @@
     </el-dialog>
 
     <!-- 合同选择弹窗 -->
-    <el-dialog title="选择合同" :visible.sync="contractDialogVisible" width="1000px" class="contract-dialog">
-      <!-- 合同搜索表单 -->
-      <el-form :inline="true" :model="contractSearchForm" class="demo-form-inline" style="margin-bottom: 20px;">
-        <el-form-item label="合同名称">
-          <el-input v-model="contractSearchForm.name" placeholder="请输入合同名称" />
-        </el-form-item>
-        <el-form-item label="合同编号">
-          <el-input v-model="contractSearchForm.code" placeholder="请输入合同编号" />
-        </el-form-item>
-        <el-form-item label="合同类型">
-          <el-input v-model="contractSearchForm.type" placeholder="请输入合同类型" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleContractSearch">搜索</el-button>
-          <el-button @click="handleContractReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-
-      <!-- 合同列表 -->
-      <el-table
-        v-loading="contractListLoading"
-        :data="contractList"
-        border
-        fit
-        highlight-current-row
-        @row-click="handleContractSelect"
-        style="margin-bottom: 20px;"
-      >
-        <el-table-column label="合同名称" prop="name" />
-        <el-table-column label="合同编号" prop="code" width="120" />
-        <el-table-column label="合同识别号" prop="recognitionCode" width="150" />
-        <el-table-column label="合同类型" prop="type" width="100" />
-        <el-table-column label="起始日期" prop="startDate" width="120" />
-        <el-table-column label="结束日期" prop="endDate" width="120" />
-        <el-table-column label="甲方信息" prop="partyA" />
-        <el-table-column label="乙方信息" prop="partyB" />
-        <el-table-column label="选择" width="80" align="center">
-          <template slot-scope="scope">
-            <el-radio 
-              v-model="selectedContractId" 
-              :label="scope.row.id"
-              @change="handleContractRadioChange(scope.row)"
-            >
-              选择
-            </el-radio>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 合同分页 -->
-      <div style="text-align: center; margin-bottom: 20px;">
-        <el-pagination
-          background
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="contractTotal"
-          :current-page="contractCurrentPage"
-          :page-size="contractPageSize"
-          @size-change="handleContractSizeChange"
-          @current-change="handleContractCurrentChange"
-        />
-      </div>
-
-      <!-- 已选合同信息 -->
-      <div v-if="selectedContract" class="selected-contract-info">
-        <h4>已选择的合同：</h4>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="合同名称">{{ selectedContract.name }}</el-descriptions-item>
-          <el-descriptions-item label="合同编号">{{ selectedContract.code }}</el-descriptions-item>
-          <el-descriptions-item label="合同识别号">{{ selectedContract.recognitionCode }}</el-descriptions-item>
-          <el-descriptions-item label="合同类型">{{ selectedContract.type }}</el-descriptions-item>
-          <el-descriptions-item label="起始日期">{{ selectedContract.startDate }}</el-descriptions-item>
-          <el-descriptions-item label="结束日期">{{ selectedContract.endDate }}</el-descriptions-item>
-          <el-descriptions-item label="甲方信息" :span="2">{{ selectedContract.partyA }}</el-descriptions-item>
-          <el-descriptions-item label="乙方信息" :span="2">{{ selectedContract.partyB }}</el-descriptions-item>
-        </el-descriptions>
-      </div>
-
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="contractDialogVisible = false">取 消</el-button>
-        <el-button 
-          type="primary" 
-          @click="handleConfirmBindContract"
-          :disabled="!selectedContract"
-        >
-          确认绑定
-        </el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
@@ -1040,33 +934,6 @@ export default {
       // TODO: 实现上传发票逻辑
       console.log('上传发票:', row)
     },
-    // 处理绑定合同
-    handleBindContract(row) {
-      this.form.id = row.id // 将当前订单的ID设置为form的id，以便在合同选择弹窗中使用
-      // 重置合同选择状态
-      this.selectedContract = null
-      this.selectedContractId = null
-      this.contractDialogVisible = true
-      this.fetchContractData() // 重新获取合同列表，因为搜索条件可能改变
-    },
-    // 处理解绑合同
-    handleUnbindContract(row) {
-      this.$confirm(`确定要解绑订单 ${row.orderNo} 的合同吗？`, '解绑合同', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        unbindContract({ orderId: row.id })
-          .then(() => {
-            this.$message.success('合同解绑成功！')
-            this.fetchData()
-          })
-          .catch(error => {
-            console.error('解绑合同失败:', error)
-            this.$message.error('解绑合同失败：' + (error.message || '未知错误'))
-          })
-      }).catch(() => {})
-    },
     // 合同选择相关方法
     handleContractSearch() {
       this.contractCurrentPage = 1
@@ -1115,39 +982,6 @@ export default {
       this.selectedContract = row
       this.selectedContractId = row.id
     },
-    handleConfirmBindContract() {
-      if (!this.selectedContract) {
-        this.$message.error('请选择要绑定的合同')
-        return
-      }
-      
-      // 获取当前要绑定合同的订单信息
-      const currentOrder = this.list.find(order => order.id === this.form.id)
-      if (!currentOrder) {
-        this.$message.error('订单信息获取失败')
-        return
-      }
-      
-      this.$confirm(`确定要将合同 "${this.selectedContract.name}" 绑定到订单 ${currentOrder.orderNo} 吗？`, '绑定合同', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        bindContract({ orderId: this.form.id, contractId: this.selectedContract.id })
-          .then(() => {
-            this.$message.success('合同绑定成功！')
-            this.fetchData()
-            this.contractDialogVisible = false
-            // 重置选择状态
-            this.selectedContract = null
-            this.selectedContractId = null
-          })
-          .catch(error => {
-            console.error('绑定合同失败:', error)
-            this.$message.error('绑定合同失败：' + (error.message || '未知错误'))
-          })
-      }).catch(() => {})
-    }
   }
 }
 </script>

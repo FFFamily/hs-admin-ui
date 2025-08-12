@@ -7,17 +7,6 @@ Vue.use(Router)
 import Layout from '@/layout'
 
 export const constantRoutes = [
-  // 商品分类管理
-  {
-    path: '/categories',
-    component: Layout,
-    redirect: '/categories/index',
-    name: 'Categories',
-    meta: { title: '商品分类管理', icon: 'tree' },
-    children: [
-      
-    ]
-  },
   {
     path: '/login',
     component: () => import('@/views/login/index'),
@@ -38,19 +27,7 @@ export const constantRoutes = [
       path: 'dashboard',
       name: 'Dashboard',
       component: () => import('@/views/dashboard/index'),
-      meta: { title: 'Dashboard', icon: 'dashboard' }
-    }]
-  },
-
-  {
-    path: '/wx/user/list',
-    component: Layout,
-    redirect: '/wx/user/list',
-    children: [{
-      path: 'list',
-      name: 'List',
-      component: () => import('@/views/wx/user/list'),
-      meta: { title: 'List', icon: 'dashboard' }
+      meta: { title: '首页', icon: 'dashboard' }
     }]
   },
   {
@@ -96,20 +73,6 @@ export const constantRoutes = [
     ]
   },
   {
-    path: '/system-dict',
-    component: Layout, // Layout 需根据你的实际布局组件名调整
-    name: 'SystemDict',
-    meta: { title: '系统字典', icon: 'tree' },
-    children: [
-      {
-        path: '',
-        name: 'SystemDictMain',
-        component: () => import('@/views/system/dict/index.vue'),
-        meta: { title: '系统字典', icon: 'tree' }
-      }
-    ]
-  },
-  {
     path: '/system-config',
     component: Layout, // Layout 需根据你的实际布局组件名调整
     name: 'SystemConfig',
@@ -123,6 +86,22 @@ export const constantRoutes = [
       }
     ]
   },
+  // 合同管理
+  {
+    path: '/contract',
+    component: Layout,
+    redirect: '/contract/index',
+    name: 'Contract',
+    meta: { title: '合同管理', icon: 'form' },
+    children: [
+      {
+        path: 'index',
+        name: 'ContractIndex',
+        component: () => import('@/views/rental/contract/index.vue'),
+        meta: { title: '合同管理', icon: 'form' }
+      }
+    ]
+  },
   // 回收管理
   {
     path: '/recycle',
@@ -132,16 +111,16 @@ export const constantRoutes = [
     meta: { title: '回收管理', icon: 'table' },
     children: [
       {
-        path: 'contract',
-        name: 'RentalContract',
-        component: () => import('@/views/rental/contract/index.vue'),
-        meta: { title: '合同管理', icon: 'form' }
-      },
-      {
         path: 'recycle',
         name: 'RentalRecycle',
-        component: () => import('@/views/rental/recycle/index.vue'),
+        component: () => import('@/views/recycle/order/index.vue'),
         meta: { title: '回收订单管理', icon: 'tree' }
+      },
+      {
+        path: 'business-scope',
+        name: 'BusinessScope',
+        component: () => import('@/views/recycle/business-scope/index.vue'),
+        meta: { title: '经营范围管理', icon: 'tree' }
       }
     ]
   },
@@ -173,22 +152,7 @@ export const constantRoutes = [
     ]
   },
   // 404 page must be placed at the end !!!
-  { path: '*', redirect: '/404', hidden: true },
-  {
-    path: '/demo',
-    component: Layout,
-    redirect: '/demo/user-select',
-    name: 'Demo',
-    meta: { title: '组件演示', icon: 'example' },
-    children: [
-      {
-        path: 'user-select',
-        name: 'UserSelectDemo',
-        component: () => import('@/views/demo/UserSelectDemo.vue'),
-        meta: { title: '用户选择组件', icon: 'search' }
-      }
-    ]
-  }
+  { path: '*', redirect: '/404', hidden: true }
 ]
 
 const createRouter = () => new Router({

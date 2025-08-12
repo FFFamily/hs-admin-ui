@@ -41,3 +41,10 @@ export function deleteContract(id) {
     method: 'delete'
   })
 }   
+
+export function getContractItems(contractId) {
+  return request({
+    url: `/system/contract-item/list/contract/${contractId}`,
+    method: 'get'
+  })
+}   

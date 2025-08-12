@@ -28,4 +28,22 @@ export function assignRecycle(params) {
     method: 'get',
     params
   })
+}
+
+// 新增回收订单
+export function createRecycle(data) {
+  return request({
+    url: '/recycle/order',
+    method: 'post',
+    data
+  })
+}
+
+// 更新回收订单
+export function updateRecycle(data) {
+  return request({
+    url: `/recycle/order/${data.id}`,
+    method: 'put',
+    data
+  })
 } 

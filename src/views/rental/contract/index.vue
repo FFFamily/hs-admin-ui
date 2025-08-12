@@ -13,10 +13,20 @@
       </el-form-item>
       <el-form-item label="合同类型">
         <el-select v-model="searchForm.type" placeholder="请选择合同类型" clearable>
-          <el-option label="回收合同" value="RECYCLE" />
-          <el-option label="租赁合同" value="LEASE" />
-          <el-option label="混合合同" value="MIXED" />
+          <el-option label="采购合同" value="recycle" />
+          <el-option label="租赁合同" value="lease" />
         </el-select>
+      </el-form-item>
+      <el-form-item label="签署用户">
+        <el-input
+          v-model="searchForm.userName"
+          placeholder="请选择签署用户"
+          readonly
+          @click="showSearchUserSelector"
+          style="cursor: pointer;"
+        >
+          <el-button slot="append" icon="el-icon-search" @click="showSearchUserSelector"></el-button>
+        </el-input>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
@@ -39,17 +49,20 @@
       <el-table-column label="合同编号" prop="code" />
       <el-table-column label="合同类型" prop="type">
         <template slot-scope="scope">
-          <el-tag v-if="scope.row.type === 'RECYCLE'" type="success">回收合同</el-tag>
-          <el-tag v-else-if="scope.row.type === 'LEASE'" type="warning">租赁合同</el-tag>
-          <el-tag v-else-if="scope.row.type === 'MIXED'" type="info">混合合同</el-tag>
+          <el-tag v-if="scope.row.type === 'recycle'" type="success">采购合同</el-tag>
+          <el-tag v-else-if="scope.row.type === 'lease'" type="warning">租赁合同</el-tag>
           <span v-else>{{ scope.row.type }}</span>
         </template>
       </el-table-column>
       <el-table-column label="起始日期" prop="startDate" />
       <el-table-column label="结束日期" prop="endDate" />
-      <el-table-column label="付款方式" prop="paymentMethod" />
-      <el-table-column label="开票方式" prop="invoiceMethod" />
-      <el-table-column label="签署用户" prop="userId" />
+      <!-- <el-table-column label="付款方式" prop="paymentMethod" />
+      <el-table-column label="开票方式" prop="invoiceMethod" /> -->
+      <el-table-column label="签署用户" prop="userId">
+        <template slot-scope="scope">
+          <span>{{ getUserName(scope.row.userId) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="创建时间" prop="createTime" />
       <el-table-column label="操作" width="280" align="center">
         <template slot-scope="scope">
@@ -86,9 +99,8 @@
         </el-form-item>
         <el-form-item label="合同类型" prop="type">
           <el-select v-model="form.type" placeholder="请选择合同类型" style="width: 100%;">
-            <el-option label="回收合同" value="RECYCLE" />
-            <el-option label="租赁合同" value="LEASE" />
-            <el-option label="混合合同" value="MIXED" />
+            <el-option label="采购合同" value="recycle" />
+            <el-option label="租赁合同" value="lease" />
           </el-select>
         </el-form-item>
         <el-form-item label="起始日期" prop="startDate">
@@ -97,7 +109,7 @@
         <el-form-item label="结束日期" prop="endDate">
           <el-date-picker v-model="form.endDate" type="datetime" placeholder="选择结束日期" style="width: 100%;" />
         </el-form-item>
-        <el-form-item label="付款方式" prop="paymentMethod">
+        <!-- <el-form-item label="付款方式" prop="paymentMethod">
           <el-select v-model="form.paymentMethod" placeholder="请选择付款方式" style="width: 100%;">
             <el-option label="现金" value="CASH" />
             <el-option label="银行转账" value="BANK_TRANSFER" />
@@ -112,6 +124,17 @@
             <el-option label="电子发票" value="ELECTRONIC" />
             <el-option label="不开票" value="NO_INVOICE" />
           </el-select>
+        </el-form-item> -->
+        <el-form-item label="签署用户" prop="userId">
+          <el-input
+            v-model="form.userName"
+            placeholder="请选择签署用户"
+            readonly
+            @focus="showFormUserSelector"
+            style="cursor: pointer;"
+          >
+            <el-button slot="append" icon="el-icon-search" @click="showFormUserSelector"></el-button>
+          </el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -126,9 +149,9 @@
         <el-button type="primary" size="small" @click="handleAddItem">新增明细</el-button>
       </div>
       
-      <!-- 回收货物明细 -->
-      <el-table :data="contractItems.filter(item => item.recycleGoodId)" border style="margin-bottom: 20px;">
-        <el-table-column label="回收货物明细" align="center" header-align="center">
+      <!-- 采购货物明细 -->
+      <el-table v-if="currentContractType === 'recycle'" :data="contractItems.filter(item => item.recycleGoodId)" border style="margin-bottom: 20px;" v-loading="listLoading">
+        <el-table-column label="采购货物明细" align="center" header-align="center">
           <el-table-column label="货物名称" prop="recycleGoodName" />
           <el-table-column label="规格型号" prop="recycleGoodSpecificationModel" />
           <el-table-column label="运输模式" prop="recycleGoodTransportMode" />
@@ -147,7 +170,7 @@
       </el-table>
 
       <!-- 租赁设备明细 -->
-      <el-table :data="contractItems.filter(item => item.leaseGoodId)" border>
+      <el-table v-if="currentContractType === 'lease'" :data="contractItems.filter(item => item.leaseGoodId)" border v-loading="listLoading">
         <el-table-column label="租赁设备明细" align="center" header-align="center">
           <el-table-column label="设备名称" prop="leaseGoodName" />
           <el-table-column label="押金" prop="leaseGoodDeposit">
@@ -174,14 +197,14 @@
       <el-dialog :title="itemDialogTitle" :visible.sync="itemDialogVisible" width="500px" append-to-body>
         <el-form :model="itemForm" :rules="itemRules" ref="itemForm" label-width="120px">
           <el-form-item label="明细类型" prop="itemType">
-            <el-radio-group v-model="itemForm.itemType">
-              <el-radio label="RECYCLE">回收货物</el-radio>
-              <el-radio label="LEASE">租赁设备</el-radio>
+            <el-radio-group v-model="itemForm.itemType" :disabled="true">
+              <el-radio label="recycle" v-if="currentContractType === 'recycle'">采购货物</el-radio>
+              <el-radio label="lease" v-if="currentContractType === 'lease'">租赁设备</el-radio>
             </el-radio-group>
           </el-form-item>
           
-          <!-- 回收货物字段 -->
-          <template v-if="itemForm.itemType === 'RECYCLE'">
+          <!-- 采购货物字段 -->
+          <template v-if="itemForm.itemType === 'recycle'">
             <el-form-item label="货物名称" prop="recycleGoodName">
               <el-input v-model="itemForm.recycleGoodName" placeholder="请输入货物名称" />
             </el-form-item>
@@ -202,7 +225,7 @@
           </template>
 
           <!-- 租赁设备字段 -->
-          <template v-if="itemForm.itemType === 'LEASE'">
+          <template v-if="itemForm.itemType === 'lease'">
             <el-form-item label="设备名称" prop="leaseGoodName">
               <el-input v-model="itemForm.leaseGoodName" placeholder="请输入设备名称" />
             </el-form-item>
@@ -223,13 +246,35 @@
         </div>
       </el-dialog>
     </el-dialog>
+
+    <!-- 搜索用户选择器 -->
+    <UserSelector
+      :visible.sync="searchUserSelectorVisible"
+      title="选择签署用户"
+      :multiple="false"
+      @confirm="handleSearchUserConfirm"
+      @close="handleSearchUserClose"
+    />
+
+    <!-- 表单用户选择器 -->
+    <UserSelector
+      :visible.sync="formUserSelectorVisible"
+      title="选择签署用户"
+      :multiple="false"
+      @confirm="handleFormUserConfirm"
+      @close="handleFormUserClose"
+    />
   </div>
 </template>
 
 <script>
-import { getContractPage, addContract, updateContract, deleteContract } from '@/api/contract'
+import { getContractPage, addContract, updateContract, deleteContract, getContractItems } from '@/api/contract'
+import UserSelector from '@/components/UserSelector'
 
 export default {
+  components: {
+    UserSelector
+  },
   data() {
     return {
       list: [],
@@ -238,7 +283,9 @@ export default {
         name: '',
         code: '',
         recognitionCode: '',
-        type: ''
+        type: '',
+        userId: '',
+        userName: ''
       },
       dialogVisible: false,
       dialogTitle: '新增合同',
@@ -251,7 +298,9 @@ export default {
         startDate: '',
         endDate: '',
         paymentMethod: '',
-        invoiceMethod: ''
+        invoiceMethod: '',
+        userId: '',
+        userName: ''
       },
       pagination: {
         page: 1,
@@ -269,19 +318,26 @@ export default {
         startDate: [{ required: true, message: '请选择起始日期', trigger: 'change' }],
         endDate: [{ required: true, message: '请选择结束日期', trigger: 'change' }],
         paymentMethod: [{ required: true, message: '请选择付款方式', trigger: 'change' }],
-        invoiceMethod: [{ required: true, message: '请选择开票方式', trigger: 'change' }]
+        invoiceMethod: [{ required: true, message: '请选择开票方式', trigger: 'change' }],
+        userId: [{ required: true, message: '请选择签署用户', trigger: 'change' }]
       },
       // 合同明细相关
       itemsDialogVisible: false,
       contractItems: [],
       currentContractId: null,
+      currentContractType: null,
       itemDialogVisible: false,
       itemDialogTitle: '新增明细',
+      // 用户选择器显示状态
+      searchUserSelectorVisible: false,
+      formUserSelectorVisible: false,
+      // 用户信息缓存
+      userCache: {},
       itemForm: {
         id: null,
         contractId: null,
-        itemType: 'RECYCLE',
-        // 回收货物字段
+        itemType: 'recycle',
+        // 采购货物字段
         recycleGoodId: null,
         recycleGoodName: '',
         recycleGoodSpecificationModel: '',
@@ -296,8 +352,30 @@ export default {
       },
       itemRules: {
         itemType: [{ required: true, message: '请选择明细类型', trigger: 'change' }],
-        recycleGoodName: [{ required: true, message: '请输入货物名称', trigger: 'blur' }],
-        leaseGoodName: [{ required: true, message: '请输入设备名称', trigger: 'blur' }]
+        recycleGoodName: [{ 
+          required: true, 
+          message: '请输入货物名称', 
+          trigger: 'blur',
+          validator: (rule, value, callback) => {
+            if (this.currentContractType === 'recycle' && !value) {
+              callback(new Error('请输入货物名称'))
+            } else {
+              callback()
+            }
+          }
+        }],
+        leaseGoodName: [{ 
+          required: true, 
+          message: '请输入设备名称', 
+          trigger: 'blur',
+          validator: (rule, value, callback) => {
+            if (this.currentContractType === 'lease' && !value) {
+              callback(new Error('请输入设备名称'))
+            } else {
+              callback()
+            }
+          }
+        }]
       }
     }
   },
@@ -312,6 +390,7 @@ export default {
         code: this.searchForm.code || undefined,
         recognitionCode: this.searchForm.recognitionCode || undefined,
         type: this.searchForm.type || undefined,
+        userId: this.searchForm.userId || undefined,
         page: this.pagination.page,
         size: this.pagination.size
       }
@@ -328,7 +407,7 @@ export default {
       this.fetchData()
     },
     handleReset() {
-      this.searchForm = { name: '', code: '', recognitionCode: '', type: '' }
+      this.searchForm = { name: '', code: '', recognitionCode: '', type: '', userId: '', userName: '' }
       this.pagination.page = 1
       this.fetchData()
     },
@@ -343,13 +422,24 @@ export default {
         startDate: '',
         endDate: '',
         paymentMethod: '',
-        invoiceMethod: ''
+        invoiceMethod: '',
+        userId: '',
+        userName: ''
       }
       this.dialogVisible = true
     },
     handleEdit(row) {
       this.dialogTitle = '编辑合同'
       this.form = { ...row }
+      // 如果有用户ID，尝试获取用户信息并设置用户名
+      if (row.userId) {
+        this.fetchUserInfo(row.userId)
+        // 从缓存中获取用户名
+        const user = this.userCache[row.userId]
+        if (user) {
+          this.form.userName = user.username || user.nickname || ''
+        }
+      }
       this.dialogVisible = true
     },
     handleDelete(row) {
@@ -392,36 +482,21 @@ export default {
     // 查看合同明细
     handleViewItems(row) {
       this.currentContractId = row.id
+      this.currentContractType = row.type
       this.itemsDialogVisible = true
       this.fetchContractItems(row.id)
     },
     // 获取合同明细
     fetchContractItems(contractId) {
-      // 这里需要调用获取合同明细的API
-      // getContractItems(contractId).then(response => {
-      //   this.contractItems = response.data || []
-      // })
-      // 模拟数据
-      this.contractItems = [
-        {
-          id: '1',
-          contractId: contractId,
-          recycleGoodId: 'rg1',
-          recycleGoodName: '废旧钢材',
-          recycleGoodSpecificationModel: 'Q235',
-          recycleGoodTransportMode: 'ROAD',
-          recycleGoodSubtotal: 5000.00
-        },
-        {
-          id: '2',
-          contractId: contractId,
-          leaseGoodId: 'lg1',
-          leaseGoodName: '叉车',
-          leaseGoodDeposit: 2000.00,
-          leaseGoodSubtotal: 3000.00,
-          leaseGoodInstallDate: '2024-01-15 10:00:00'
-        }
-      ]
+      this.listLoading = true
+      getContractItems(contractId).then(response => {
+        this.contractItems = response.data || []
+        this.listLoading = false
+      }).catch(() => {
+        this.$message.error('获取合同明细失败')
+        this.contractItems = []
+        this.listLoading = false
+      })
     },
     // 新增明细
     handleAddItem() {
@@ -429,7 +504,7 @@ export default {
       this.itemForm = {
         id: null,
         contractId: this.currentContractId,
-        itemType: 'RECYCLE',
+        itemType: this.currentContractType, // 根据当前合同类型自动设置
         recycleGoodId: null,
         recycleGoodName: '',
         recycleGoodSpecificationModel: '',
@@ -447,7 +522,8 @@ export default {
     handleEditItem(row) {
       this.itemDialogTitle = '编辑明细'
       this.itemForm = { ...row }
-      this.itemForm.itemType = row.recycleGoodId ? 'RECYCLE' : 'LEASE'
+      // 确保明细类型与合同类型匹配
+      this.itemForm.itemType = this.currentContractType
       this.itemDialogVisible = true
     },
     // 删除明细
@@ -467,6 +543,25 @@ export default {
     handleSaveItem() {
       this.$refs.itemForm.validate((valid) => {
         if (valid) {
+          // 验证明细类型与合同类型是否匹配
+          if (this.itemForm.itemType !== this.currentContractType) {
+            this.$message.error('明细类型与合同类型不匹配')
+            return
+          }
+          
+          // 验证必填字段
+          if (this.currentContractType === 'recycle') {
+            if (!this.itemForm.recycleGoodName || !this.itemForm.recycleGoodSubtotal) {
+              this.$message.error('请填写完整的货物信息')
+              return
+            }
+          } else if (this.currentContractType === 'lease') {
+            if (!this.itemForm.leaseGoodName || !this.itemForm.leaseGoodSubtotal) {
+              this.$message.error('请填写完整的设备信息')
+              return
+            }
+          }
+          
           if (this.itemForm.id) {
             // 编辑明细
             // updateContractItem(this.itemForm.id, this.itemForm).then(() => {
@@ -499,6 +594,82 @@ export default {
     handleCurrentChange(val) {
       this.pagination.page = val
       this.fetchData()
+    },
+    // 处理用户选择变化
+    handleUserChange(user) {
+      this.form.userId = user.id
+      // 缓存用户信息
+      this.userCache[user.id] = user
+    },
+    // 根据用户ID获取用户名
+    getUserName(userId) {
+      if (!userId) return '-'
+      // 从缓存中获取用户信息
+      const user = this.userCache[userId]
+      if (user) {
+        return user.username || user.nickname || userId
+      }
+      return userId
+    },
+    // 获取用户信息
+    fetchUserInfo(userId) {
+      if (!userId || this.userCache[userId]) return
+      // 这里可以调用API获取用户信息，暂时跳过
+      // 实际项目中可以调用 getUserById(userId) 等API
+      // 同时更新用户名字段
+      const user = this.userCache[userId]
+      if (user) {
+        if (this.form && this.form.userId === userId) {
+          this.form.userName = user.username || user.nickname || ''
+        }
+        if (this.searchForm && this.searchForm.userId === userId) {
+          this.searchForm.userName = user.username || user.nickname || ''
+        }
+      }
+    },
+    // 显示搜索用户选择器
+    showSearchUserSelector() {
+      this.searchUserSelectorVisible = true
+    },
+
+    // 处理搜索用户选择确认
+    handleSearchUserConfirm(users) {
+      const user = users[0]
+      this.searchForm.userId = user.id
+      this.searchForm.userName = user.nickname || user.username || ''
+      // 缓存用户信息
+      this.userCache[user.id] = user
+    },
+
+    // 处理搜索用户选择器关闭
+    handleSearchUserClose() {
+      this.searchUserSelectorVisible = false
+    },
+
+    // 显示表单用户选择器
+    showFormUserSelector() {
+      this.formUserSelectorVisible = true
+    },
+
+    // 处理表单用户选择确认
+    handleFormUserConfirm(users) {
+      const user = users[0]
+      this.form.userId = user.id
+      this.form.userName = user.nickname || user.username || ''
+      // 缓存用户信息
+      this.userCache[user.id] = user
+    },
+
+    // 处理表单用户选择器关闭
+    handleFormUserClose() {
+      this.formUserSelectorVisible = false
+    },
+
+    // 处理搜索用户变化（保留兼容性）
+    handleSearchUserChange(user) {
+      this.searchForm.userId = user.id
+      // 缓存用户信息
+      this.userCache[user.id] = user
     }
   }
 }
