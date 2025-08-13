@@ -28,9 +28,10 @@ export function addContract(data) {
     data
   })
 }
-export function updateContract(id, data) {
+// 更新合同
+export function updateContract(data) {
   return request({
-    url: `/sys/contract`,
+    url: `/sys/contract/update`,
     method: 'put',
     data
   })
@@ -45,6 +46,14 @@ export function deleteContract(id) {
 export function getContractItems(contractId) {
   return request({
     url: `/system/contract-item/list/contract/${contractId}`,
+    method: 'get'
+  })
+}   
+
+// 获取合同日志列表
+export function getContractLogList(contractId) {
+  return request({
+    url: `/system/contract/log/list/${contractId}`,
     method: 'get'
   })
 }   

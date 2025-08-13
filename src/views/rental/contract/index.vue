@@ -68,6 +68,7 @@
         <template slot-scope="scope">
           <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
           <el-button size="mini" type="success" @click="handleViewItems(scope.row)">明细</el-button>
+          <el-button size="mini" type="info" @click="handleViewLogs(scope.row)">变更记录</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
@@ -98,7 +99,8 @@
           <el-input v-model="form.code" placeholder="请输入合同编号" />
         </el-form-item>
         <el-form-item label="合同类型" prop="type">
-          <el-select v-model="form.type" placeholder="请选择合同类型" style="width: 100%;">
+          <!--编辑时无法编辑合同类型-->
+          <el-select v-model="form.type" placeholder="请选择合同类型" style="width: 100%;" :disabled="form.id">
             <el-option label="采购合同" value="recycle" />
             <el-option label="租赁合同" value="lease" />
           </el-select>
@@ -139,7 +141,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="handleSave">确 定</el-button>
+        <el-button type="primary" @click="handleSave">{{ form.id ? '更新' : '添加' }}</el-button>
       </div>
     </el-dialog>
 
@@ -264,11 +266,39 @@
       @confirm="handleFormUserConfirm"
       @close="handleFormUserClose"
     />
+
+    <!-- 合同变更记录弹窗 -->
+    <el-dialog title="合同变更记录" :visible.sync="logsDialogVisible" width="900px">
+      <el-table :data="contractLogs" border v-loading="logsLoading">
+        <el-table-column label="操作类型" prop="operationTypeLabel" width="120">
+          <template slot-scope="scope">
+            <el-tag v-if="scope.row.operationType === 'CREATE'" type="success">创建</el-tag>
+            <el-tag v-else-if="scope.row.operationType === 'UPDATE'" type="warning">更新</el-tag>
+            <el-tag v-else-if="scope.row.operationType === 'DELETE'" type="danger">删除</el-tag>
+            <span v-else>{{ scope.row.operationTypeLabel || scope.row.operationType }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作人" prop="operatorName" width="120" />
+        <el-table-column label="操作时间" prop="operationTime" width="180" />
+        <el-table-column label="变更详情" min-width="400">
+          <template slot-scope="scope">
+            <div v-if="scope.row.operationInfo">
+              <div v-for="(change, index) in parseOperationInfo(scope.row.operationInfo)" :key="index" class="change-item">
+                <span class="field-label">{{ change.fieldLabel }}:</span>
+                <span class="old-value">变更前: {{ change.oldValue || '-' }}</span>
+                <span class="new-value">变更后: {{ change.newValue || '-' }}</span>
+              </div>
+            </div>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { getContractPage, addContract, updateContract, deleteContract, getContractItems } from '@/api/contract'
+import { getContractPage, addContract, updateContract, deleteContract, getContractItems, getContractLogList } from '@/api/contract'
 import UserSelector from '@/components/UserSelector'
 
 export default {
@@ -333,6 +363,10 @@ export default {
       formUserSelectorVisible: false,
       // 用户信息缓存
       userCache: {},
+      // 合同变更记录相关
+      logsDialogVisible: false,
+      contractLogs: [],
+      logsLoading: false,
       itemForm: {
         id: null,
         contractId: null,
@@ -459,7 +493,7 @@ export default {
         if (valid) {
           if (this.form.id) {
             // 编辑
-            updateContract(this.form.id, this.form).then(() => {
+            updateContract(this.form).then(() => {
               this.$message.success('编辑成功')
               this.dialogVisible = false
               this.fetchData()
@@ -670,6 +704,38 @@ export default {
       this.searchForm.userId = user.id
       // 缓存用户信息
       this.userCache[user.id] = user
+    },
+
+    // 查看合同变更记录
+    handleViewLogs(row) {
+      this.logsDialogVisible = true
+      this.fetchContractLogs(row.id)
+    },
+
+    // 获取合同变更记录
+    fetchContractLogs(contractId) {
+      this.logsLoading = true
+      getContractLogList(contractId).then(response => {
+        this.contractLogs = response.data || []
+        this.logsLoading = false
+      }).catch(() => {
+        this.$message.error('获取合同变更记录失败')
+        this.contractLogs = []
+        this.logsLoading = false
+      })
+    },
+
+    // 解析操作信息JSON字符串
+    parseOperationInfo(operationInfo) {
+      try {
+        if (typeof operationInfo === 'string') {
+          return JSON.parse(operationInfo)
+        }
+        return operationInfo || []
+      } catch (error) {
+        console.error('解析操作信息失败:', error)
+        return []
+      }
     }
   }
 }
@@ -678,5 +744,33 @@ export default {
 <style scoped>
 .demo-form-inline .el-form-item {
   margin-right: 20px;
+}
+
+.change-item {
+  margin-bottom: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.change-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.field-label {
+  font-weight: bold;
+  color: #606266;
+  margin-right: 8px;
+}
+
+.old-value {
+  color: #f56c6c;
+  margin-right: 12px;
+  font-size: 12px;
+}
+
+.new-value {
+  color: #67c23a;
+  font-size: 12px;
 }
 </style>

@@ -10,12 +10,7 @@
       <el-form-item label="状态">
         <el-select v-model="searchForm.status" placeholder="请选择状态">
           <el-option label="全部" value="" />
-          <el-option 
-            v-for="item in statusOptions" 
-            :key="item.value" 
-            :label="item.label" 
-            :value="item.value" 
-          />
+          <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
         <el-tooltip content="状态说明：待审核 → 租赁中 → 待开票 → 已完成" placement="top">
           <i class="el-icon-question" style="margin-left: 8px; color: #909399; cursor: help;"></i>
@@ -29,14 +24,7 @@
         <el-button type="primary" @click="handleAdd">新增订单</el-button>
       </el-form-item>
     </el-form>
-    <el-table
-      v-loading="listLoading"
-      :data="list"
-      border
-      fit
-      highlight-current-row
-      style="margin-top: 20px;"
-    >
+    <el-table v-loading="listLoading" :data="list" border fit highlight-current-row style="margin-top: 20px;">
       <el-table-column label="订单号" prop="orderNo" width="180" align="center" />
       <el-table-column label="用户" prop="userName" width="120" align="center" />
       <el-table-column label="订单总金额" prop="totalAmount" width="120" align="center">
@@ -92,37 +80,23 @@
           <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           <!-- 待审核状态时显示审核通过按钮 -->
-          <el-button 
-            v-if="scope.row.status === 'PENDING_REVIEW'" 
-            size="mini" 
-            type="success" 
-            @click="handleApprove(scope.row)"
-          >
+          <el-button v-if="scope.row.status === 'PENDING_REVIEW'" size="mini" type="success"
+            @click="handleApprove(scope.row)">
             审核通过
           </el-button>
           <!--租赁中状态时才显示上传发票按钮-->
-          <el-button 
-            v-if="scope.row.status === 'LEASING'" 
-            size="mini" 
-            type="primary" 
-            @click="handleUploadInvoice(scope.row)"
-          >
-          确认开票
+          <el-button v-if="scope.row.status === 'LEASING'" size="mini" type="primary"
+            @click="handleUploadInvoice(scope.row)">
+            确认开票
           </el-button>
         </template>
       </el-table-column>
     </el-table>
     <!-- 分页组件 -->
     <div class="pagination-container" style="margin-top: 20px;">
-      <el-pagination
-        background
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="total"
-        :current-page="currentPage"
-        :page-size="pageSize"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
+      <el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="total"
+        :current-page="currentPage" :page-size="pageSize" @size-change="handleSizeChange"
+        @current-change="handleCurrentChange" />
     </div>
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="1200px">
@@ -132,32 +106,29 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="用户" prop="userName">
-              <el-input v-model="form.userName" />
+              <el-input @focus="searchUserSelectorVisible = true" v-model="form.userName" />
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="订单状态" prop="status">
               <el-select v-model="form.status" style="width: 100%">
-                <el-option 
-                  v-for="item in statusOptions" 
-                  :key="item.value" 
-                  :label="item.label" 
-                  :value="item.value" 
-                />
+                <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="押金金额" prop="depositAmount">
-              <el-input-number v-model="form.depositAmount" :min="0" :precision="2" style="width: 100%" :disabled="form.id && form.status !== 'PENDING_REVIEW'" />
+              <el-input-number v-model="form.depositAmount" :min="0" :precision="2" style="width: 100%"
+                :disabled="form.id && form.status !== 'PENDING_REVIEW'" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="已支付金额" prop="paidAmount">
-              <el-input-number v-model="form.paidAmount" :min="0" :precision="2" style="width: 100%" :disabled="form.id && form.status !== 'PENDING_REVIEW'" />
+              <el-input-number v-model="form.paidAmount" :min="0" :precision="2" style="width: 100%"
+                :disabled="form.id && form.status !== 'PENDING_REVIEW'" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -167,26 +138,14 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="租赁开始时间" prop="leaseStartTime">
-              <el-date-picker 
-                v-model="form.leaseStartTime" 
-                type="datetime" 
-                placeholder="选择租赁开始时间" 
-                style="width: 100%"
-                @change="calculateLeaseDays"
-                :disabled="form.id && form.status !== 'PENDING_REVIEW'"
-              />
+              <el-date-picker v-model="form.leaseStartTime" type="datetime" placeholder="选择租赁开始时间" style="width: 100%"
+                @change="calculateLeaseDays" :disabled="form.id && form.status !== 'PENDING_REVIEW'" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="租赁结束时间" prop="leaseEndTime">
-              <el-date-picker 
-                v-model="form.leaseEndTime" 
-                type="datetime" 
-                placeholder="选择租赁结束时间" 
-                style="width: 100%"
-                @change="calculateLeaseDays"
-                :disabled="form.id && form.status !== 'PENDING_REVIEW'"
-              />
+              <el-date-picker v-model="form.leaseEndTime" type="datetime" placeholder="选择租赁结束时间" style="width: 100%"
+                @change="calculateLeaseDays" :disabled="form.id && form.status !== 'PENDING_REVIEW'" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -198,23 +157,13 @@
           </el-col>
         </el-row>
       </el-form>
-      
-            <div style="margin-top: 30px;">
+
+      <div style="margin-top: 30px;">
         <el-divider>订单明细</el-divider>
-        <el-button 
-          v-if="!form.id" 
-          type="primary" 
-          size="mini" 
-          @click="handleAddItem"
-        >
+        <el-button v-if="!form.id" type="primary" size="mini" @click="handleAddItem">
           添加商品
         </el-button>
-        <el-table
-          :data="orderItems"
-          border
-          fit
-          style="margin-top: 10px;"
-        >
+        <el-table :data="orderItems" border fit style="margin-top: 10px;">
           <el-table-column label="商品名称" prop="goodName" />
           <el-table-column label="商品单价" prop="goodPrice" align="center">
             <template slot-scope="scope">
@@ -232,43 +181,32 @@
           </el-table-column>
           <el-table-column v-if="!form.id" label="操作" align="center">
             <template slot-scope="scope">
-              <el-button                
-                size="mini" 
-                @click="handleEditItem(scope.row)"
-              >
+              <el-button size="mini" @click="handleEditItem(scope.row)">
                 编辑
               </el-button>
-              <el-button 
-                size="mini" 
-                type="danger" 
-                @click="handleDeleteItem(scope.row)"
-              >
+              <el-button size="mini" type="danger" @click="handleDeleteItem(scope.row)">
                 删除
               </el-button>
             </template>
           </el-table-column>
         </el-table>
         <div style="text-align: right; margin-top: 10px;">
-          <el-button 
-            v-if="!form.id" 
-            type="primary" 
-            @click="calculateTotalAmount"
-          >
+          <el-button v-if="!form.id" type="primary" @click="calculateTotalAmount">
             计算总金额
           </el-button>
           <span style="margin-left: 20px; font-weight: bold; font-size: 16px; color: #409EFF;">
             订单总金额: ¥{{ form.totalAmount }}
           </span>
-        </div>  
+        </div>
       </div>
-      
+
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button v-if="form.id" type="primary" @click="handleSave">更 新</el-button>
         <el-button v-if="!form.id" type="primary" @click="handleSave">添 加</el-button>
       </div>
     </el-dialog>
-    
+
     <!-- 订单明细弹窗 -->
     <el-dialog :title="itemDialogTitle" :visible.sync="itemDialogVisible" width="800px">
       <el-form :model="itemForm" :rules="itemFormRules" ref="itemForm" label-width="120px">
@@ -299,7 +237,8 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="租赁数量" prop="quantity">
-              <el-input-number v-model="itemForm.quantity" :min="1" @change="calculateItemSubtotal" style="width: 100%" />
+              <el-input-number v-model="itemForm.quantity" :min="1" @change="calculateItemSubtotal"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -309,12 +248,14 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="租赁开始时间" prop="leaseStartTime">
-              <el-date-picker v-model="itemForm.leaseStartTime" type="datetime" placeholder="选择开始时间" @change="calculateItemLeaseDays" style="width: 100%" />
+              <el-date-picker v-model="itemForm.leaseStartTime" type="datetime" placeholder="选择开始时间"
+                @change="calculateItemLeaseDays" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="租赁结束时间" prop="leaseEndTime">
-              <el-date-picker v-model="itemForm.leaseEndTime" type="datetime" placeholder="选择结束时间" @change="calculateItemLeaseDays" style="width: 100%" />
+              <el-date-picker v-model="itemForm.leaseEndTime" type="datetime" placeholder="选择结束时间"
+                @change="calculateItemLeaseDays" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -342,7 +283,8 @@
       </div>
     </el-dialog>
 
-    <!-- 合同选择弹窗 -->
+    <UserSelector :visible.sync="searchUserSelectorVisible" title="选择签署用户" :multiple="false" @confirm="handleUserSelect"
+      @close="searchUserSelectorVisible = false" />
   </div>
 </template>
 
@@ -350,8 +292,11 @@
 import { getLeaseOrderListPage, getLeaseOrderDetail, addLeaseOrder, updateLeaseOrder, deleteLeaseOrder, approveOrder, getGoodList, getOrderItemList, addOrderItem, updateOrderItem, deleteOrderItem, updateOrderLogistics, getOrderStatusAll, bindContract, unbindContract } from '@/api/leaseOrder';
 import { getUserList } from '@/api/user';
 import { getContractPage } from '@/api/contract';
+import UserSelector from '@/components/UserSelector';
 export default {
-  components: {},
+  components: {
+    UserSelector
+  },
   data() {
     return {
       list: [],
@@ -435,7 +380,9 @@ export default {
       contractCurrentPage: 1,
       contractPageSize: 10,
       selectedContractId: null,
-      selectedContract: null
+      selectedContract: null,
+      // 用户选择器
+      searchUserSelectorVisible: false
     }
   },
   created() {
@@ -445,16 +392,22 @@ export default {
     this.getStatusOptions()
   },
   methods: {
+    handleUserSelect(users) {
+      this.form.userId = users[0].id
+      this.form.userName = users[0].username
+    },
     // 格式化日期时间
     formatDateTime(dateTime) {
       if (!dateTime) return '-'
-      return new Date(dateTime).toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      const date = new Date(dateTime)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const seconds = String(date.getSeconds()).padStart(2, '0')
+      
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
     },
     getUserOptions() {
       getUserList()
@@ -608,7 +561,7 @@ export default {
               this.$message.error('删除订单失败')
             })
         })
-        .catch(() => {})
+        .catch(() => { })
     },
     handleApprove(row) {
       this.$confirm('确定要审核通过该订单吗？', '审核确认', {
@@ -628,7 +581,7 @@ export default {
             console.error('审核失败:', error)
             this.$message.error('审核失败：' + (error.message || '未知错误'))
           })
-      }).catch(() => {})
+      }).catch(() => { })
     },
     handleUserChange(userId) {
       const user = this.userOptions.find(item => item.id === userId)
@@ -675,7 +628,7 @@ export default {
         total += parseFloat(item.subtotal || 0)
       })
       this.form.totalAmount = total.toFixed(2)
-      
+
       // 显示计算结果
       this.$message.success(`订单总金额已更新：¥${this.form.totalAmount}`)
     },
@@ -709,12 +662,12 @@ export default {
           this.calculateTotalAmount()
           this.$message.success('删除成功')
         })
-        .catch(() => {})
+        .catch(() => { })
     },
     handleSaveItem() {
       this.$refs.itemForm.validate((valid) => {
         if (!valid) return
-        
+
         // 验证租赁时间逻辑
         const startTime = new Date(this.itemForm.leaseStartTime)
         const endTime = new Date(this.itemForm.leaseEndTime)
@@ -723,7 +676,11 @@ export default {
           return
         }
 
-        const formData = { ...this.itemForm }
+        const formData = {
+          ...this.itemForm,
+          leaseStartTime: this.formatDateTime(startTime),
+          leaseEndTime: this.formatDateTime(endTime)
+        }
 
         if (formData.id) {
           // 编辑现有商品（本地）
@@ -737,6 +694,7 @@ export default {
           // 生成临时ID，避免与后端ID冲突
           formData.id = 'temp_' + Date.now()
           this.orderItems.push(formData)
+          console.log(this.orderItems)
           this.$message.success('新增成功')
         }
 
@@ -747,7 +705,7 @@ export default {
     handleSave() {
       this.$refs.form.validate((valid) => {
         if (!valid) return
-        
+
         // 如果是编辑模式且不是待审核状态，只验证基本信息
         if (this.form.id && this.form.status !== 'PENDING_REVIEW') {
           // 编辑模式且非待审核状态，只保存基本信息
@@ -764,7 +722,7 @@ export default {
             })
           return
         }
-        
+
         if (this.orderItems.length === 0) {
           this.$message.error('请添加商品')
           return
@@ -798,43 +756,38 @@ export default {
           }).then(() => {
             updateLeaseOrder(formData)
               .then(() => {
+                this.$message.success('编辑成功')
+                this.dialogVisible = false
+                this.fetchData()
                 // 处理商品更新
-                const promises = this.orderItems.map(item => {
-                  item.orderId = formData.id
-                  if (item.id && !item.id.startsWith('temp_')) {
-                    // 更新已有商品
-                    return updateOrderItem(item)
-                  } else {
-                    // 添加新商品
-                    // 删除临时ID
-                    delete item.id
-                    return addOrderItem(item)
-                  }
-                })
+                // const promises = this.orderItems.map(item => {
+                //   item.orderId = formData.id
+                //   if (item.id && !item.id.startsWith('temp_')) {
+                //     // 更新已有商品
+                //     return updateOrderItem(item)
+                //   } else {
+                //     // 添加新商品
+                //     // 删除临时ID
+                //     delete item.id
+                //     return addOrderItem(item)
+                //   }
+                // })
 
-                Promise.all(promises)
-                  .then(() => {
-                    this.$message.success('编辑成功')
-                    this.dialogVisible = false
-                    this.fetchData()
-                  })
-                  .catch(error => {
-                    console.error('更新商品失败:', error)
-                    this.$message.error('更新商品失败，但订单已保存')
-                  })
+                // Promise.all(promises)
+                //   .then(() => {
+                //     this.$message.success('编辑成功')
+                //     this.dialogVisible = false
+                //     this.fetchData()
+                //   })
               })
               .catch(error => {
                 console.error('编辑订单失败:', error)
                 this.$message.error('编辑订单失败')
               })
-          }).catch(() => {})
+          }).catch(() => { })
         } else {
           // 新增订单 - 显示确认对话框
-          this.$confirm('确定要创建订单吗？请确认以下信息：\n' +
-            `用户：${this.userOptions.find(u => u.id === this.form.userId)?.name || '未知'}\n` +
-            `收货人：${this.form.receiverName}\n` +
-            `商品数量：${this.orderItems.length}个\n` +
-          `订单总金额：¥${this.form.totalAmount}`, 
+          this.$confirm('确定要创建订单吗？',
             '确认创建订单', {
             confirmButtonText: '确定创建',
             cancelButtonText: '取消',
@@ -852,19 +805,21 @@ export default {
             // 准备订单数据
             const orderData = {
               ...formData,
+              leaseStartTime: this.formatDateTime(formData.leaseStartTime),
+              leaseEndTime: this.formatDateTime(formData.leaseEndTime),
               orderItems: this.orderItems.map(item => ({
                 goodId: item.goodId,
                 goodName: item.goodName,
                 goodPrice: item.goodPrice,
                 quantity: item.quantity,
-                leaseStartTime: item.leaseStartTime,
+                leaseStartTime:  item.leaseStartTime,
                 leaseEndTime: item.leaseEndTime,
                 leaseDays: item.leaseDays,
                 subtotal: item.subtotal,
                 remark: item.remark
               }))
             }
-            
+
             // 调用创建订单接口
             addLeaseOrder(orderData)
               .then(response => {
@@ -1021,7 +976,7 @@ export default {
 }
 
 /* 按钮组样式 */
-.el-button + .el-button {
+.el-button+.el-button {
   margin-left: 8px;
 }
 
@@ -1090,7 +1045,7 @@ export default {
   .el-dialog {
     width: 95% !important;
   }
-  
+
   .el-col {
     margin-bottom: 15px;
   }
