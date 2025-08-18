@@ -2,27 +2,13 @@
   <div class="app-container">
     <!-- 搜索表单 -->
     <el-form :inline="true" :model="searchForm" class="search-form" @submit.native.prevent>
-      <el-form-item label="货物类型">
-        <el-input v-model="searchForm.goodsType" placeholder="请输入货物类型" clearable />
-      </el-form-item>
-      <el-form-item label="货物名称">
-        <el-input v-model="searchForm.goodsName" placeholder="请输入货物名称" clearable />
-      </el-form-item>
-      <el-form-item label="规格型号">
-        <el-input v-model="searchForm.specification" placeholder="请输入规格型号" clearable />
-      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
         <el-button @click="handleReset">重置</el-button>
+        <el-button type="primary" @click="handleAdd">新增经营范围</el-button>
+        <el-button type="success" @click="showSelector = true">选择经营范围</el-button>
       </el-form-item>
     </el-form>
-
-    <!-- 操作按钮 -->
-    <div class="operation-container">
-      <el-button type="primary" @click="handleAdd">新增经营范围</el-button>
-      <el-button type="danger" :disabled="selectedIds.length === 0" @click="handleBatchDelete">批量删除</el-button>
-    </div>
-
     <!-- 数据表格 -->
     <el-table
       v-loading="listLoading"
@@ -34,32 +20,35 @@
       style="margin-top: 20px;"
     >
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="编号" prop="id" width="80" align="center" />
-      <el-table-column label="货物类型" prop="goodsType" width="120" align="center" />
-      <el-table-column label="货物名称" prop="goodsName" width="150" align="center" />
-      <el-table-column label="规格型号" prop="specification" width="150" align="center" />
-      <el-table-column label="货物价格" width="120" align="center">
+      <el-table-column label="编号" prop="no" width="80" align="center" />
+      <el-table-column label="货物类型" prop="goodType" width="120" align="center" />
+      <el-table-column label="货物名称" prop="goodName" width="150" align="center" />
+      <el-table-column label="规格型号" prop="goodModel" width="150" align="center" />
+      <el-table-column label="公示价格" prop="publicPrice" width="120" align="center" />
+      <el-table-column label="货物备注" prop="goodRemark" width="120" align="center" />
+      <el-table-column label="创建时间" prop="createTime" width="180" align="center" />
+      <el-table-column label="是否显示" prop="isShow" width="120" align="center">
         <template slot-scope="scope">
-          <span class="price">¥{{ scope.row.goodsPrice }}</span>
+          <el-tag :type="scope.row.isShow === 'Y' ? 'success' : 'danger'">{{ scope.row.isShow === 'Y' ? '显示' : '隐藏' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" prop="createTime" width="180" align="center" />
-      <el-table-column label="操作" width="200" align="center">
+      <el-table-column label="操作" align="center">
         <template slot-scope="scope">
-          <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+          <el-button pageSize="mini" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button pageSize="mini" @click="handleView(scope.row)">{{ scope.row.isShow === 'Y' ? '隐藏' : '显示' }}</el-button>
+          <el-button pageSize="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <!-- 分页组件 -->
     <el-pagination
-      :current-page="pagination.page"
-      :page-sizes="[10, 20, 50, 100]"
-      :page-size="pagination.size"
+      :current-pageNum="pagination.pageNum"
+      :pageNum-sizes="[10, 20, 50, 100]"
+      :pageNum-pageSize="pagination.pageSize"
       :total="pagination.total"
       layout="total, sizes, prev, pager, next, jumper"
-      @size-change="handleSizeChange"
+      @pageSize-change="handleSizeChange"
       @current-change="handleCurrentChange"
       style="margin-top: 20px; text-align: right;"
     />
@@ -78,23 +67,29 @@
         label-width="100px"
         @submit.native.prevent
       >
-        <el-form-item label="货物类型" prop="goodsType">
-          <el-input v-model="form.goodsType" placeholder="请输入货物类型" />
+        <el-form-item label="编号" prop="no">
+          <el-input v-model="form.no" placeholder="请输入编号" />
         </el-form-item>
-        <el-form-item label="货物名称" prop="goodsName">
-          <el-input v-model="form.goodsName" placeholder="请输入货物名称" />
+        <el-form-item label="货物类型" prop="goodType">
+          <el-input v-model="form.goodType" placeholder="请输入货物类型" />
         </el-form-item>
-        <el-form-item label="规格型号" prop="specification">
-          <el-input v-model="form.specification" placeholder="请输入规格型号" />
+        <el-form-item label="货物名称" prop="goodName">
+          <el-input v-model="form.goodName" placeholder="请输入货物名称" />
         </el-form-item>
-        <el-form-item label="货物价格" prop="goodsPrice">
+        <el-form-item label="规格型号" prop="goodModel">
+          <el-input v-model="form.goodModel" placeholder="请输入规格型号" />
+        </el-form-item>
+        <el-form-item label="货物备注" prop="goodRemark">
+          <el-input v-model="form.goodRemark" placeholder="请输入货物备注" />
+        </el-form-item>
+        <el-form-item label="公示价格" prop="publicPrice">
           <el-input-number 
-            v-model="form.goodsPrice" 
+            v-model="form.publicPrice" 
             :precision="2" 
             :min="0" 
             :step="0.01"
             style="width: 100%"
-            placeholder="请输入货物价格"
+            placeholder="请输入公示价格"
           />
         </el-form-item>
       </el-form>
@@ -103,6 +98,13 @@
         <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
       </div>
     </el-dialog>
+
+    <!-- 经营范围选择器 -->
+    <BusinessScopeSelector
+      :visible.sync="showSelector"
+      title="选择经营范围"
+      @confirm="handleSelectorConfirm"
+    />
   </div>
 </template>
 
@@ -112,11 +114,16 @@ import {
   createBusinessScope, 
   updateBusinessScope, 
   deleteBusinessScope,
-  batchDeleteBusinessScope
+  batchDeleteBusinessScope,
+  updateBusinessScopeVisible
 } from '@/api/businessScope'
+import BusinessScopeSelector from '@/components/BusinessScopeSelector'
 
 export default {
   name: 'BusinessScope',
+  components: {
+    BusinessScopeSelector
+  },
   data() {
     return {
       // 列表数据
@@ -125,15 +132,15 @@ export default {
       
       // 搜索表单
       searchForm: {
-        goodsType: '',
-        goodsName: '',
-        specification: ''
+        goodType: '',
+        goodName: '',
+        goodModel: ''
       },
       
       // 分页
       pagination: {
-        page: 1,
-        size: 10,
+        pageNum: 1,
+        pageSize: 10,
         total: 0
       },
       
@@ -148,27 +155,33 @@ export default {
       // 表单数据
       form: {
         id: null,
-        goodsType: '',
-        goodsName: '',
-        specification: '',
-        goodsPrice: 0
+        goodType: '',
+        goodName: '',
+        goodModel: '',
+        publicPrice: 0
       },
       
       // 表单验证规则
       rules: {
-        goodsType: [
+        no: [
+          { required: true, message: '请输入编号', trigger: 'blur' }
+        ],
+        goodType: [
           { required: true, message: '请输入货物类型', trigger: 'blur' }
         ],
-        goodsName: [
+        goodName: [
           { required: true, message: '请输入货物名称', trigger: 'blur' }
         ],
-        specification: [
+        goodModel: [
           { required: true, message: '请输入规格型号', trigger: 'blur' }
         ],
-        goodsPrice: [
+        publicPrice: [
           { required: true, message: '请输入货物价格', trigger: 'blur' }
         ]
-      }
+      },
+      
+      // 选择器相关
+      showSelector: false
     }
   },
   
@@ -181,11 +194,11 @@ export default {
     fetchData() {
       this.listLoading = true
       const params = {
-        goodsType: this.searchForm.goodsType || undefined,
-        goodsName: this.searchForm.goodsName || undefined,
-        specification: this.searchForm.specification || undefined,
-        page: this.pagination.page,
-        size: this.pagination.size
+        goodType: this.searchForm.goodType || undefined,
+        goodName: this.searchForm.goodName || undefined,
+        goodModel: this.searchForm.goodModel || undefined,
+        pageNum: this.pagination.pageNum,
+        pageSize: this.pagination.pageSize
       }
       
       getBusinessScopePage(params).then(response => {
@@ -196,21 +209,26 @@ export default {
         this.listLoading = false
       })
     },
-    
+    handleView(row) {
+      updateBusinessScopeVisible(row.id, row.isShow === 'Y' ? 'N' : 'Y').then(() => {
+        this.$message.success('操作成功')
+        this.fetchData()
+      })
+    },
     // 搜索
     handleSearch() {
-      this.pagination.page = 1
+      this.pagination.pageNum = 1
       this.fetchData()
     },
     
     // 重置搜索
     handleReset() {
       this.searchForm = {
-        goodsType: '',
-        goodsName: '',
-        specification: ''
+        goodType: '',
+        goodName: '',
+        goodModel: ''
       }
-      this.pagination.page = 1
+      this.pagination.pageNum = 1
       this.fetchData()
     },
     
@@ -219,10 +237,10 @@ export default {
       this.dialogTitle = '新增经营范围'
       this.form = {
         id: null,
-        goodsType: '',
-        goodsName: '',
-        specification: '',
-        goodsPrice: 0
+        goodType: '',
+        goodName: '',
+        goodModel: '',
+        publicPrice: 0
       }
       this.dialogVisible = true
       this.$nextTick(() => {
@@ -300,15 +318,23 @@ export default {
     
     // 分页大小变化
     handleSizeChange(val) {
-      this.pagination.size = val
-      this.pagination.page = 1
+      this.pagination.pageSize = val
+      this.pagination.pageNum = 1
       this.fetchData()
     },
     
     // 当前页变化
     handleCurrentChange(val) {
-      this.pagination.page = val
+      this.pagination.pageNum = val
       this.fetchData()
+    },
+    
+    // 选择器确认
+    handleSelectorConfirm(selectedItems) {
+      this.$message.success(`成功选择 ${selectedItems.length} 项经营范围`)
+      console.log('选中的经营范围:', selectedItems)
+      // 这里可以根据需要处理选中的经营范围
+      // 例如：添加到当前列表、进行批量操作等
     }
   }
 }

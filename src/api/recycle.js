@@ -33,7 +33,7 @@ export function assignRecycle(params) {
 // 新增回收订单
 export function createRecycle(data) {
   return request({
-    url: '/recycle/order',
+    url: '/recycle/order/create',
     method: 'post',
     data
   })
@@ -42,7 +42,7 @@ export function createRecycle(data) {
 // 更新回收订单
 export function updateRecycle(data) {
   return request({
-    url: `/recycle/order/${data.id}`,
+    url: `/recycle/order/update`,
     method: 'put',
     data
   })

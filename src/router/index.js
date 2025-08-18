@@ -13,11 +13,7 @@ export const constantRoutes = [
     hidden: true
   },
 
-  {
-    path: '/404',
-    component: () => import('@/views/404'),
-    hidden: true
-  },
+
 
   {
     path: '/',
@@ -48,6 +44,12 @@ export const constantRoutes = [
         name: 'AdminUser',
         component: () => import('@/views/admin/user/index.vue'),
         meta: { title: '后台用户管理', icon: 'user' }
+      },
+      {
+        path: 'userType',
+        name: 'UserType',
+        component: () => import('@/views/system/accountType/index.vue'),
+        meta: { title: '用户类型管理', icon: 'user' }
       }
     ]
   },
@@ -83,22 +85,27 @@ export const constantRoutes = [
         name: 'SystemConfigMain',
         component: () => import('@/views/system/config/index.vue'),
         meta: { title: '系统配置', icon: 'setting' }
+      },
+      {
+        path: 'accountType',
+        name: 'AccountType',
+        component: () => import('@/views/system/accountType/index.vue'),
+        meta: { title: '账号类型管理', icon: 'user' }
       }
     ]
   },
-  // 合同管理
   {
-    path: '/contract',
+    path: '/business-scope',
     component: Layout,
-    redirect: '/contract/index',
-    name: 'Contract',
-    meta: { title: '合同管理', icon: 'form' },
+    redirect: '/business-scope/index',
+    name: 'BusinessScope',
+    meta: { title: '经营范围管理', icon: 'tree' },
     children: [
       {
         path: 'index',
-        name: 'ContractIndex',
-        component: () => import('@/views/rental/contract/index.vue'),
-        meta: { title: '合同管理', icon: 'form' }
+        name: 'BusinessScopeIndex',
+        component: () => import('@/views/recycle/business-scope/index.vue'),
+        meta: { title: '经营范围管理', icon: 'tree' }
       }
     ]
   },
@@ -108,19 +115,71 @@ export const constantRoutes = [
     component: Layout,
     redirect: '/recycle/goods',
     name: 'Recycle',
-    meta: { title: '回收管理', icon: 'table' },
+    meta: { title: '合同管理', icon: 'table' },
     children: [
+      {
+        path: 'contract',
+        name: 'ContractRecycle',
+        component: () => import('@/views/recycle/constract/index.vue'),
+        meta: { title: '合同回收', icon: 'form' }
+      },
       {
         path: 'recycle',
         name: 'RentalRecycle',
         component: () => import('@/views/recycle/order/index.vue'),
         meta: { title: '回收订单管理', icon: 'tree' }
-      },
+      }
+    ]
+  },
+  // 订单管理
+  {
+    path: '/order',
+    component: Layout,
+    redirect: '/order/transportOrder',
+    name: 'Order',
+    meta: { title: '订单管理', icon: 'table' },
+    children: [
+      // 采购订单
       {
-        path: 'business-scope',
-        name: 'BusinessScope',
-        component: () => import('@/views/recycle/business-scope/index.vue'),
-        meta: { title: '经营范围管理', icon: 'tree' }
+        path: 'purchaseOrder',
+        name: 'PurchaseOrder',
+        component: () => import('@/views/recycle/order/purchaseOrder.vue'),
+        meta: { title: '采购订单管理', icon: 'table' }
+      },
+      // 运输订单 
+      {
+        path: 'transportOrder',
+        name: 'TransportOrder',
+        component: () => import('@/views/recycle/order/transportOrder.vue'),
+        meta: { title: '运输订单管理', icon: 'table' }
+      },
+      // 加工订单
+      {
+        path: 'processingOrder',
+        name: 'ProcessingOrder',
+        component: () => import('@/views/recycle/order/processOrder.vue'),
+        meta: { title: '加工订单管理', icon: 'table' }
+      },
+      // 仓储订单
+      {
+        path: 'warehouseOrder',
+        name: 'WarehouseOrder',
+        component: () => import('@/views/recycle/order/storageOrder.vue'),
+        meta: { title: '仓储订单管理', icon: 'table' }
+      },
+      // 销售订单
+      {
+        path: 'salesOrder',
+        name: 'SalesOrder',
+        component: () => import('@/views/recycle/order/saleOrder.vue'),
+        meta: { title: '销售订单管理', icon: 'table' }
+      },
+      // 其他订单
+      {
+        path: 'otherOrder',
+        name: 'OtherOrder',
+        component: () => import('@/views/recycle/order/otherOrder.vue'),
+        meta: { title: '其他订单管理', icon: 'table' }
       }
     ]
   },
@@ -131,6 +190,12 @@ export const constantRoutes = [
     name: 'Rental',
     meta: { title: '租赁管理', icon: 'table' },
     children: [
+      {
+        path: 'contract',
+        name: 'RentalContract',
+        component: () => import('@/views/rental/contract/index.vue'),
+        meta: { title: '租赁合同管理', icon: 'form' }
+      },
       {
         path: 'goods',
         name: 'RentalGoods',
@@ -152,7 +217,12 @@ export const constantRoutes = [
     ]
   },
   // 404 page must be placed at the end !!!
-  { path: '*', redirect: '/404', hidden: true }
+  { path: '*', redirect: '/404', hidden: true },
+  {
+    path: '/404',
+    component: () => import('@/views/404'),
+    hidden: true
+  }
 ]
 
 const createRouter = () => new Router({

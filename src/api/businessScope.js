@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取经营范围分页列表
 export function getBusinessScopePage(params) {
   return request({
-    url: '/business-scope/page',
+    url: '/recycle/business-scope/page',
     method: 'get',
     params
   })
@@ -12,7 +12,7 @@ export function getBusinessScopePage(params) {
 // 获取经营范围详情
 export function getBusinessScopeDetail(id) {
   return request({
-    url: `/business-scope/${id}`,
+    url: `/recycle/business-scope/${id}`,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getBusinessScopeDetail(id) {
 // 新增经营范围
 export function createBusinessScope(data) {
   return request({
-    url: '/business-scope',
+    url: '/recycle/business-scope/create',
     method: 'post',
     data
   })
@@ -29,7 +29,7 @@ export function createBusinessScope(data) {
 // 更新经营范围
 export function updateBusinessScope(id, data) {
   return request({
-    url: `/business-scope/${id}`,
+    url: `/recycle/business-scope/${id}`,
     method: 'put',
     data
   })
@@ -38,7 +38,7 @@ export function updateBusinessScope(id, data) {
 // 删除经营范围
 export function deleteBusinessScope(id) {
   return request({
-    url: `/business-scope/${id}`,
+    url: `/recycle/business-scope/delete/${id}`,
     method: 'delete'
   })
 }
@@ -46,8 +46,16 @@ export function deleteBusinessScope(id) {
 // 批量删除经营范围
 export function batchDeleteBusinessScope(ids) {
   return request({
-    url: '/business-scope/batch',
+    url: '/recycle/business-scope/batch',
     method: 'delete',
     data: { ids }
   })
 } 
+// 更新是否显示
+export function updateBusinessScopeVisible(id, isShow) {
+  return request({
+    url: `/recycle/business-scope/update/isShow`,
+    method: 'put',
+    data: { id,isShow }
+  })
+}
