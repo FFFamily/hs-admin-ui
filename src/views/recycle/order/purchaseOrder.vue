@@ -56,16 +56,13 @@
 
       <el-table-column label="操作" width="280" align="center" fixed="right">
         <template slot-scope="scope">
-          <el-button size="mini" type="success" icon="el-icon-sell"
-            @click="handleSettle(scope.row)">
+          <el-button size="mini" type="success" icon="el-icon-sell" @click="handleSettle(scope.row)">
             结算
           </el-button>
-          <el-button size="mini" type="warning" icon="el-icon-edit"
-            @click="handleEdit(scope.row)">
+          <el-button size="mini" type="warning" icon="el-icon-edit" @click="handleEdit(scope.row)">
             编辑
           </el-button>
-          <el-button size="mini" type="danger" icon="el-icon-delete"
-            @click="handleDelete(scope.row)">
+          <el-button size="mini" type="danger" icon="el-icon-delete" @click="handleDelete(scope.row)">
             删除
           </el-button>
         </template>
@@ -81,6 +78,29 @@
     <el-dialog :title="getDialogTitle()" :visible.sync="detailVisible" width="900px" :close-on-click-modal="false"
       top="5vh">
       <el-form ref="detailForm" :model="detailData" :rules="formRules" label-width="120px" class="detail-form">
+        <!-- 合同相关信息 -->
+        <el-divider content-position="left">合同相关信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="合同编号" prop="contractNo">
+              <el-input v-model="detailData.contractNo" disabled placeholder="请选择合同">
+                <el-button v-if="!detailData.id" slot="append" icon="el-icon-search" @click="openContractSelector" />
+              </el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="合同名称" prop="contractName">
+              <el-input v-model="detailData.contractName" :readonly="dialogMode === 'view'" placeholder="请输入合同名称" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="合作方" prop="contractPartner">
+              <el-input v-model="detailData.contractPartner" :readonly="dialogMode === 'view'" placeholder="请输入合作方" />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <!-- 基本信息 -->
         <el-divider content-position="left">基本信息</el-divider>
         <el-row :gutter="20">
@@ -100,8 +120,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="状态" prop="status">
-              <el-select v-model="detailData.status" :disabled="dialogMode === 'view'" placeholder="请选择状态"
-                style="width: 100%;">
+              <el-select v-model="detailData.status" disabled placeholder="请选择状态" style="width: 100%;">
                 <el-option label="执行中" value="processing" />
                 <el-option label="已结束" value="completed" />
               </el-select>
@@ -134,19 +153,22 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="经办人" prop="processor">
-              <el-input v-model="detailData.processor" :readonly="dialogMode === 'view'" placeholder="请输入经办人姓名" />
+              <el-input v-model="detailData.processor" :readonly="true" placeholder="请选择经办人"
+                @click.native="openUserSelector">
+                <el-button slot="append" icon="el-icon-search" @click="openUserSelector" />
+              </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="经办人电话" prop="processorPhone">
-              <el-input v-model="detailData.processorPhone" :readonly="dialogMode === 'view'" placeholder="请输入经办人电话" />
+              <el-input v-model="detailData.processorPhone" :disabled="dialogMode === 'view'" placeholder="请输入经办人电话" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="订单总金额" prop="totalAmount">
-              <el-input v-model="detailData.totalAmount" :readonly="dialogMode === 'view'" placeholder="请输入订单总金额">
+              <el-input v-model="detailData.totalAmount" disabled placeholder="请输入订单总金额">
                 <template slot="prepend">¥</template>
               </el-input>
             </el-form-item>
@@ -192,110 +214,85 @@
                 <el-image :src="detailData.orderNodeImg" :preview-src-list="[detailData.orderNodeImg]" fit="cover"
                   style="width: 100%; height: 150px; border-radius: 8px;" />
               </div>
-              <el-upload v-else-if="dialogMode !== 'view'" class="image-uploader" :action="uploadUrl"
-                :show-file-list="false" :on-success="handleOrderNodeImgSuccess" :before-upload="beforeImageUpload">
-                <img v-if="detailData.orderNodeImg" :src="detailData.orderNodeImg" class="uploaded-image" />
-                <i v-else class="el-icon-plus image-uploader-icon"></i>
-              </el-upload>
+              <div v-else>
+                <ImageUploader
+                  v-model="detailData.orderNodeImg"
+                  :multiple="false"
+                  :limit="1"
+                />
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
 
-        <!-- 合同相关信息 -->
-        <el-divider content-position="left">合同相关信息</el-divider>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="合同编号" prop="contractNo">
-              <el-input v-model="detailData.contractNo" :readonly="dialogMode === 'view'" placeholder="请输入合同编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="合同名称" prop="contractName">
-              <el-input v-model="detailData.contractName" :readonly="dialogMode === 'view'" placeholder="请输入合同名称" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="合作方" prop="contractPartner">
-              <el-input v-model="detailData.contractPartner" :readonly="dialogMode === 'view'" placeholder="请输入合作方" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <!-- 订单明细 -->
+        <el-divider content-position="left">订单明细</el-divider>
+        <el-table :data="detailData.items" border fit style="width: 100%" v-loading="itemsLoading">
+          <el-table-column prop="goodNo" label="货物编号" width="140" align="center" />
+          <el-table-column prop="goodType" label="货物分类" width="120" align="center" />
+          <el-table-column prop="goodName" label="货物名称" min-width="160" show-overflow-tooltip />
+          <el-table-column prop="goodModel" label="货物型号" width="140" align="center" />
+          <el-table-column prop="goodCount" label="货物数量" width="120" align="center">
+            <template slot-scope="scope">
+              <el-input-number
+                v-if="dialogMode === 'edit'"
+                v-model="scope.row.goodCount"
+                :min="0"
+                :precision="0"
+                controls-position="right"
+                @change="onItemFieldChange(scope.row)"
+              />
+              <span v-else>{{ scope.row.goodCount }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="contractPrice" label="合同预计单价" width="140" align="center">
+            <template slot-scope="scope">
+              <span>¥{{ formatAmount(scope.row.contractPrice) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodPrice" label="货物单价" width="140" align="center">
+            <template slot-scope="scope">
+              <el-input-number
+                v-if="dialogMode === 'edit'"
+                v-model="scope.row.goodPrice"
+                :min="0"
+                :precision="2"
+                controls-position="right"
+                @change="onItemFieldChange(scope.row)"
+              />
+              <span v-else>¥{{ formatAmount(scope.row.goodPrice) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodTotalPrice" label="货物总价" width="160" align="center">
+            <template slot-scope="scope">
+              <span class="amount-text">¥{{ formatAmount(scope.row.goodTotalPrice) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodRemark" label="货物备注" min-width="180">
+            <template slot-scope="scope">
+              <el-input
+                v-if="dialogMode === 'edit'"
+                v-model="scope.row.goodRemark"
+                placeholder="请输入备注"
+              />
+              <span v-else>{{ scope.row.goodRemark || '--' }}</span>
+            </template>
+          </el-table-column>
+        </el-table>
       </el-form>
 
       <div slot="footer" class="dialog-footer">
         <el-button @click="detailVisible = false">取消</el-button>
-        <el-button
-          v-if="dialogMode === 'view' && detailData.status === 'pending' && hasPermission('recycle:order:assign')"
-          type="primary" @click="handleAssignPerson">
-          分配专人
-        </el-button>
         <el-button v-if="dialogMode !== 'view'" type="primary" @click="handleSubmit" :loading="submitLoading">
           {{ dialogMode === 'add' ? '新增' : '保存' }}
         </el-button>
       </div>
     </el-dialog>
 
-    <!-- 分配专人弹窗 -->
-    <el-dialog title="选择处理人员" :visible.sync="assignPersonVisible" width="80%" :close-on-click-modal="false" top="5vh">
-      <div class="search-container">
-        <el-input v-model="searchQuery" placeholder="输入用户名或手机号搜索" style="width: 300px; margin-right: 10px;" clearable
-          @keyup.enter.native="fetchUserList">
-          <i slot="prefix" class="el-input__icon el-icon-search"></i>
-        </el-input>
-        <el-button type="primary" icon="el-icon-search" @click="fetchUserList">搜索</el-button>
-        <el-button icon="el-icon-refresh" @click="resetUserSearch">重置</el-button>
-      </div>
-
-      <el-table v-loading="userLoading" :data="userList" style="width: 100%; margin-top: 20px;" border
-        highlight-current-row @current-change="handleCurrentUser">
-        <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="username" label="用户名" width="180" show-overflow-tooltip />
-        <el-table-column prop="phone" label="手机号" width="150" align="center" />
-        <el-table-column prop="type" label="类型" width="100" align="center">
-          <template slot-scope="scope">
-            <el-tag :type="scope.row.type === 'company' ? 'primary' : 'success'" size="mini">
-              {{ scope.row.type === 'company' ? '企业' : '个人' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="nickname" label="昵称" width="150" show-overflow-tooltip />
-        <el-table-column prop="email" label="邮箱" width="200" show-overflow-tooltip />
-      </el-table>
-
-      <div style="margin-top: 20px; text-align: right;">
-        <el-pagination background layout="total, prev, pager, next, jumper" :total="userTotal" :page-size="userPageSize"
-          :current-page.sync="userCurrentPage" @current-change="fetchUserList" />
-      </div>
-
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="assignPersonVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmSelect" :disabled="!selectedProcessor">
-          确认分配
-        </el-button>
-      </div>
-    </el-dialog>
-
-    <!-- 审批弹窗 -->
-    <el-dialog title="审批订单" :visible.sync="approvalVisible" width="500px" :close-on-click-modal="false">
-      <el-form :model="approvalForm" label-width="80px">
-        <el-form-item label="审批结果" required>
-          <el-radio-group v-model="approvalForm.result">
-            <el-radio label="approved">通过</el-radio>
-            <el-radio label="rejected">拒绝</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="审批意见" required>
-          <el-input v-model="approvalForm.comment" type="textarea" :rows="4" placeholder="请输入审批意见" maxlength="200"
-            show-word-limit />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="approvalVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitApproval">确认</el-button>
-      </div>
-    </el-dialog>
+    <!-- 合同选择弹窗组件 -->
+    <contract-selector :visible.sync="contractSelectorVisible" title="选择合同" :multiple="false" @confirm="handleContractSelected" />
+    <!-- 用户选择弹窗组件 -->
+    <user-selector :visible.sync="userSelectorVisible" title="选择经办人" :multiple="false" @confirm="handleUserSelected" />
   </div>
 </template>
 
@@ -303,9 +300,14 @@
 import { getRecyclePage, getRecycleDetail, deleteRecycle, assignRecycle, approveRecycle, createRecycle, updateRecycle } from '@/api/recycle'
 import { getUserPage } from '@/api/user'
 import { parseTime } from '@/utils'
+import ImageUploader from '@/components/ImageUploader/index.vue'
+import ContractSelector from '@/components/ContractSelector'
+import UserSelector from '@/components/UserSelector'
+import { getContractItems } from '@/api/recycleContract'
 
 export default {
   name: 'RecycleOrder',
+  components: { ContractSelector, UserSelector, ImageUploader },
   data() {
     return {
       list: [],
@@ -343,6 +345,12 @@ export default {
         comment: '',
         orderId: null
       },
+      // 合同选择弹窗
+      contractSelectorVisible: false,
+      // 用户选择弹窗
+      userSelectorVisible: false,
+      // 明细加载
+      itemsLoading: false,
       // 表单验证规则
       formRules: {
         no: [
@@ -384,6 +392,92 @@ export default {
     this.fetchData()
   },
   methods: {
+    // 打开用户选择器
+    openUserSelector() {
+      if (this.dialogMode === 'view') return
+      this.userSelectorVisible = true
+    },
+    // 用户选择回填
+    handleUserSelected(selected) {
+      const user = Array.isArray(selected) ? selected[0] : selected
+      if (!user) return
+      // 经办人显示用户名或昵称
+      this.detailData.processor = user.nickname || user.username || ''
+      // 回填电话（若接口字段为 phone/mobile）
+      this.detailData.processorPhone = user.phone || user.mobile || this.detailData.processorPhone
+    },
+    // 打开合同选择器
+    openContractSelector() {
+      if (this.dialogMode === 'view') return
+      this.contractSelectorVisible = true
+    },
+    // 合同选择回填
+    handleContractSelected(selected) {
+      const contract = Array.isArray(selected) ? selected[0] : selected
+      if (!contract) return
+      // 优先使用合同编号字段，如无则使用ID占位
+      this.detailData.contractNo = contract.no
+      this.detailData.contractName = contract.name
+      this.detailData.contractPartner = contract.partner
+      // 引用合同中的总金额
+      if (contract.totalAmount != null && this.detailData.contractReferencePrice === '') {
+        this.detailData.totalAmount = contract.totalAmount
+      }
+      // 拉取合同明细，填充订单明细
+      this.fetchContractItems(contract.id)
+    },
+    // 获取合同明细并映射到订单明细
+    async fetchContractItems(contractId) {
+      if (!contractId) return
+      this.itemsLoading = true
+      try {
+        const resp = await getContractItems(contractId)
+        const list = resp && resp.data ? (resp.data.records || resp.data || []) : []
+        this.detailData.items = (list || []).map(item => ({
+          goodNo: item.goodNo,
+          goodType: item.goodType,
+          goodName: item.goodName,
+          goodModel: item.goodModel,
+          goodCount: item.goodCount,
+          contractPrice: item.goodPrice || item.contractPrice || 0,
+          goodPrice: item.goodPrice || 0,
+          goodTotalPrice: this.calcTotal(item.goodCount, (item.goodPrice || 0)),
+          goodRemark: item.goodRemark
+        }))
+        this.recalcOrderAmount()
+      } catch (e) {
+        this.$message.error('获取合同明细失败')
+        this.detailData.items = []
+      } finally {
+        this.itemsLoading = false
+      }
+    },
+    // 编辑明细时联动总价
+    onItemFieldChange(row) {
+      const count = Number(row.goodCount) || 0
+      const price = Number(row.goodPrice) || 0
+      row.goodTotalPrice = this.calcTotal(count, price)
+      this.recalcOrderAmount()
+    },
+    // 删除明细（编辑态）
+    removeItem(index) {
+      if (this.dialogMode !== 'edit') return
+      if (!Array.isArray(this.detailData.items)) return
+      this.detailData.items.splice(index, 1)
+      this.recalcOrderAmount()
+    },
+    // 计算合计金额
+    calcTotal(count, price) {
+      const c = Number(count) || 0
+      const p = Number(price) || 0
+      return Number((c * p).toFixed(2))
+    },
+    // 重新计算订单总金额
+    recalcOrderAmount() {
+      if (!Array.isArray(this.detailData.items)) return
+      const sum = this.detailData.items.reduce((acc, it) => acc + (Number(it.goodTotalPrice) || 0), 0)
+      this.detailData.totalAmount = Number(sum.toFixed(2))
+    },
     // 获取数据
     fetchData() {
       this.listLoading = true
@@ -745,13 +839,13 @@ export default {
       return {
         no: '',
         type: 'purchase',
-        status: 'pending',
+        status: 'processing',
         startTime: '',
         endTime: '',
         identifyCode: '',
         processor: '',
         processorPhone: '',
-        totalAmount: '',
+        totalAmount: 0,
         orderNodeTime: '',
         orderNodeImg: '',
         orderNodePickupLocation: '',
@@ -759,7 +853,8 @@ export default {
         contractNo: '',
         contractReferencePrice: '',
         contractName: '',
-        contractPartner: ''
+        contractPartner: '',
+        items: []
       }
     },
 
@@ -816,17 +911,12 @@ export default {
       this.$message.success('签收图片上传成功')
     },
 
-    // 订单节点图片上传成功
-    handleOrderNodeImgSuccess(response) {
-      this.detailData.orderNodeImg = response.data
-      this.$message.success('订单节点图片上传成功')
-    },
-
-    // 订单节点图片上传成功
-    handleOrderNodeImgSuccess(response) {
-      this.detailData.orderNodeImg = response.data
-      this.$message.success('订单节点图片上传成功')
+    // 金额格式化
+    formatAmount(amount) {
+      const num = Number(amount) || 0
+      return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
     }
+    
   }
 }
 </script>

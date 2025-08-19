@@ -71,7 +71,8 @@
           
           <!-- 合同名称列 -->
           <el-table-column prop="name" label="合同名称" min-width="180" show-overflow-tooltip />
-          
+          <!-- 合同编号 -->
+          <el-table-column prop="no" label="合同编号" width="120" align="center" />
           <!-- 合同类型列 -->
           <el-table-column prop="type" label="合同类型" width="120" align="center">
             <template slot-scope="scope">

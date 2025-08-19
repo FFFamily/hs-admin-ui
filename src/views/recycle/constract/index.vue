@@ -65,18 +65,23 @@
 
 
         <!-- 新增/编辑对话框 -->
-        <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="800px" :close-on-click-modal="false"
+        <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="900px" :close-on-click-modal="false"
             @close="handleDialogClose">
             <el-form ref="form" :model="form" :rules="rules" label-width="100px">
                 <el-row :gutter="20">
                     <!-- 合同信息分组 -->
                     <el-divider content-position="center">合同信息</el-divider>
-                    <el-col :span="12">
+                    <el-col :span="8">
                         <el-form-item label="合同名称" prop="name">
                             <el-input v-model="form.name" placeholder="请输入合同名称" />
                         </el-form-item>
                     </el-col>
-                    <el-col :span="12">
+                    <el-col :span="8">
+                        <el-form-item label="合同编号" prop="no">
+                            <el-input v-model="form.no" placeholder="请输入合同编号" />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="8">
                         <el-form-item label="合同类型" prop="type">
                             <el-select v-model="form.type" placeholder="请选择合同类型" style="width: 100%;">
                                 <el-option label="采购合同" value="purchase" />
@@ -108,10 +113,11 @@
 
                     <el-col :span="12">
                         <el-form-item label="合同总金额" prop="totalAmount">
-                            <el-input-number v-model="form.totalAmount" :precision="2" :step="100" :min="0"
+                            <el-input-number disabled v-model="form.totalAmount" :precision="2" :step="100" :min="0"
                                 placeholder="请输入金额" style="width: 100%;" controls-position="right" />
                         </el-form-item>
                     </el-col>
+                    
                 </el-row>
                 <el-divider content-position="center">合作方信息</el-divider>
                 <el-row :gutter="20">

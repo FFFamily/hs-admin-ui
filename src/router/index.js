@@ -216,6 +216,21 @@ export const constantRoutes = [
       }
     ]
   },
+  {
+    path: '/finance',
+    component: Layout,
+    redirect: '/finance/fundflow',
+    name: 'Finance',
+    meta: { title: '资金管理', icon: 'table' },
+    children: [
+      {
+        path: 'fundflow',
+        name: 'FundFlow',
+        component: () => import('@/views/finance/fundflow/index.vue'),
+        meta: { title: '资金走款管理', icon: 'table' }
+      }
+    ]
+  },
   // 404 page must be placed at the end !!!
   { path: '*', redirect: '/404', hidden: true },
   {
