@@ -3,8 +3,8 @@ import request from '@/utils/request'
 // 分页查询资金走款
 export function getFundFlowPage(params) {
   return request({
-    url: '/finance/fund/flow/page',
-    method: 'get',
+    url: '/recycle/fund/page',
+    method: 'post',
     params
   })
 }
@@ -12,7 +12,7 @@ export function getFundFlowPage(params) {
 // 获取资金走款详情
 export function getFundFlowDetail(id) {
   return request({
-    url: `/finance/fund/flow/${id}`,
+    url: `/recycle/fund/${id}`,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getFundFlowDetail(id) {
 // 新增资金走款记录
 export function addFundFlow(data) {
   return request({
-    url: '/finance/fund/flow/create',
+    url: '/recycle/fund/add',
     method: 'post',
     data
   })
@@ -29,7 +29,7 @@ export function addFundFlow(data) {
 // 更新资金走款记录
 export function updateFundFlow(data) {
   return request({
-    url: '/finance/fund/flow/update',
+    url: '/recycle/fund/update',
     method: 'put',
     data
   })
@@ -38,7 +38,7 @@ export function updateFundFlow(data) {
 // 删除资金走款记录
 export function deleteFundFlow(id) {
   return request({
-    url: `/finance/fund/flow/${id}`,
+    url: `/recycle/fund/${id}`,
     method: 'delete'
   })
 }

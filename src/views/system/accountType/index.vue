@@ -2,15 +2,7 @@
   <div class="app-container">
     <!-- 搜索表单 -->
     <el-form :inline="true" :model="searchForm" class="demo-form-inline" @submit.native.prevent>
-      <el-form-item label="编号">
-        <el-input v-model="searchForm.code" placeholder="请输入编号" />
-      </el-form-item>
-      <el-form-item label="账号类型">
-        <el-input v-model="searchForm.name" placeholder="请输入账号类型名称" />
-      </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="handleReset">重置</el-button>
         <el-button type="primary" @click="handleAdd">新增账号类型</el-button>
       </el-form-item>
     </el-form>
@@ -22,10 +14,9 @@
       border
       fit
       highlight-current-row
-      style="margin-top: 20px;"
     >
       <el-table-column label="编号" prop="code" width="150" />
-      <el-table-column label="账号类型" prop="name" />
+      <el-table-column label="账号类型" prop="typeName" />
       <el-table-column label="创建时间" prop="createTime" width="180" />
       <el-table-column label="操作" width="200" align="center">
         <template slot-scope="scope">
@@ -54,7 +45,7 @@
           <el-input v-model="form.code" placeholder="请输入编号" />
         </el-form-item>
         <el-form-item label="账号类型" prop="name">
-          <el-input v-model="form.name" placeholder="请输入账号类型名称" />
+          <el-input v-model="form.typeName" placeholder="请输入账号类型名称" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -76,14 +67,14 @@ export default {
       listLoading: false,
       searchForm: {
         code: '',
-        name: ''
+        typeName: ''
       },
       dialogVisible: false,
       dialogTitle: '新增账号类型',
       form: {
         id: null,
         code: '',
-        name: ''
+        typeName: ''
       },
       pagination: {
         page: 1,
@@ -95,7 +86,7 @@ export default {
           { required: true, message: '请输入编号', trigger: 'blur' },
           { min: 2, max: 20, message: '编号长度在 2 到 20 个字符', trigger: 'blur' }
         ],
-        name: [
+        typeName: [
           { required: true, message: '请输入账号类型名称', trigger: 'blur' },
           { min: 2, max: 50, message: '账号类型名称长度在 2 到 50 个字符', trigger: 'blur' }
         ]
@@ -110,7 +101,7 @@ export default {
       this.listLoading = true
       const params = {
         code: this.searchForm.code || undefined,
-        name: this.searchForm.name || undefined,
+        typeName: this.searchForm.typeName || undefined,
         page: this.pagination.page,
         size: this.pagination.size
       }
@@ -127,7 +118,7 @@ export default {
       this.fetchData()
     },
     handleReset() {
-      this.searchForm = { code: '', name: '' }
+      this.searchForm = { code: '', typeName: '' }
       this.pagination.page = 1
       this.fetchData()
     },
@@ -136,7 +127,7 @@ export default {
       this.form = {
         id: null,
         code: '',
-        name: ''
+        typeName: ''
       }
       this.dialogVisible = true
     },

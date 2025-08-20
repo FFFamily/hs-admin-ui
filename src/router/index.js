@@ -36,7 +36,7 @@ export const constantRoutes = [
       {
         path: 'user',
         name: 'User',
-        component: () => import('@/views/user/index.vue'),
+        component: () => import('@/views/system/account/index.vue'),
         meta: { title: '小程序用户管理', icon: 'user' }
       },
       {
@@ -228,6 +228,12 @@ export const constantRoutes = [
         name: 'FundFlow',
         component: () => import('@/views/finance/fundflow/index.vue'),
         meta: { title: '资金走款管理', icon: 'table' }
+      },
+      {
+        path: 'capitalpool',
+        name: 'CapitalPool',
+        component: () => import('@/views/finance/capitalpool/index.vue'),
+        meta: { title: '资金池管理', icon: 'table' }
       }
     ]
   },

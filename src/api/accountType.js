@@ -20,7 +20,7 @@ export function getAccountTypeList() {
 // 新增账号类型
 export function addAccountType(data) {
   return request({
-    url: '/system/accountType',
+    url: '/system/accountType/add',
     method: 'post',
     data
   })
@@ -29,7 +29,7 @@ export function addAccountType(data) {
 // 更新账号类型
 export function updateAccountType(data) {
   return request({
-    url: `/system/accountType/${data.id}`,
+    url: `/system/accountType/update`,
     method: 'put',
     data
   })
@@ -38,7 +38,7 @@ export function updateAccountType(data) {
 // 删除账号类型
 export function deleteAccountType(id) {
   return request({
-    url: `/system/accountType/${id}`,
+    url: `/system/accountType/delete/${id}`,
     method: 'delete'
   })
 }
@@ -46,7 +46,7 @@ export function deleteAccountType(id) {
 // 获取账号类型详情
 export function getAccountTypeById(id) {
   return request({
-    url: `/system/accountType/${id}`,
+    url: `/system/accountType/get/${id}`,
     method: 'get'
   })
 } 

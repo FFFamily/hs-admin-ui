@@ -3,7 +3,7 @@
     <el-card>
       <div class="filter-container">
         <el-input v-model="search.username" placeholder="用户名" style="width: 180px; margin-right: 10px;" />
-        <el-select v-model="search.type" placeholder="用户类型" style="width: 150px; margin-right: 10px;">
+        <el-select v-model="search.type" placeholder="账号类型" style="width: 150px; margin-right: 10px;">
           <el-option label="全部" value="" />
           <el-option label="个人" value="person" />
           <el-option label="企业" value="company" />
@@ -13,10 +13,15 @@
         <el-button type="success" icon="el-icon-plus" style="margin-left: 10px;" @click="handleAdd">新增用户</el-button>
       </div>
       <el-table :data="list" style="width: 100%; margin-top: 20px;" border>
-        <el-table-column prop="username" label="用户名" width="150" />
-        <el-table-column prop="type" label="类型" width="100">
+        <el-table-column prop="nickname" label="账号名称" width="200" />
+        <el-table-column prop="type" label="账号类型" width="100">
           <template slot-scope="scope">
-            <span>{{ scope.row.type === 'company' ? '企业' : '个人' }}</span>
+            <span>{{ getType(scope.row.type) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="accountTypeId" label="用户类型" width="200">
+          <template slot-scope="scope">
+            <span>{{ getAccountType(scope.row.accountTypeId) }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="username" label="账号" width="200" />
@@ -48,16 +53,24 @@
       </div>
     </el-card>
     <!-- 新增/编辑弹窗 -->
-    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible">
+    <el-dialog :title="dialogTitle" width="500px" :visible.sync="dialogVisible">
       <el-form :model="form" :rules="rules" ref="form" label-width="100px">
-        <el-form-item label="用户类型" prop="type">
+        <el-form-item label="账号类型" prop="type">
           <el-select v-model="form.type" placeholder="请选择用户类型" @change="handleTypeChange">
             <el-option label="个人" value="person" />
             <el-option label="企业" value="company" />
           </el-select>
         </el-form-item>
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" />
+        <el-form-item label="用户类型" prop="accountTypeId">
+          <el-select v-model="form.accountTypeId" placeholder="请选择用户类型" :disabled="form.id !== undefined" @change="handleAccountTypeChange">
+            <el-option v-for="accountType in accountTypes" :key="accountType.id" :label="accountType.typeName" :value="accountType.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="账号名称" prop="nickname">
+          <el-input v-model="form.nickname" placeholder="公司账号则为公司名，自然人账号则为该人的名字" />
+        </el-form-item>
+        <el-form-item label="编号(账号)" prop="username">
+          <el-input disabled v-model="form.username" placeholder="专责用户类型后，自动按序生成账号编号"/>
         </el-form-item>
         <el-form-item v-if="form.type === 'person' || form.type === 'company'" label="手机号" prop="phone">
           <el-input v-model="form.phone" />
@@ -97,14 +110,8 @@
             <el-input v-model="form.payAccount3" />
           </el-form-item>
         </template>
-        <el-form-item label="密码" prop="password">
+        <el-form-item v-show="" label="密码" prop="password">
           <el-input v-model="form.password" type="password" autocomplete="new-password" />
-        </el-form-item>
-        <el-form-item label="昵称" prop="nickname">
-          <el-input v-model="form.nickname" />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-switch v-model="form.status" :active-value="use" :inactive-value="disable" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -117,11 +124,13 @@
 
 <script>
 // 这里的接口方法请后续补充联动
-import { getUserPage, createWxUser, updateWxUser, changeWxUserStatus, deleteWxUser, changeWxUserType } from '@/api/user'
+import { getUserPage, createWxUser, updateWxUser, changeWxUserStatus, deleteWxUser, changeWxUserType,generateAccountUsername } from '@/api/user'
+import { getAccountTypeList } from '@/api/accountType'
 export default {
   name: 'AdminUserList',
   data() {
     return {
+      accountTypes: [],
       list: [],
       total: 0,
       page: 1,
@@ -156,6 +165,7 @@ export default {
       },
       rules: {
         type: [{ required: true, message: '请选择用户类型', trigger: 'change' }],
+        accountTypeId: [{ required: true, message: '请选择用户类型', trigger: 'change' }],
         username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
         password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
         phone: [
@@ -164,15 +174,54 @@ export default {
         ],
         idCard: [
           { required: true, message: '请输入身份证号', trigger: 'blur' },
-          { pattern: /^(\d{15}|\d{17}[\dXx])$/, message: '请输入正确的身份证号', trigger: 'blur' }
+          { 
+            validator: (rule, value, callback) => {
+              if (!value) {
+                callback(new Error('请输入身份证号'))
+                return
+              }
+              // 中国大陆身份证号码验证
+              const idCardReg = /^[1-9]\d{5}(18|19|20)\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$/
+              if (!idCardReg.test(value)) {
+                callback(new Error('请输入正确的身份证号'))
+                return
+              }
+              // 验证校验码
+              if (value.length === 18) {
+                const factor = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]
+                const parity = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2']
+                let sum = 0
+                let ai = 0
+                let wi = 0
+                for (let i = 0; i < 17; i++) {
+                  ai = value[i]
+                  wi = factor[i]
+                  sum += ai * wi
+                }
+                const last = parity[sum % 11]
+                if (last !== value[17].toUpperCase()) {
+                  callback(new Error('身份证号校验码错误'))
+                  return
+                }
+              }
+              callback()
+            },
+            trigger: 'blur'
+          }
         ]
       }
     }
   },
   created() {
+    this.getAccountTypes()
     this.fetchList()
   },
   methods: {
+    getAccountTypes() {
+      getAccountTypeList().then(res => {
+        this.accountTypes = res.data
+      })
+    },
     fetchList() {
       getUserPage({
         pageNum: this.page,
@@ -268,6 +317,25 @@ export default {
         this.form.payAccount2 = ''
         this.form.payAccount3 = ''
       }
+    },
+    // 切换用户类型时
+    handleAccountTypeChange() {
+      generateAccountUsername(this.form.accountTypeId).then(res => {
+        this.form.username = res.data
+      })
+    },
+    // 列表用户类型
+    getType(type) {
+      if(type === 'company') {
+        return '企业'
+      } else if(type === 'person') {
+        return '个人'
+      } else {
+        return '未设置'
+      }
+    },
+    getAccountType(id) {
+      return this.accountTypes.find(item => item.id === id)?.typeName
     }
   }
 }
