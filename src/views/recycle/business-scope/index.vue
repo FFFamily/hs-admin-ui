@@ -3,10 +3,11 @@
     <!-- 搜索表单 -->
     <el-form :inline="true" :model="searchForm" class="search-form" @submit.native.prevent>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
+        <el-button type="primary" @click="handleSearch">查询</el-button>
         <el-button @click="handleReset">重置</el-button>
         <el-button type="primary" @click="handleAdd">新增经营范围</el-button>
-        <el-button type="success" @click="showSelector = true">选择经营范围</el-button>
+        <el-button type="danger" @click="handleBatchDelete">批量删除</el-button>
+        <el-button type="success" @click="handleBatchAdd">批量导入</el-button>
       </el-form-item>
     </el-form>
     <!-- 数据表格 -->
@@ -24,8 +25,8 @@
       <el-table-column label="货物类型" prop="goodType" width="120" align="center" />
       <el-table-column label="货物名称" prop="goodName" width="150" align="center" />
       <el-table-column label="规格型号" prop="goodModel" width="150" align="center" />
-      <el-table-column label="公示价格" prop="publicPrice" width="120" align="center" />
       <el-table-column label="货物备注" prop="goodRemark" width="120" align="center" />
+      <el-table-column label="公示价格" prop="publicPrice" width="120" align="center" />
       <el-table-column label="创建时间" prop="createTime" width="180" align="center" />
       <el-table-column label="是否显示" prop="isShow" width="120" align="center">
         <template slot-scope="scope">
@@ -34,6 +35,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center">
         <template slot-scope="scope">
+          <el-button pageSize="mini" @click="handleUp(scope.row)">上移</el-button>
+          <el-button pageSize="mini" @click="handleDown(scope.row)">下移</el-button>
           <el-button pageSize="mini" @click="handleEdit(scope.row)">编辑</el-button>
           <el-button pageSize="mini" @click="handleView(scope.row)">{{ scope.row.isShow === 'Y' ? '隐藏' : '显示' }}</el-button>
           <el-button pageSize="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
@@ -115,7 +118,9 @@ import {
   updateBusinessScope, 
   deleteBusinessScope,
   batchDeleteBusinessScope,
-  updateBusinessScopeVisible
+  updateBusinessScopeVisible,
+  moveUpBusinessScope,
+  moveDownBusinessScope
 } from '@/api/businessScope'
 import BusinessScopeSelector from '@/components/BusinessScopeSelector'
 
@@ -207,6 +212,18 @@ export default {
         this.listLoading = false
       }).catch(() => {
         this.listLoading = false
+      })
+    },
+    handleUp(row) {
+      moveUpBusinessScope(row.id).then(() => {
+        this.$message.success('上移成功')
+        this.fetchData()
+      })
+    },
+    handleDown(row) {
+      moveDownBusinessScope(row.id).then(() => {
+        this.$message.success('下移成功')
+        this.fetchData()
       })
     },
     handleView(row) {
@@ -335,6 +352,10 @@ export default {
       console.log('选中的经营范围:', selectedItems)
       // 这里可以根据需要处理选中的经营范围
       // 例如：添加到当前列表、进行批量操作等
+    },
+    // 点击批量导入时
+    handleBatchAdd() {
+      alert('功能开发中')
     }
   }
 }

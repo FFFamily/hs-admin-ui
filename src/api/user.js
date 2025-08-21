@@ -90,3 +90,10 @@ export function generateAccountUsername(accountType){
     method: 'get'
   })
 }
+// 获取后台配置的所有的身份列表
+export function getUseTypeList() {
+  return request({
+    url: '/wx/user/useTypeList',
+    method: 'get'
+  })
+}

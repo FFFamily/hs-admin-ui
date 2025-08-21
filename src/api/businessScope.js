@@ -46,9 +46,9 @@ export function deleteBusinessScope(id) {
 // 批量删除经营范围
 export function batchDeleteBusinessScope(ids) {
   return request({
-    url: '/recycle/business-scope/batch',
+    url: '/recycle/business-scope/delete/batch',
     method: 'delete',
-    data: { ids }
+    data: ids
   })
 } 
 // 更新是否显示
@@ -57,5 +57,21 @@ export function updateBusinessScopeVisible(id, isShow) {
     url: `/recycle/business-scope/update/isShow`,
     method: 'put',
     data: { id,isShow }
+  })
+}
+
+// 上移
+export function moveUpBusinessScope(id) {
+  return request({
+    url: `/recycle/business-scope/move-up/${id}`,
+    method: 'put'
+  })
+}
+
+// 下移
+export function moveDownBusinessScope(id) {
+  return request({
+    url: `/recycle/business-scope/move-down/${id}`,
+    method: 'put'
   })
 }
