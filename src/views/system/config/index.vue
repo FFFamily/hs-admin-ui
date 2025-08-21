@@ -1,101 +1,34 @@
 <template>
-  <div class="system-config">
-    <el-card>
-      <el-form :model="form" label-width="160px" style="max-width: 800px;">
-        <el-form-item label="小程序首页轮播图图片">
-          <div v-if="!isEdit">
-            <el-image
-              v-for="(url, idx) in form.homeImg"
-              :key="url"
-              :src="url"
-              style="width: 120px; height: 60px; margin-right: 10px;"
-              fit="cover"
-            />
-            <div v-if="!form.homeImg || form.homeImg.length === 0" style="color: #999;">暂无图片</div>
-          </div>
-          <div v-else class="image-manager">
-            <!-- 图片列表 -->
-            <div class="image-list">
-              <div 
-                v-for="(url, index) in form.homeImg" 
-                :key="index"
-                class="image-item"
-              >
-                <div class="image-wrapper" :class="{ 'moving': movingIndex === index }">
-                  <el-image
-                    :src="url"
-                    style="width: 120px; height: 60px;"
-                    fit="cover"
-                  />
-                  <div class="image-actions">
-                    <el-button 
-                      size="mini" 
-                      type="primary" 
-                      icon="el-icon-arrow-up"
-                      :disabled="index === 0"
-                      @click="moveUp(index)"
-                      title="上移"
-                    ></el-button>
-                    <el-button 
-                      size="mini" 
-                      type="primary" 
-                      icon="el-icon-arrow-down"
-                      :disabled="index === form.homeImg.length - 1"
-                      @click="moveDown(index)"
-                      title="下移"
-                    ></el-button>
-                    <el-button 
-                      size="mini" 
-                      type="danger" 
-                      icon="el-icon-delete"
-                      @click="removeImage(index)"
-                      title="删除"
-                    ></el-button>
-                  </div>
+  <el-card>
+    <el-row :gutter="15">
+          <el-col :span="6" v-for="(url, index) in form.homeImg" :key="url" :offset="0">
+            <el-card :body-style="{ padding: '0px' }">
+              <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png"
+                class="image">
+              <div style="padding: 14px;">
+                <div class="bottom clearfix">
+                  <el-button size="mini" type="primary" :disabled="index === 0" @click="moveUp(index)">上移</el-button>
+                  <el-button size="mini" type="primary" :disabled="index === form.homeImg.length - 1"
+                    @click="moveDown(index)">下移</el-button>
+                  <el-button size="mini" type="danger" @click="removeImage(index)">删除</el-button>
                 </div>
-                <div class="image-index">{{ index + 1 }}</div>
               </div>
-            </div>
-            
-            <!-- 上传区域 -->
-            <div class="upload-area">
-              <el-upload
-                class="upload-demo"
-                action="/api/system/file/upload"
-                list-type="picture-card"
-                :show-file-list="false"
-                :on-success="handleUploadSuccess"
-                :before-upload="beforeUpload"
-                :headers="{'Token-Key': getToken()}"
-                multiple
-              >
-                <i class="el-icon-plus"></i>
-                <div class="upload-text">添加图片</div>
-              </el-upload>
-            </div>
-            
-            <div class="el-upload__tip">支持多图上传，建议尺寸 750x360px</div>
-          </div>
-        </el-form-item>
-        <!-- <el-form-item label="商城分类类型">
-          <div v-if="!isEdit">
-            <span>{{ getCategoryName(form.mallType) }}</span>
-          </div>
-          <el-select v-else v-model="form.mallType" placeholder="请选择商城类型" multiple>
-            <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id"></el-option>
-          </el-select>
-          <div class="el-upload__tip" slot="tip" v-if="isEdit">选择商城顶部分类栏的展示类型，可多选</div>
-        </el-form-item> -->
-        <el-form-item>
-          <el-button v-if="!isEdit" type="primary" @click="handleEdit">编辑</el-button>
-          <template v-else>
-            <el-button type="primary" @click="handleSave">保存</el-button>
-            <el-button @click="handleCancel">取消</el-button>
-          </template>
-        </el-form-item>
-      </el-form>
-    </el-card>
-  </div>
+            </el-card>
+          </el-col>
+        </el-row>
+        <div class="upload-area">
+          <el-upload class="upload-demo" action="/api/system/file/upload" list-type="picture-card"
+            :show-file-list="false" :on-success="handleUploadSuccess" :before-upload="beforeUpload"
+            :headers="{ 'Token-Key': getToken() }" multiple>
+            <i class="el-icon-plus"></i>
+          </el-upload>
+        </div>
+        <el-button type="primary" @click="handleSave">保存</el-button>
+  </el-card>
+
+
+
+
 </template>
 
 <script>
@@ -111,8 +44,6 @@ export default {
         mallType: [] // 商城分类类型，存储分类ID数组
       },
       fileList: [],
-      isEdit: false,
-      backup: null,
       getToken: getToken,
       categories: [], // 商品分类列表
       movingIndex: -1 // 当前移动的图片索引
@@ -171,7 +102,7 @@ export default {
         const temp = this.form.homeImg[index]
         this.form.homeImg[index] = this.form.homeImg[index - 1]
         this.form.homeImg[index - 1] = temp
-        
+
         // 动画结束后清除状态
         setTimeout(() => {
           this.movingIndex = -1
@@ -184,7 +115,7 @@ export default {
         const temp = this.form.homeImg[index]
         this.form.homeImg[index] = this.form.homeImg[index + 1]
         this.form.homeImg[index + 1] = temp
-        
+
         // 动画结束后清除状态
         setTimeout(() => {
           this.movingIndex = -1
@@ -198,12 +129,7 @@ export default {
       }
       return isImage
     },
-    handleEdit() {
-      this.isEdit = true
-      this.backup = JSON.parse(JSON.stringify(this.form))
-    },
     handleSave() {
-      this.isEdit = false
       let config = {
         ...this.form,
         // 拼接成字符串
@@ -213,53 +139,23 @@ export default {
       updateHomeConfig(config.id, config).then(res => {
         this.$message.success('保存成功')
       })
-    },
-    handleCancel() {
-      // 还原数据
-      this.form = JSON.parse(JSON.stringify(this.backup))
-      this.isEdit = false
     }
   }
 }
 </script>
 
 <style scoped>
-.system-config {
-  padding: 20px;
-}
 
 .image-manager {
   width: 100%;
 }
 
-.image-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 20px;
+.image-col {
+  margin-bottom: 15px;
 }
 
-.image-item {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
 
-.image-wrapper {
-  position: relative;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  padding: 8px;
-  background: #fafafa;
-  transition: all 0.3s ease;
-}
 
-.image-wrapper.moving {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-color: #409eff;
-}
 
 .image-actions {
   position: absolute;
@@ -302,4 +198,39 @@ export default {
   color: #999;
   font-size: 12px;
 }
-</style> 
+
+
+
+
+
+
+.time {
+  font-size: 13px;
+  color: #999;
+}
+
+.bottom {
+  margin-top: 13px;
+  line-height: 12px;
+}
+
+.button {
+  padding: 0;
+  float: right;
+}
+
+.image {
+  width: 100%;
+  display: block;
+}
+
+.clearfix:before,
+.clearfix:after {
+  display: table;
+  content: "";
+}
+
+.clearfix:after {
+  clear: both
+}
+</style>

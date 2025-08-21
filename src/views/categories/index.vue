@@ -9,6 +9,9 @@
             </div>
 
             <el-form :inline="true" :model="searchForm" class="demo-form-inline">
+                <el-form-item label="分类编码">
+                    <el-input v-model="searchForm.code" placeholder="请输入分类编码"></el-input>
+                </el-form-item>
                 <el-form-item label="分类名称">
                     <el-input v-model="searchForm.name" placeholder="请输入分类名称"></el-input>
                 </el-form-item>
@@ -19,6 +22,7 @@
             </el-form>
 
             <el-table v-loading="listLoading" :data="categoryList" style="width: 100%" border>
+                <el-table-column prop="code" label="分类编码" width="180"></el-table-column>
                 <el-table-column prop="name" label="分类名称" width="180"></el-table-column>
                 <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
                 <el-table-column label="操作" fixed="right">
@@ -48,6 +52,9 @@
                 <el-form-item label="分类名称" prop="name">
                     <el-input v-model="categoryForm.name" placeholder="请输入分类名称"></el-input>
                 </el-form-item>
+                <el-form-item label="分类编码" prop="code">
+                    <el-input v-model="categoryForm.code" placeholder="请输入分类编码"></el-input>
+                </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click="dialogVisible = false">取消</el-button>
@@ -65,7 +72,8 @@ export default {
     data() {
         return {
             searchForm: {
-                name: ''
+                name: '',
+                code: ''
             },
             categoryList: [],
             total: 0,
@@ -76,12 +84,18 @@ export default {
             dialogTitle: '新增分类',
             categoryForm: {
                 id: '',
-                name: ''
+                name: '',
+                code: ''
             },
             categoryRules: {
                 name: [
                     { required: true, message: '请输入分类名称', trigger: 'blur' },
                     { min: 1, max: 50, message: '分类名称长度在 1 到 50 个字符', trigger: 'blur' }
+                ],
+                code: [
+                    { required: true, message: '请输入分类编码', trigger: 'blur' },
+                    { min: 1, max: 50, message: '分类编码长度在 1 到 50 个字符', trigger: 'blur' },
+                    { pattern: /^[a-zA-Z0-9]+$/, message: '只能输入数字和字母', trigger: 'blur' }
                 ]
             },
 
@@ -96,7 +110,8 @@ export default {
             const params = {
                 pageNum: this.currentPage,
                 pageSize: this.pageSize,
-                name: this.searchForm.name
+                name: this.searchForm.name,
+                code: this.searchForm.code
             }
             getCategoriesListPage(params)
                 .then(response => {
@@ -116,7 +131,8 @@ export default {
         },
         resetForm() {
             this.searchForm = {
-                name: ''
+                name: '',
+                code: ''
             }
             this.getList()
         },
@@ -124,7 +140,8 @@ export default {
             this.dialogTitle = '新增分类'
             this.categoryForm = {
                 id: '',
-                name: ''
+                name: '',
+                code: ''
             }
             this.dialogVisible = true
         },
@@ -132,7 +149,8 @@ export default {
             this.dialogTitle = '编辑分类'
             this.categoryForm = {
                 id: row.id,
-                name: row.name
+                name: row.name,
+                code: row.code
             }
             this.dialogVisible = true
         },

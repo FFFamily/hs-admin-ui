@@ -34,6 +34,7 @@ export default {
       type: [String, Array],
       default: () => []
     },
+    // 是否多选
     multiple: {
       type: Boolean,
       default: true
@@ -74,7 +75,7 @@ export default {
       // 是否向外部输出后端返回的原始 fileUrl（相对/接口地址）。
       // 若为 false，则向外部输出拼接后的完整可访问 URL。
       type: Boolean,
-      default: true
+      default: false
     }
   },
   computed: {
