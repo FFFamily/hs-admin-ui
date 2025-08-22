@@ -2,12 +2,18 @@
   <div class="app-container">
     <!-- 搜索表单 -->
     <el-form :inline="true" :model="searchForm" class="search-form" @submit.native.prevent>
+      <el-form-item label="货物类型">
+        <el-input v-model="searchForm.goodType" placeholder="请输入货物类型" />
+      </el-form-item>
+      <el-form-item label="货物名称"> 
+        <el-input v-model="searchForm.goodName" placeholder="请输入货物名称" />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleSearch">查询</el-button>
         <el-button @click="handleReset">重置</el-button>
         <el-button type="primary" @click="handleAdd">新增经营范围</el-button>
-        <el-button type="danger" @click="handleBatchDelete">批量删除</el-button>
-        <el-button type="success" @click="handleBatchAdd">批量导入</el-button>
+        <!-- <el-button type="danger" @click="handleBatchDelete">批量删除</el-button> -->
+        <!-- <el-button type="success" @click="handleBatchAdd">批量导入</el-button> -->
       </el-form-item>
     </el-form>
     <!-- 数据表格 -->
@@ -201,7 +207,6 @@ export default {
       const params = {
         goodType: this.searchForm.goodType || undefined,
         goodName: this.searchForm.goodName || undefined,
-        goodModel: this.searchForm.goodModel || undefined,
         pageNum: this.pagination.pageNum,
         pageSize: this.pagination.pageSize
       }

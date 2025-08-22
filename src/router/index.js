@@ -40,13 +40,19 @@ export const constantRoutes = [
         path: 'userType',
         name: 'UserType',
         component: () => import('@/views/system/accountType/index.vue'),
-        meta: { title: '用户类型管理', icon: 'user' }
+        meta: { title: '账号类型管理', icon: 'user' }
       },
       {
         path: 'business-scope',
         name: 'BusinessScope',
         component: () => import('@/views/recycle/business-scope/index.vue'),
         meta: { title: '经营范围管理', icon: 'tree' }
+      },
+      {
+        path: 'address',
+        name: 'Address',
+        component: () => import('@/views/system/address/index.vue'),
+        meta: { title: '地址管理', icon: 'el-icon-location' }
       }
     ]
   },
@@ -70,20 +76,20 @@ export const constantRoutes = [
         meta: { title: '用户账号管理', icon: 'user' }
       },
       {
-        path: 'user',
-        name: 'User',
-        component: () => import('@/views/system/account/index.vue'),
+        path: 'processor',
+        name: 'Processor',
+        component: () => import('@/views/admin/agent/index.vue'),
         meta: { title: '用户经办人管理', icon: 'user' }
       },
       {
-        path: 'user',
-        name: 'User',
+        path: 'bank',
+        name: 'Bank',
         component: () => import('@/views/system/account/index.vue'),
         meta: { title: '银行账号管理', icon: 'user' }
       },
       {
-        path: 'user',
-        name: 'User',
+        path: 'invoice',
+        name: 'Invoice',
         component: () => import('@/views/system/account/index.vue'),
         meta: { title: '发票抬头管理', icon: 'user' }
       }

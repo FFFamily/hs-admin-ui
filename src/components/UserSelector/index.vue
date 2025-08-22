@@ -1,283 +1,417 @@
 <template>
   <el-dialog
     :title="title"
-    :visible.sync="dialogVisible"
-    width="800px"
+    :visible.sync="visible"
+    :width="width"
     :before-close="handleClose"
+    class="user-selector-dialog"
   >
-    <!-- 搜索区域 -->
-    <div class="search-container">
-      <el-input
-        v-model="searchKeyword"
-        placeholder="请输入用户名、昵称或手机号搜索"
-        style="width: 300px;"
-        clearable
-        @keyup.enter.native="handleSearch"
-      >
-        <el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
-      </el-input>
-      <el-button type="primary" @click="handleSearch" style="margin-left: 10px;">搜索</el-button>
-      <el-button @click="handleReset" style="margin-left: 10px;">重置</el-button>
-    </div>
+    <div class="user-selector">
+      <!-- 搜索区域 -->
+      <el-form :inline="true" :model="searchForm" :rules="searchRules" ref="searchFormRef">
+        <el-form-item label="用户账号" prop="username">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="请输入用户账号、昵称搜索"
+            class="search-input"
+            clearable
+            @input="handleSearch"
+          >
+            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="用户名称" prop="nickname">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="请输入用户名称搜索"
+            class="search-input"
+            clearable
+            @input="handleSearch"
+          >
+            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+          </el-input>
+        </el-form-item>
+      </el-form>
 
-    <!-- 用户列表 -->
-    <el-table
-      :data="userList"
-      v-loading="loading"
-      border
-      style="margin-top: 20px;"
-      @selection-change="handleSelectionChange"
-      :row-key="row => row.id"
-    >
-      <el-table-column
-        v-if="multiple"
-        type="selection"
-        width="55"
-        :reserve-selection="true"
-      />
-      <el-table-column label="头像" width="80" align="center">
-        <template slot-scope="scope">
-          <el-avatar
-            v-if="scope.row.avatar"
-            :src="scope.row.avatar"
-            size="small"
+      <!-- 用户列表 -->
+      
+        <el-table
+          :data="filteredUserList"
+          style="width: 100%"
+          highlight-current-row
+          border
+          @selection-change="handleSelectionChange"
+          @row-click="handleRowClick"
+          :row-class-name="getRowClassName"
+        >
+          <!-- 多选列 -->
+          <el-table-column
+            v-if="multiple"
+            type="selection"
+            width="55"
+            :selectable="isSelectable"
           />
-          <el-avatar
-            v-else
-            icon="el-icon-user"
-            size="small"
-          />
-        </template>
-      </el-table-column>
-      <el-table-column label="用户名" prop="username" width="120" />
-      <el-table-column label="昵称" prop="nickname" width="120" />
-      <el-table-column label="手机号" prop="phone" width="130" />
-      <el-table-column label="状态" width="80" align="center">
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.status === 'use' ? 'success' : 'danger'">
-            {{ scope.row.status === 'use' ? '正常' : '禁用' }}
+          
+          <!-- 用户账号列 -->
+          <el-table-column prop="username" label="用户账号" min-width="120" />
+          
+          <!-- 用户名称列 -->
+          <el-table-column prop="nickname" label="用户名称" min-width="120" />
+          
+          <!-- 用户类型列 -->
+          <el-table-column prop="useType" label="用户类型" width="100" align="center">
+            <template slot-scope="scope">
+              <el-tag :type="scope.row.type === 'person' ? 'primary' : 'success'" size="mini">
+                {{ useTypeText(scope.row.type) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          
+          <!-- 状态列 -->
+          <el-table-column prop="status" label="状态" width="80" align="center">
+            <template slot-scope="scope">
+              <el-tag :type="scope.row.status === 'use' ? 'success' : 'danger'" size="mini">
+                {{ statusText(scope.row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+      <!-- 分页 -->
+      <div class="pagination-container" v-if="showPagination">
+        <el-pagination
+          background
+          layout="total, prev, pager, next, jumper"
+          :total="total"
+          :page-size="pageSize"
+          :current-page.sync="currentPage"
+          @current-change="handlePageChange"
+        />
+      </div>
+
+      <!-- 已选择用户展示 -->
+      <div class="selected-users" v-if="multiple && selectedUsers.length > 0">
+        <div class="selected-title">
+          <span>已选择用户 ({{ selectedUsers.length }})：</span>
+          <el-button type="text" @click="clearSelection">清空选择</el-button>
+        </div>
+        <div class="selected-tags">
+          <el-tag
+            v-for="user in selectedUsers"
+            :key="user.id"
+            closable
+            @close="removeUser(user)"
+            style="margin-right: 8px; margin-bottom: 8px;"
+          >
+            {{ user.username }} - {{ user.nickname }}
           </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" prop="createTime" width="180" />
-    </el-table>
-
-    <!-- 分页 -->
-    <el-pagination
-      :current-page="pagination.page"
-      :page-sizes="[10, 20, 50]"
-      :page-size="pagination.size"
-      :total="pagination.total"
-      layout="total, sizes, prev, pager, next, jumper"
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      style="margin-top: 20px; text-align: right;"
-    />
-
-    <!-- 已选择用户展示 -->
-    <div v-if="multiple && selectedUsers.length > 0" class="selected-users">
-      <h4>已选择用户：</h4>
-      <el-tag
-        v-for="user in selectedUsers"
-        :key="user.id"
-        closable
-        @close="removeSelectedUser(user)"
-        style="margin-right: 8px; margin-bottom: 8px;"
-      >
-        {{ user.nickname || user.username }}
-      </el-tag>
+        </div>
+      </div>
     </div>
 
-    <!-- 操作按钮 -->
     <div slot="footer" class="dialog-footer">
-      <el-button @click="handleClose">取 消</el-button>
-      <el-button
-        type="primary"
-        @click="handleConfirm"
-        :disabled="multiple ? selectedUsers.length === 0 : !singleSelectedUser"
-      >
-        确 定
+      <el-button @click="handleClose">取消</el-button>
+      <el-button type="primary" @click="handleConfirm" :disabled="!canConfirm">
+        {{ confirmText }}
       </el-button>
     </div>
   </el-dialog>
 </template>
 
 <script>
-import { getAgentList } from '@/api/agent'
+import { getUserPage } from '@/api/user'
 
 export default {
   name: 'UserSelector',
   props: {
+    // 弹框是否可见
     visible: {
       type: Boolean,
       default: false
     },
+    // 弹框标题
     title: {
       type: String,
       default: '选择用户'
     },
+    // 弹框宽度
+    width: {
+      type: String,
+      default: '800px'
+    },
+    // 是否多选
     multiple: {
       type: Boolean,
       default: false
     },
-    // 已选择的用户ID列表（多选模式）
-    selectedIds: {
+    // 是否显示分页
+    showPagination: {
+      type: Boolean,
+      default: true
+    },
+    // 每页显示数量
+    pageSize: {
+      type: Number,
+      default: 10
+    },
+    // 默认选中的用户ID数组
+    defaultSelected: {
+      type: Array,
+      default: () => []
+    },
+    // 禁用的用户ID数组
+    disabledUsers: {
       type: Array,
       default: () => []
     }
   },
   data() {
     return {
-      dialogVisible: false,
-      loading: false,
-      searchKeyword: '',
       userList: [],
+      filteredUserList: [],
       selectedUsers: [],
-      singleSelectedUser: null,
-      pagination: {
-        page: 1,
-        size: 10,
-        total: 0
+      searchKeyword: '',
+      currentPage: 1,
+      total: 0,
+      loading: false,
+      defaultAvatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+    }
+  },
+  computed: {
+    canConfirm() {
+      if (this.multiple) {
+        return this.selectedUsers.length > 0
+      } else {
+        return this.selectedUsers.length === 1
+      }
+    },
+    confirmText() {
+      if (this.multiple) {
+        return `确定选择 (${this.selectedUsers.length})`
+      } else {
+        return '确定选择'
       }
     }
   },
   watch: {
-    visible(val) {
-      this.dialogVisible = val
-      if (val) {
+    visible(newVal) {
+      if (newVal) {
         this.initData()
       }
     },
-    dialogVisible(val) {
-      this.$emit('update:visible', val)
+    defaultSelected: {
+      handler(newVal) {
+        this.selectedUsers = [...newVal]
+      },
+      immediate: true
     }
   },
   methods: {
-    initData() {
+    // 初始化数据
+    async initData() {
       this.searchKeyword = ''
-      this.selectedUsers = []
-      this.singleSelectedUser = null
-      this.pagination.page = 1
-      this.fetchUserList()
-      
-      // 如果是多选模式且有已选择的用户ID，则恢复选择状态
-      if (this.multiple && this.selectedIds.length > 0) {
-        this.restoreSelection()
-      }
+      this.currentPage = 1
+      await this.fetchUserList()
     },
-    
-    fetchUserList() {
+
+    // 获取用户列表
+    async fetchUserList() {
       this.loading = true
-      const params = {
-        keyword: this.searchKeyword || undefined,
-        page: this.pagination.page,
-        size: this.pagination.size
+      try {
+        const params = {
+          pageNum: this.currentPage,
+          pageSize: this.pageSize
+        }
+        
+        const response = await getUserPage(params)
+        if (response && response.data) {
+          this.userList = response.data.records || []
+          this.total = response.data.total || 0
+        }
+        this.filteredUserList = [...this.userList]
+      } catch (error) {
+        console.error('获取用户列表失败:', error)
+        this.$message.error('获取用户列表失败')
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // 搜索处理
+    handleSearch() {
+      if (!this.searchKeyword.trim()) {
+        this.filteredUserList = [...this.userList]
+        return
       }
       
-      getAgentList(params).then(response => {
-        this.userList = response.data.records || response.data || []
-        this.pagination.total = response.data.total || 0
-        this.loading = false
-        
-        // 恢复选择状态
-        if (this.multiple && this.selectedIds.length > 0) {
-          this.$nextTick(() => {
-            this.restoreSelection()
-          })
-        }
-      }).catch(() => {
-        this.loading = false
-      })
+      const keyword = this.searchKeyword.toLowerCase()
+      this.filteredUserList = this.userList.filter(user => 
+        (user.username && user.username.toLowerCase().includes(keyword)) ||
+        (user.nickname && user.nickname.toLowerCase().includes(keyword)) ||
+        (user.city && user.city.toLowerCase().includes(keyword))
+      )
     },
-    
-    handleSearch() {
-      this.pagination.page = 1
+
+    // 分页处理
+    handlePageChange(page) {
+      this.currentPage = page
       this.fetchUserList()
     },
-    
-    handleReset() {
-      this.searchKeyword = ''
-      this.pagination.page = 1
-      this.fetchUserList()
-    },
-    
+
+    // 选择变化处理
     handleSelectionChange(selection) {
       this.selectedUsers = selection
     },
-    
-    handleSizeChange(val) {
-      this.pagination.size = val
-      this.pagination.page = 1
-      this.fetchUserList()
+
+    // 行点击处理（单选模式）
+    handleRowClick(row, column, event) {
+      if (this.multiple) return
+      
+      // 单选模式，直接选择该行
+      this.selectedUsers = [row]
     },
-    
-    handleCurrentChange(val) {
-      this.pagination.page = val
-      this.fetchUserList()
-    },
-    
-    // 恢复选择状态
-    restoreSelection() {
-      this.$nextTick(() => {
-        this.userList.forEach(row => {
-          if (this.selectedIds.includes(row.id)) {
-            this.$refs.multipleTable.toggleRowSelection(row, true)
-          }
-        })
-      })
-    },
-    
-    // 移除已选择的用户
-    removeSelectedUser(user) {
-      this.selectedUsers = this.selectedUsers.filter(u => u.id !== user.id)
-    },
-    
-    handleConfirm() {
-      if (this.multiple) {
-        if (this.selectedUsers.length === 0) {
-          this.$message.warning('请至少选择一个用户')
-          return
-        }
-        this.$emit('confirm', this.selectedUsers)
-      } else {
-        if (!this.singleSelectedUser) {
-          this.$message.warning('请选择一个用户')
-          return
-        }
-        this.$emit('confirm', [this.singleSelectedUser])
+
+    // 获取行样式类名
+    getRowClassName({ row }) {
+      if (this.selectedUsers.some(user => user.id === row.id)) {
+        return 'selected-row'
       }
+      return ''
+    },
+
+    // 判断用户是否可选
+    isSelectable(row) {
+      return !this.disabledUsers.includes(row.id)
+    },
+
+    // 移除已选择的用户
+    removeUser(user) {
+      const index = this.selectedUsers.findIndex(u => u.id === user.id)
+      if (index > -1) {
+        this.selectedUsers.splice(index, 1)
+      }
+    },
+
+    // 清空选择
+    clearSelection() {
+      this.selectedUsers = []
+    },
+
+    // 用户类型文本转换
+    useTypeText(useType) {
+      if (useType === 'person') return '用户'
+      if (useType === 'company') return '企业'
+      return '未知'
+    },
+
+    // 状态文本转换
+    statusText(status) {
+      if (status === 'use') return '正常'
+      if (status === 'disable') return '禁用'
+      return '未知'
+    },
+
+    // 确认选择
+    handleConfirm() {
+      if (this.selectedUsers.length === 0) {
+        this.$message.warning('请至少选择一个用户')
+        return
+      }
+
+      // 向父组件传递选中的用户
+      this.$emit('confirm', this.selectedUsers)
       this.handleClose()
     },
-    
+
+    // 关闭弹框
     handleClose() {
-      this.dialogVisible = false
+      this.$emit('update:visible', false)
       this.$emit('close')
     }
   }
 }
 </script>
 
-<style scoped>
-.search-container {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
+<style lang="scss" scoped>
+.user-selector-dialog {
+  .user-selector {
+    .search-container {
+      margin-bottom: 20px;
+      
+      .search-input {
+        width: 300px;
+      }
+    }
+
+    .user-list-container {
+      max-height: 400px;
+      overflow-y: auto;
+      
+      .selected-row {
+        background-color: #e6f7ff !important;
+        border-left: 4px solid #1890ff !important;
+        
+        &:hover {
+          background-color: #bae7ff !important;
+        }
+      }
+      
+      // 增强选中行的视觉效果
+      .el-table__row.selected-row {
+        td {
+          background-color: #e6f7ff !important;
+        }
+        
+        &:hover td {
+          background-color: #bae7ff !important;
+        }
+      }
+    }
+
+    .pagination-container {
+      margin-top: 20px;
+      text-align: right;
+    }
+
+    .selected-users {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      
+      .selected-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        font-weight: 500;
+        color: #606266;
+      }
+      
+      .selected-tags {
+        .el-tag {
+          margin-right: 8px;
+          margin-bottom: 8px;
+        }
+      }
+    }
+  }
+
+  .dialog-footer {
+    text-align: right;
+  }
 }
 
-.selected-users {
-  margin-top: 20px;
-  padding: 15px;
-  background: #f5f7fa;
-  border-radius: 4px;
-}
-
-.selected-users h4 {
-  margin: 0 0 10px 0;
-  color: #606266;
-  font-size: 14px;
-}
-
-.dialog-footer {
-  text-align: right;
+// 全局样式
+:deep(.selected-row) {
+  background-color: #e6f7ff !important;
+  border-left: 4px solid #1890ff !important;
+  
+  &:hover {
+    background-color: #bae7ff !important;
+  }
+  
+  td {
+    background-color: #e6f7ff !important;
+  }
 }
 </style> 
