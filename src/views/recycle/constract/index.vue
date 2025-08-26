@@ -128,7 +128,7 @@
                     <el-col :span="12">
                         <el-form-item label="合同文件" prop="file">
                             <FileUploader
-                                v-model="form.file"
+                                v-model="form.filePath"
                                 :multiple="false"
                                 :limit="1"
                                 accept=".pdf"
@@ -143,11 +143,41 @@
                 <el-divider content-position="center">合作方信息</el-divider>
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item label="合作方" prop="partner">
-                            <el-input v-model="form.partnerName" placeholder="请选择合作方" readonly
-                                @click="showPartnerSelector">
-                                <el-button slot="append" icon="el-icon-search" @click="showPartnerSelector"></el-button>
+                        <el-form-item label="甲方" prop="partyA">
+                            <el-input v-model="form.partyA" placeholder="请选择甲方" readonly
+                                @click="showPartyASelector">
+                                <el-button slot="append" icon="el-icon-search" @click="showPartyASelector"></el-button>
                             </el-input>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="乙方" prop="partyB">
+                            <el-input v-model="form.partyB" placeholder="请选择乙方" readonly
+                                @click="showPartyBSelector">
+                                <el-button slot="append" icon="el-icon-search" @click="showPartyBSelector"></el-button>
+                            </el-input>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="合作方" prop="partner">
+                            <el-select 
+                                v-model="form.partner" 
+                                placeholder="请从甲方或乙方中选择合作方" 
+                                style="width: 100%;"
+                                :disabled="!form.partyA && !form.partyB"
+                                @change="handlePartnerChange"
+                            >
+                                <el-option 
+                                    v-if="form.partyA" 
+                                    :label="`甲方：${form.partyA}`" 
+                                    :value="form.partyA"
+                                />
+                                <el-option 
+                                    v-if="form.partyB" 
+                                    :label="`乙方：${form.partyB}`" 
+                                    :value="form.partyB"
+                                />
+                            </el-select>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -270,13 +300,19 @@
             </el-dialog>
         </el-dialog>
 
-        <!-- 人员选择器 -->
-        <UserSelector :visible.sync="partnerSelectorVisible" title="选择合作方" :multiple="false"
-            @confirm="handlePartnerConfirm" @close="handlePartnerClose" />
+
 
         <!-- 搜索合作方选择器 -->
         <UserSelector :visible.sync="searchPartnerSelectorVisible" title="选择搜索合作方" :multiple="false"
             @confirm="handleSearchPartnerConfirm" @close="handleSearchPartnerClose" />
+
+        <!-- 甲方选择器 -->
+        <UserSelector :visible.sync="partyASelectorVisible" title="选择甲方" :multiple="false"
+            @confirm="handlePartyAConfirm" @close="handlePartyAClose" />
+
+        <!-- 乙方选择器 -->
+        <UserSelector :visible.sync="partyBSelectorVisible" title="选择乙方" :multiple="false"
+            @confirm="handlePartyBConfirm" @close="handlePartyBClose" />
 
         <!-- 经营范围选择器 -->
         <BusinessScopeSelector 
@@ -347,7 +383,11 @@ export default {
             form: {
                 name: '',
                 type: '',
-                partner: '', // 合作方ID
+                partyA: '', // 甲方
+                partyAName: '', // 甲方名称
+                partyB: '', // 乙方
+                partyBName: '', // 乙方名称
+                partner: '', // 合作方（从甲方或乙方中选择）
                 partnerName: '', // 合作方名称
                 startTime: '',
                 endTime: '',
@@ -380,8 +420,11 @@ export default {
             submitLoading: false,
             itemSubmitLoading: false,
             // 人员选择器控制
-            partnerSelectorVisible: false,
             searchPartnerSelectorVisible: false,
+            // 甲方选择器控制
+            partyASelectorVisible: false,
+            // 乙方选择器控制
+            partyBSelectorVisible: false,
             // 经营范围选择器控制
             businessScopeSelectorVisible: false,
             // 日期选择器配置
@@ -394,7 +437,9 @@ export default {
             rules: {
                 name: [{ required: true, message: '请输入合同名称', trigger: 'blur' }],
                 type: [{ required: true, message: '请选择合同类型', trigger: 'change' }],
-                partnerName: [{ required: true, message: '请选择合作方', trigger: 'change' }],
+                partyA: [{ required: true, message: '请选择甲方', trigger: 'change' }],
+                partyB: [{ required: true, message: '请选择乙方', trigger: 'change' }],
+                partner: [{ required: true, message: '请选择合作方', trigger: 'change' }],
                 startTime: [{ required: true, message: '请选择起始时间', trigger: 'change' }],
                 endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
                 totalAmount: [
@@ -476,7 +521,11 @@ export default {
                 this.form = {
                     name: '',
                     type: '',
-                    partner: '', // 合作方ID
+                    partyA: '', // 甲方
+                    partyAName: '', // 甲方名称
+                    partyB: '', // 乙方
+                    partyBName: '', // 乙方名称
+                    partner: '', // 合作方（从甲方或乙方中选择）
                     partnerName: '', // 合作方名称
                     startTime: '',
                     endTime: '',
@@ -499,6 +548,15 @@ export default {
             // 确保合作方名称字段存在
             if (this.form.partner && !this.form.partnerName) {
                 this.form.partnerName = this.form.partner
+            }
+            // 确保甲方和乙方字段存在
+            if (!this.form.partyA) {
+                this.form.partyA = ''
+                this.form.partyAName = ''
+            }
+            if (!this.form.partyB) {
+                this.form.partyB = ''
+                this.form.partyBName = ''
             }
             this.dialogVisible = true
         },
@@ -762,24 +820,13 @@ export default {
             this.$refs.form && this.$refs.form.resetFields()
         },
 
-        // 显示合作方选择器
-        showPartnerSelector() {
-            this.partnerSelectorVisible = true
-        },
-
-        // 合作方选择确认
-        handlePartnerConfirm(users) {
-            if (users && users.length > 0) {
-                const user = users[0] // 单选模式，取第一个用户
-                this.form.partner = user.nickname
-                this.form.partnerName = user.nickname || user.username
+        // 合作方选择变化
+        handlePartnerChange(value) {
+            if (value === this.form.partyA) {
+                this.form.partnerName = this.form.partyAName
+            } else if (value === this.form.partyB) {
+                this.form.partnerName = this.form.partyBName
             }
-            this.partnerSelectorVisible = false
-        },
-
-        // 合作方选择器关闭
-        handlePartnerClose() {
-            this.partnerSelectorVisible = false
         },
 
         // 显示搜索合作方选择器
@@ -800,6 +847,72 @@ export default {
         // 搜索合作方选择器关闭
         handleSearchPartnerClose() {
             this.searchPartnerSelectorVisible = false
+        },
+
+        // 显示甲方选择器
+        showPartyASelector() {
+            this.partyASelectorVisible = true
+        },
+
+        // 甲方选择确认
+        handlePartyAConfirm(users) {
+            if (users && users.length > 0) {
+                const user = users[0] // 单选模式，取第一个用户
+                this.form.partyA = user.nickname
+                this.form.partyAName = user.nickname || user.username
+                // 如果当前选择的合作方是甲方，则更新合作方名称
+                if (this.form.partner === this.form.partyA) {
+                    this.form.partnerName = this.form.partyAName
+                }
+            } else {
+                // 如果没有选择用户，清空甲方信息
+                this.form.partyA = ''
+                this.form.partyAName = ''
+                // 如果当前选择的合作方是甲方，则清空合作方选择
+                if (this.form.partner === this.form.partyA) {
+                    this.form.partner = ''
+                    this.form.partnerName = ''
+                }
+            }
+            this.partyASelectorVisible = false
+        },
+
+        // 甲方选择器关闭
+        handlePartyAClose() {
+            this.partyASelectorVisible = false
+        },
+
+        // 显示乙方选择器
+        showPartyBSelector() {
+            this.partyBSelectorVisible = true
+        },
+
+        // 乙方选择确认
+        handlePartyBConfirm(users) {
+            if (users && users.length > 0) {
+                const user = users[0] // 单选模式，取第一个用户
+                this.form.partyB = user.nickname
+                this.form.partyBName = user.nickname || user.username
+                // 如果当前选择的合作方是乙方，则更新合作方名称
+                if (this.form.partner === this.form.partyB) {
+                    this.form.partnerName = this.form.partyBName
+                }
+            } else {
+                // 如果没有选择用户，清空乙方信息
+                this.form.partyB = ''
+                this.form.partyBName = ''
+                // 如果当前选择的合作方是乙方，则清空合作方选择
+                if (this.form.partner === this.form.partyB) {
+                    this.form.partner = ''
+                    this.form.partnerName = ''
+                }
+            }
+            this.partyBSelectorVisible = false
+        },
+
+        // 乙方选择器关闭
+        handlePartyBClose() {
+            this.partyBSelectorVisible = false
         },
 
         // 下载文件
@@ -933,6 +1046,8 @@ export default {
 .dialog-footer {
     text-align: right;
 }
+
+
 
 // 响应式设计
 @media (max-width: 768px) {
