@@ -2,8 +2,8 @@
   <div class="app-container">
     <!-- 搜索表单 -->
     <el-form :inline="true" :model="searchForm" class="demo-form-inline" @submit.native.prevent>
-      <el-form-item label="账号">
-        <el-input v-model="searchForm.accountId" placeholder="请输入账号" />
+      <el-form-item label="账号名称">
+        <el-input v-model="searchForm.accountName" placeholder="请输入账号名称" />
       </el-form-item>
       <el-form-item label="编号">
         <el-input v-model="searchForm.no" placeholder="请输入编号" />
@@ -30,9 +30,9 @@
       highlight-current-row
       style="margin-top: 20px;"
     >
-      <el-table-column label="ID" prop="id" width="120" align="center" />
-      <el-table-column label="账号" prop="accountId" width="150" />
-      <el-table-column label="编号" prop="no" width="120" />
+    <el-table-column label="编号" prop="no" width="120" />
+      <el-table-column label="账号名称" prop="accountName" width="150" />
+      
       <el-table-column label="经办人姓名" prop="name" width="120" />
       <el-table-column label="手机号" prop="phone" width="150" />
       <el-table-column label="身份证号" prop="idCard" width="200" />
@@ -60,84 +60,73 @@
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="700px">
       <el-form :model="form" :rules="rules" ref="form" label-width="100px">
-        <!-- 基本信息 -->
-        <div class="form-section">
-          <div class="section-title">
-            <i class="el-icon-user"></i>
-            <span>基本信息</span>
+        <el-form-item label="账号名称" prop="accountName">
+          <div style="display: flex; align-items: center;">
+            <el-input 
+              v-model="form.accountName" 
+              placeholder="请选择用户账号" 
+              readonly
+              style="flex: 1; margin-right: 10px;"
+            />
+            <el-button type="primary" @click="showUserSelector">选择用户</el-button>
           </div>
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="账号" prop="accountId">
-                <el-input v-model="form.accountId" placeholder="请输入账号" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="编号" prop="no">
-                <el-input v-model="form.no" placeholder="请输入编号" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="经办人姓名" prop="name">
-                <el-input v-model="form.name" placeholder="请输入经办人姓名" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="手机号" prop="phone">
-                <el-input v-model="form.phone" placeholder="请输入手机号" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </div>
-
-        <!-- 身份信息 -->
-        <div class="form-section">
-          <div class="section-title">
-            <i class="el-icon-identity"></i>
-            <span>身份信息</span>
+          <div v-if="selectedUser" style="margin-top: 8px; color: #666; font-size: 12px;">
+            已选择：{{ selectedUser.nickname }} ({{ selectedUser.username }})
           </div>
-          <el-row :gutter="20">
-            <el-col :span="24">
-              <el-form-item label="身份证号" prop="idCard">
-                <el-input v-model="form.idCard" placeholder="请输入身份证号" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20">
-            <el-col :span="24">
-              <el-form-item label="住址" prop="address">
-                <el-input 
-                  v-model="form.address" 
-                  type="textarea" 
-                  :rows="3"
-                  placeholder="请输入详细住址" 
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </div>
+        </el-form-item>
+        <el-form-item label="编号" prop="no">
+          <el-input v-model="form.no" placeholder="请输入编号" />
+        </el-form-item>
+        <el-form-item label="经办人姓名" prop="name">
+          <el-input v-model="form.name" placeholder="请输入经办人姓名" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="form.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="身份证号" prop="idCard">
+          <el-input v-model="form.idCard" placeholder="请输入身份证号" />
+        </el-form-item>
+        <el-form-item label="住址" prop="address">
+          <el-input 
+            v-model="form.address" 
+            type="textarea" 
+            :rows="3"
+            placeholder="请输入详细住址" 
+          />
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="handleSave">确 定</el-button>
       </div>
     </el-dialog>
+
+    <!-- 用户选择器 -->
+    <UserSelector
+      :visible.sync="userSelectorVisible"
+      title="选择用户账号"
+      :multiple="false"
+      @confirm="handleUserConfirm"
+      @close="handleUserSelectorClose"
+    />
   </div>
 </template>
 
 <script>
 import { getAgentPage, addAgent, updateAgent, deleteAgent } from '@/api/agent'
+import UserSelector from '@/components/UserSelector'
 
 export default {
   name: 'AgentManagement',
+  components: {
+    UserSelector
+  },
   data() {
     return {
       list: [],
       listLoading: false,
       searchForm: {
-        accountId: '',
+        accountName: '',
         no: '',
         name: '',
         phone: ''
@@ -146,13 +135,16 @@ export default {
       dialogTitle: '新增经办人',
       form: {
         id: null,
-        accountId: '',
+        accountName: '',
         no: '',
         name: '',
         phone: '',
         idCard: '',
         address: ''
       },
+      // 用户选择器相关
+      userSelectorVisible: false,
+      selectedUser: null,
       pagination: {
         page: 1,
         size: 10,
@@ -160,8 +152,7 @@ export default {
       },
       rules: {
         accountId: [
-          { required: true, message: '请输入账号', trigger: 'blur' },
-          { min: 3, max: 50, message: '账号长度在 3 到 50 个字符', trigger: 'blur' }
+          { required: true, message: '请选择账号', trigger: 'change' }
         ],
         no: [
           { required: true, message: '请输入编号', trigger: 'blur' }
@@ -192,7 +183,7 @@ export default {
     fetchData() {
       this.listLoading = true
       const params = {
-        accountId: this.searchForm.accountId || undefined,
+        accountName: this.searchForm.accountName || undefined,
         no: this.searchForm.no || undefined,
         name: this.searchForm.name || undefined,
         phone: this.searchForm.phone || undefined,
@@ -212,7 +203,7 @@ export default {
       this.fetchData()
     },
     handleReset() {
-      this.searchForm = { accountId: '', no: '', name: '', phone: '' }
+      this.searchForm = { accountName: '', no: '', name: '', phone: '' }
       this.pagination.page = 1
       this.fetchData()
     },
@@ -220,18 +211,26 @@ export default {
       this.dialogTitle = '新增经办人'
       this.form = {
         id: null,
-        accountId: '',
+        accountName: '',
         no: '',
         name: '',
         phone: '',
         idCard: '',
         address: ''
       }
+      this.selectedUser = null
       this.dialogVisible = true
     },
     handleEdit(row) {
       this.dialogTitle = '编辑经办人'
       this.form = { ...row }
+      // 如果有账号信息，需要查找对应的用户信息
+      if (row.accountId) {
+        // 这里可以根据accountId查找用户信息，暂时设置为null
+        this.selectedUser = null
+      } else {
+        this.selectedUser = null
+      }
       this.dialogVisible = true
     },
     handleDelete(row) {
@@ -279,6 +278,21 @@ export default {
     handleCurrentChange(val) {
       this.pagination.page = val
       this.fetchData()
+    },
+    showUserSelector() {
+      this.userSelectorVisible = true
+    },
+    handleUserConfirm(users) {
+      if (users && users.length > 0) {
+        const user = users[0]
+        this.selectedUser = user
+        this.form.accountName = user.nickname
+        this.form.accountId = user.id
+        this.$message.success(`已选择用户：${user.nickname}`)
+      }
+    },
+    handleUserSelectorClose() {
+      this.userSelectorVisible = false
     }
   }
 }
@@ -287,75 +301,5 @@ export default {
 <style scoped>
 .demo-form-inline .el-form-item {
   margin-right: 20px;
-}
-
-/* 表单分组样式 */
-.form-section {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: #fafafa;
-  border-radius: 8px;
-  border: 1px solid #e8e8e8;
-}
-
-.form-section:last-child {
-  margin-bottom: 0;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #409eff;
-  font-size: 16px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.section-title i {
-  margin-right: 8px;
-  font-size: 18px;
-  color: #409eff;
-}
-
-.section-title span {
-  position: relative;
-}
-
-.section-title span::after {
-  content: '';
-  position: absolute;
-  bottom: -14px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: #409eff;
-}
-
-/* 表单项间距优化 */
-.form-section .el-form-item {
-  margin-bottom: 18px;
-}
-
-.form-section .el-row {
-  margin-bottom: 0;
-}
-
-/* 弹窗内容区域滚动 */
-.el-dialog__body {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-/* 响应式优化 */
-@media (max-width: 768px) {
-  .form-section {
-    padding: 15px;
-  }
-  
-  .el-col {
-    margin-bottom: 10px;
-  }
 }
 </style> 

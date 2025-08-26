@@ -4,6 +4,7 @@
     :visible.sync="visible"
     :width="width"
     :before-close="handleClose"
+    append-to-body
     class="contract-selector-dialog"
   >
     <div class="contract-selector">
@@ -403,6 +404,9 @@ export default {
 
 <style lang="scss" scoped>
 .contract-selector-dialog {
+  // 确保合同选择器弹窗在最顶层
+  z-index: 3000 !important;
+  
   .contract-selector {
     .search-input {
       width: 200px;

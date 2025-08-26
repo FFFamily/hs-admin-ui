@@ -9,14 +9,15 @@
     </el-form>
 
     <el-table :data="list" v-loading="listLoading" border fit highlight-current-row style="margin-top: 20px;">
-      <el-table-column prop="no" label="编号" width="180" />
-      <el-table-column prop="contractId" label="合同ID" width="220" />
-      <el-table-column prop="initialBalance" label="初始余额" width="140">
-        <template slot-scope="scope">¥{{ formatAmount(scope.row.initialBalance) }}</template>
-      </el-table-column>
+      <el-table-column prop="no" label="资金池编号" width="180" />
+      <el-table-column prop="contractId" label="合同编号" width="220" />
+      <el-table-column prop="contractName" label="合同名称" width="140" />
+      <el-table-column prop="partner" label="合作方" width="140" />
+      <el-table-column prop="contractName" label="合同类型" width="140" />
+      <el-table-column prop="fundPoolDirection" label="资金池方向" width="140" />
       <el-table-column prop="balance" label="当前余额" width="140">
         <template slot-scope="scope">¥{{ formatAmount(scope.row.balance) }}</template>
-      </el-table-column>
+      </el-table-column> 
       <el-table-column label="操作" width="260" align="center">
         <template slot-scope="scope">
           <el-button size="mini" @click="handleViewDetail(scope.row)">明细</el-button>
@@ -38,31 +39,87 @@
     />
 
     <!-- 新增/编辑资金池 -->
-    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px">
-      <el-form :model="form" :rules="rules" ref="form" label-width="120px">
-        <el-row :gutter="16">
-          <el-col :span="24">
-            <el-form-item label="编号" prop="no">
-              <el-input v-model="form.no" placeholder="请输入编号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="合同ID" prop="contractId">
-              <el-input v-model="form.contractId" placeholder="请输入合同ID" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="初始余额" prop="initialBalance">
-              <el-input-number v-model="form.initialBalance" :min="0" :precision="2" style="width:100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="700px">
+      <el-form :model="form" :rules="rules" ref="form" label-width="140px">
+        <!-- 基本信息 -->
+        <div class="form-section">
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="编号" prop="no">
+                <el-input v-model="form.no" placeholder="请输入编号" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="合同编号" prop="contractNo">
+                <el-input v-model="form.contractNo" placeholder="请选择合同" readonly @focus="openContractSelector">
+                  <el-button slot="append" icon="el-icon-search" @click="openContractSelector">选择</el-button>
+                </el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="合同名称" prop="contractName">
+                <el-input v-model="form.contractName" placeholder="请输入合同名称" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="合作方" prop="partner">
+                <el-input v-model="form.partner" placeholder="请输入合作方" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <!-- 分割线 -->
+
+        <!-- 资金池信息 -->
+        <div class="form-section">
+          <el-row :gutter="1">
+            <el-col :span="12">
+              <el-form-item label="资金池方向" prop="fundPoolDirection">
+                <el-select v-model="form.fundPoolDirection" placeholder="请选择资金池方向" style="width: 100%;">
+                  <el-option label="收款" value="收款" />
+                  <el-option label="付款" value="付款" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="初始金额" prop="initialAmount">
+                <el-input-number 
+                  v-model="form.initialAmount" 
+                  :min="0" 
+                  :precision="2" 
+                  style="width: 100%;" 
+                  placeholder="请输入初始金额"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="24">
+              <el-form-item label="初始余额凭证" prop="initialBalanceVoucher">
+                <el-input 
+                  v-model="form.initialBalanceVoucher" 
+                  type="textarea" 
+                  :rows="3"
+                  placeholder="请输入初始余额凭证" 
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="handleSave">{{ form.id ? '更新' : '添加' }}</el-button>
       </div>
     </el-dialog>
+
+    <!-- 合同选择器 -->
+    <contract-selector
+      :visible.sync="contractSelectorVisible"
+      title="选择合同"
+      :multiple="false"
+      :show-pagination="true"
+      @confirm="handleContractConfirm"
+    />
 
     <!-- 资金池明细 -->
     <el-dialog title="资金池明细" :visible.sync="detailVisible" width="900px">
@@ -95,9 +152,11 @@
 
 <script>
 import { getCapitalPoolPage, createCapitalPool, updateCapitalPool, deleteCapitalPool, getCapitalPoolDetails } from '@/api/capitalPool'
+import ContractSelector from '@/components/ContractSelector'
 
 export default {
   name: 'CapitalPool',
+  components: { ContractSelector },
   data() {
     return {
       list: [],
@@ -116,18 +175,27 @@ export default {
       form: {
         id: null,
         no: '',
-        contractId: '',
-        initialBalance: 0
+        contractNo: '',
+        contractName: '',
+        partner: '',
+        fundPoolDirection: '',
+        initialAmount: 0,
+        initialBalanceVoucher: ''
       },
       rules: {
         no: [{ required: true, message: '请输入编号', trigger: 'blur' }],
-        contractId: [{ required: true, message: '请输入合同ID', trigger: 'blur' }],
-        initialBalance: [{ required: true, message: '请输入初始余额', trigger: 'blur' }]
+        contractNo: [{ required: true, message: '请输入合同编号', trigger: 'blur' }],
+        contractName: [{ required: true, message: '请输入合同名称', trigger: 'blur' }],
+        partner: [{ required: true, message: '请输入合作方', trigger: 'blur' }],
+        fundPoolDirection: [{ required: true, message: '请选择资金池方向', trigger: 'change' }],
+        initialAmount: [{ required: true, message: '请输入初始金额', trigger: 'blur' }],
+        initialBalanceVoucher: [{ required: true, message: '请输入初始余额凭证', trigger: 'blur' }]
       },
       detailVisible: false,
       detailsLoading: false,
       details: [],
-      currentPool: null
+      currentPool: null,
+      contractSelectorVisible: false
     }
   },
   created() {
@@ -164,13 +232,33 @@ export default {
     },
     handleAdd() {
       this.dialogTitle = '新增资金池'
-      this.form = { id: null, no: '', contractId: '', initialBalance: 0 }
+      this.form = { 
+        id: null, 
+        no: '', 
+        contractNo: '', 
+        contractName: '', 
+        partner: '', 
+        fundPoolDirection: '', 
+        initialAmount: 0, 
+        initialBalanceVoucher: '' 
+      }
       this.dialogVisible = true
     },
     handleEdit(row) {
       this.dialogTitle = '编辑资金池'
       this.form = { ...row }
       this.dialogVisible = true
+    },
+    openContractSelector() {
+      this.contractSelectorVisible = true
+    },
+    handleContractConfirm(selected) {
+      const contract = Array.isArray(selected) ? selected[0] : selected
+      if (!contract) return
+      this.form.contractNo = contract.no || contract.contractNo || ''
+      this.form.contractName = contract.name || contract.contractName || ''
+      this.form.partner = contract.partner || ''
+      this.contractSelectorVisible = false
     },
     handleDelete(row) {
       this.$confirm('确定要删除该资金池吗？', '提示', { type: 'warning' })
@@ -218,6 +306,19 @@ export default {
 <style scoped>
 .app-container {
   padding: 20px;
+}
+
+
+.el-divider {
+  margin: 24px 0 16px 0;
+}
+
+.el-divider__text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #606266;
+  background-color: #f5f7fa;
+  padding: 0 16px;
 }
 </style>
 

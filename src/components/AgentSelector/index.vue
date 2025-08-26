@@ -4,15 +4,16 @@
     :visible.sync="visible"
     :width="width"
     :before-close="handleClose"
-    class="user-selector-dialog"
+    append-to-body
+    class="agent-selector-dialog"
   >
-    <div class="user-selector">
+    <div class="agent-selector">
       <!-- 搜索区域 -->
       <el-form :inline="true" :model="searchForm" ref="searchFormRef">
-        <el-form-item label="用户账号" prop="username">
+        <el-form-item label="编号" prop="no">
           <el-input
             v-model="searchKeyword"
-            placeholder="请输入用户账号、昵称搜索"
+            placeholder="请输入编号搜索"
             class="search-input"
             clearable
             @input="handleSearch"
@@ -20,10 +21,21 @@
             <i slot="prefix" class="el-input__icon el-icon-search"></i>
           </el-input>
         </el-form-item>
-        <el-form-item label="用户名称" prop="nickname">
+        <el-form-item label="经办人姓名" prop="name">
           <el-input
             v-model="searchKeyword"
-            placeholder="请输入用户名称搜索"
+            placeholder="请输入经办人姓名搜索"
+            class="search-input"
+            clearable
+            @input="handleSearch"
+          >
+            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="请输入手机号搜索"
             class="search-input"
             clearable
             @input="handleSearch"
@@ -33,48 +45,41 @@
         </el-form-item>
       </el-form>
 
-      <!-- 用户列表 -->
-        <el-table
-          :data="filteredUserList"
-          style="width: 100%"
-          highlight-current-row
-          border
-          @selection-change="handleSelectionChange"
-          @row-click="handleRowClick"
-          :row-class-name="getRowClassName"
-        >
-          <!-- 多选列 -->
-          <el-table-column
-            v-if="multiple"
-            type="selection"
-            width="55"
-            :selectable="isSelectable"
-          />
-          
-          <!-- 用户账号列 -->
-          <el-table-column prop="username" label="用户账号" min-width="120" />
-          
-          <!-- 用户名称列 -->
-          <el-table-column prop="nickname" label="用户名称" min-width="120" />
-          
-          <!-- 用户类型列 -->
-          <el-table-column prop="useType" label="用户类型" width="100" align="center">
-            <template slot-scope="scope">
-              <el-tag :type="scope.row.type === 'person' ? 'primary' : 'success'" size="mini">
-                {{ useTypeText(scope.row.type) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          
-          <!-- 状态列 -->
-          <el-table-column prop="status" label="状态" width="80" align="center">
-            <template slot-scope="scope">
-              <el-tag :type="scope.row.status === 'use' ? 'success' : 'danger'" size="mini">
-                {{ statusText(scope.row.status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
+      <!-- 经办人列表 -->
+      <el-table
+        :data="filteredAgentList"
+        style="width: 100%"
+        highlight-current-row
+        border
+        @selection-change="handleSelectionChange"
+        @row-click="handleRowClick"
+        :row-class-name="getRowClassName"
+        v-loading="loading"
+      >
+        <!-- 多选列 -->
+        <el-table-column
+          v-if="multiple"
+          type="selection"
+          width="55"
+          :selectable="isSelectable"
+        />
+        
+        <!-- 编号列 -->
+        <el-table-column prop="no" label="编号" min-width="120" />
+        
+        <!-- 账号名称列 -->
+        <el-table-column prop="accountName" label="账号名称" min-width="120" />
+        
+        <!-- 经办人姓名列 -->
+        <el-table-column prop="name" label="经办人姓名" min-width="120" />
+        
+        <!-- 手机号列 -->
+        <el-table-column prop="phone" label="手机号" min-width="120" />
+        
+        <!-- 身份证号列 -->
+        <el-table-column prop="idCard" label="身份证号" min-width="150" show-overflow-tooltip />
+      </el-table>
+
       <!-- 分页 -->
       <div class="pagination-container" v-if="showPagination">
         <el-pagination
@@ -87,21 +92,21 @@
         />
       </div>
 
-      <!-- 已选择用户展示 -->
-      <div class="selected-users" v-if="multiple && selectedUsers.length > 0">
+      <!-- 已选择经办人展示 -->
+      <div class="selected-agents" v-if="multiple && selectedAgents.length > 0">
         <div class="selected-title">
-          <span>已选择用户 ({{ selectedUsers.length }})：</span>
+          <span>已选择经办人 ({{ selectedAgents.length }})：</span>
           <el-button type="text" @click="clearSelection">清空选择</el-button>
         </div>
         <div class="selected-tags">
           <el-tag
-            v-for="user in selectedUsers"
-            :key="user.id"
+            v-for="agent in selectedAgents"
+            :key="agent.id"
             closable
-            @close="removeUser(user)"
+            @close="removeAgent(agent)"
             style="margin-right: 8px; margin-bottom: 8px;"
           >
-            {{ user.username }} - {{ user.nickname }}
+            {{ agent.name }} - {{ agent.no }}
           </el-tag>
         </div>
       </div>
@@ -117,10 +122,10 @@
 </template>
 
 <script>
-import { getUserPage } from '@/api/user'
+import { getAgentPage } from '@/api/agent'
 
 export default {
-  name: 'UserSelector',
+  name: 'AgentSelector',
   props: {
     // 弹框是否可见
     visible: {
@@ -130,12 +135,12 @@ export default {
     // 弹框标题
     title: {
       type: String,
-      default: '选择用户'
+      default: '选择经办人'
     },
     // 弹框宽度
     width: {
       type: String,
-      default: '800px'
+      default: '900px'
     },
     // 是否多选
     multiple: {
@@ -150,43 +155,42 @@ export default {
     // 每页显示数量
     pageSize: {
       type: Number,
-      default: 5
+      default: 10
     },
-    // 默认选中的用户ID数组
+    // 默认选中的经办人ID数组
     defaultSelected: {
       type: Array,
       default: () => []
     },
-    // 禁用的用户ID数组
-    disabledUsers: {
+    // 禁用的经办人ID数组
+    disabledAgents: {
       type: Array,
       default: () => []
     }
   },
   data() {
     return {
-      userList: [],
-      filteredUserList: [],
-      selectedUsers: [],
+      agentList: [],
+      filteredAgentList: [],
+      selectedAgents: [],
       searchKeyword: '',
       currentPage: 1,
       total: 0,
       searchForm: {},
-      loading: false,
-      defaultAvatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+      loading: false
     }
   },
   computed: {
     canConfirm() {
       if (this.multiple) {
-        return this.selectedUsers.length > 0
+        return this.selectedAgents.length > 0
       } else {
-        return this.selectedUsers.length === 1
+        return this.selectedAgents.length === 1
       }
     },
     confirmText() {
       if (this.multiple) {
-        return `确定选择 (${this.selectedUsers.length})`
+        return `确定选择 (${this.selectedAgents.length})`
       } else {
         return '确定选择'
       }
@@ -200,7 +204,7 @@ export default {
     },
     defaultSelected: {
       handler(newVal) {
-        this.selectedUsers = [...newVal]
+        this.selectedAgents = [...newVal]
       },
       immediate: true
     }
@@ -210,27 +214,27 @@ export default {
     async initData() {
       this.searchKeyword = ''
       this.currentPage = 1
-      await this.fetchUserList()
+      await this.fetchAgentList()
     },
 
-    // 获取用户列表
-    async fetchUserList() {
+    // 获取经办人列表
+    async fetchAgentList() {
       this.loading = true
       try {
         const params = {
-          pageNum: this.currentPage,
-          pageSize: this.pageSize
+          page: this.currentPage,
+          size: this.pageSize
         }
         
-        const response = await getUserPage(params)
+        const response = await getAgentPage(params)
         if (response && response.data) {
-          this.userList = response.data.records || []
+          this.agentList = response.data.records || response.data || []
           this.total = response.data.total || 0
         }
-        this.filteredUserList = [...this.userList]
+        this.filteredAgentList = [...this.agentList]
       } catch (error) {
-        console.error('获取用户列表失败:', error)
-        this.$message.error('获取用户列表失败')
+        console.error('获取经办人列表失败:', error)
+        this.$message.error('获取经办人列表失败')
       } finally {
         this.loading = false
       }
@@ -239,27 +243,28 @@ export default {
     // 搜索处理
     handleSearch() {
       if (!this.searchKeyword.trim()) {
-        this.filteredUserList = [...this.userList]
+        this.filteredAgentList = [...this.agentList]
         return
       }
       
       const keyword = this.searchKeyword.toLowerCase()
-      this.filteredUserList = this.userList.filter(user => 
-        (user.username && user.username.toLowerCase().includes(keyword)) ||
-        (user.nickname && user.nickname.toLowerCase().includes(keyword)) ||
-        (user.city && user.city.toLowerCase().includes(keyword))
+      this.filteredAgentList = this.agentList.filter(agent => 
+        (agent.no && agent.no.toLowerCase().includes(keyword)) ||
+        (agent.name && agent.name.toLowerCase().includes(keyword)) ||
+        (agent.phone && agent.phone.includes(keyword)) ||
+        (agent.accountName && agent.accountName.toLowerCase().includes(keyword))
       )
     },
 
     // 分页处理
     handlePageChange(page) {
       this.currentPage = page
-      this.fetchUserList()
+      this.fetchAgentList()
     },
 
     // 选择变化处理
     handleSelectionChange(selection) {
-      this.selectedUsers = selection
+      this.selectedAgents = selection
     },
 
     // 行点击处理（单选模式）
@@ -267,58 +272,44 @@ export default {
       if (this.multiple) return
       
       // 单选模式，直接选择该行
-      this.selectedUsers = [row]
+      this.selectedAgents = [row]
     },
 
     // 获取行样式类名
     getRowClassName({ row }) {
-      if (this.selectedUsers.some(user => user.id === row.id)) {
+      if (this.selectedAgents.some(agent => agent.id === row.id)) {
         return 'selected-row'
       }
       return ''
     },
 
-    // 判断用户是否可选
+    // 判断经办人是否可选
     isSelectable(row) {
-      return !this.disabledUsers.includes(row.id)
+      return !this.disabledAgents.includes(row.id)
     },
 
-    // 移除已选择的用户
-    removeUser(user) {
-      const index = this.selectedUsers.findIndex(u => u.id === user.id)
+    // 移除已选择的经办人
+    removeAgent(agent) {
+      const index = this.selectedAgents.findIndex(a => a.id === agent.id)
       if (index > -1) {
-        this.selectedUsers.splice(index, 1)
+        this.selectedAgents.splice(index, 1)
       }
     },
 
     // 清空选择
     clearSelection() {
-      this.selectedUsers = []
-    },
-
-    // 用户类型文本转换
-    useTypeText(useType) {
-      if (useType === 'person') return '用户'
-      if (useType === 'company') return '企业'
-      return '未知'
-    },
-
-    // 状态文本转换
-    statusText(status) {
-      if (status === 'use') return '正常'
-      if (status === 'disable') return '禁用'
-      return '未知'
+      this.selectedAgents = []
     },
 
     // 确认选择
     handleConfirm() {
-      if (this.selectedUsers.length === 0) {
-        this.$message.warning('请至少选择一个用户')
+      if (this.selectedAgents.length === 0) {
+        this.$message.warning('请至少选择一个经办人')
         return
       }
 
-      // 向父组件传递选中的用户
-      this.$emit('confirm', this.selectedUsers)
+      // 向父组件传递选中的经办人
+      this.$emit('confirm', this.selectedAgents)
       this.handleClose()
     },
 
@@ -332,11 +323,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.user-selector-dialog {
-  // 确保用户选择器弹窗在最顶层
+.agent-selector-dialog {
+  // 确保经办人选择器弹窗在最顶层
   z-index: 3000 !important;
   
-  .user-selector {
+  .agent-selector {
     .search-container {
       margin-bottom: 20px;
       
@@ -375,7 +366,7 @@ export default {
       text-align: right;
     }
 
-    .selected-users {
+    .selected-agents {
       margin-top: 20px;
       padding: 15px;
       background-color: #f8f9fa;

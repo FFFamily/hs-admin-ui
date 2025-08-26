@@ -4,23 +4,12 @@
     :visible.sync="visible"
     :width="width"
     :before-close="handleClose"
-    class="user-selector-dialog"
+    class="address-selector-dialog"
   >
-    <div class="user-selector">
+    <div class="address-selector">
       <!-- 搜索区域 -->
       <el-form :inline="true" :model="searchForm" ref="searchFormRef">
-        <el-form-item label="用户账号" prop="username">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="请输入用户账号、昵称搜索"
-            class="search-input"
-            clearable
-            @input="handleSearch"
-          >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="用户名称" prop="nickname">
+        <el-form-item label="用户名称" prop="accountName">
           <el-input
             v-model="searchKeyword"
             placeholder="请输入用户名称搜索"
@@ -31,50 +20,73 @@
             <i slot="prefix" class="el-input__icon el-icon-search"></i>
           </el-input>
         </el-form-item>
+        <el-form-item label="地址" prop="realAddress">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="请输入地址搜索"
+            class="search-input"
+            clearable
+            @input="handleSearch"
+          >
+            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="分类" prop="category">
+          <el-select
+            v-model="searchForm.category"
+            placeholder="请选择分类"
+            clearable
+            @change="handleSearch"
+            style="width: 150px;"
+          >
+            <el-option label="家庭地址" value="家庭地址" />
+            <el-option label="工作地址" value="工作地址" />
+            <el-option label="其他地址" value="其他地址" />
+          </el-select>
+        </el-form-item>
       </el-form>
 
-      <!-- 用户列表 -->
-        <el-table
-          :data="filteredUserList"
-          style="width: 100%"
-          highlight-current-row
-          border
-          @selection-change="handleSelectionChange"
-          @row-click="handleRowClick"
-          :row-class-name="getRowClassName"
-        >
-          <!-- 多选列 -->
-          <el-table-column
-            v-if="multiple"
-            type="selection"
-            width="55"
-            :selectable="isSelectable"
-          />
-          
-          <!-- 用户账号列 -->
-          <el-table-column prop="username" label="用户账号" min-width="120" />
-          
-          <!-- 用户名称列 -->
-          <el-table-column prop="nickname" label="用户名称" min-width="120" />
-          
-          <!-- 用户类型列 -->
-          <el-table-column prop="useType" label="用户类型" width="100" align="center">
-            <template slot-scope="scope">
-              <el-tag :type="scope.row.type === 'person' ? 'primary' : 'success'" size="mini">
-                {{ useTypeText(scope.row.type) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          
-          <!-- 状态列 -->
-          <el-table-column prop="status" label="状态" width="80" align="center">
-            <template slot-scope="scope">
-              <el-tag :type="scope.row.status === 'use' ? 'success' : 'danger'" size="mini">
-                {{ statusText(scope.row.status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
+      <!-- 地址列表 -->
+      <el-table
+        :data="filteredAddressList"
+        style="width: 100%"
+        highlight-current-row
+        border
+        @selection-change="handleSelectionChange"
+        @row-click="handleRowClick"
+        :row-class-name="getRowClassName"
+        v-loading="loading"
+      >
+        <!-- 多选列 -->
+        <el-table-column
+          v-if="multiple"
+          type="selection"
+          width="55"
+          :selectable="isSelectable"
+        />
+        
+        <!-- 用户名称列 -->
+        <el-table-column prop="accountName" label="用户名称" min-width="120" />
+        
+        <!-- 分类列 -->
+        <el-table-column prop="category" label="分类" width="100" align="center">
+          <template slot-scope="scope">
+            <el-tag :type="getCategoryTagType(scope.row.category)" size="mini">
+              {{ scope.row.category }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        
+        <!-- 地址列 -->
+        <el-table-column prop="realAddress" label="地址" min-width="200" show-overflow-tooltip />
+        
+        <!-- 备注列 -->
+        <el-table-column prop="remark" label="备注" width="150" show-overflow-tooltip />
+        
+        <!-- 创建时间列 -->
+        <el-table-column prop="createTime" label="创建时间" width="180" />
+      </el-table>
+
       <!-- 分页 -->
       <div class="pagination-container" v-if="showPagination">
         <el-pagination
@@ -87,21 +99,21 @@
         />
       </div>
 
-      <!-- 已选择用户展示 -->
-      <div class="selected-users" v-if="multiple && selectedUsers.length > 0">
+      <!-- 已选择地址展示 -->
+      <div class="selected-addresses" v-if="multiple && selectedAddresses.length > 0">
         <div class="selected-title">
-          <span>已选择用户 ({{ selectedUsers.length }})：</span>
+          <span>已选择地址 ({{ selectedAddresses.length }})：</span>
           <el-button type="text" @click="clearSelection">清空选择</el-button>
         </div>
         <div class="selected-tags">
           <el-tag
-            v-for="user in selectedUsers"
-            :key="user.id"
+            v-for="address in selectedAddresses"
+            :key="address.id"
             closable
-            @close="removeUser(user)"
+            @close="removeAddress(address)"
             style="margin-right: 8px; margin-bottom: 8px;"
           >
-            {{ user.username }} - {{ user.nickname }}
+            {{ address.accountName }} - {{ address.realAddress }}
           </el-tag>
         </div>
       </div>
@@ -117,10 +129,10 @@
 </template>
 
 <script>
-import { getUserPage } from '@/api/user'
+import { getAddressPage } from '@/api/address'
 
 export default {
-  name: 'UserSelector',
+  name: 'AddressSelector',
   props: {
     // 弹框是否可见
     visible: {
@@ -130,12 +142,12 @@ export default {
     // 弹框标题
     title: {
       type: String,
-      default: '选择用户'
+      default: '选择地址'
     },
     // 弹框宽度
     width: {
       type: String,
-      default: '800px'
+      default: '900px'
     },
     // 是否多选
     multiple: {
@@ -150,43 +162,44 @@ export default {
     // 每页显示数量
     pageSize: {
       type: Number,
-      default: 5
+      default: 10
     },
-    // 默认选中的用户ID数组
+    // 默认选中的地址ID数组
     defaultSelected: {
       type: Array,
       default: () => []
     },
-    // 禁用的用户ID数组
-    disabledUsers: {
+    // 禁用的地址ID数组
+    disabledAddresses: {
       type: Array,
       default: () => []
     }
   },
   data() {
     return {
-      userList: [],
-      filteredUserList: [],
-      selectedUsers: [],
+      addressList: [],
+      filteredAddressList: [],
+      selectedAddresses: [],
       searchKeyword: '',
+      searchForm: {
+        category: ''
+      },
       currentPage: 1,
       total: 0,
-      searchForm: {},
-      loading: false,
-      defaultAvatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+      loading: false
     }
   },
   computed: {
     canConfirm() {
       if (this.multiple) {
-        return this.selectedUsers.length > 0
+        return this.selectedAddresses.length > 0
       } else {
-        return this.selectedUsers.length === 1
+        return this.selectedAddresses.length === 1
       }
     },
     confirmText() {
       if (this.multiple) {
-        return `确定选择 (${this.selectedUsers.length})`
+        return `确定选择 (${this.selectedAddresses.length})`
       } else {
         return '确定选择'
       }
@@ -200,7 +213,7 @@ export default {
     },
     defaultSelected: {
       handler(newVal) {
-        this.selectedUsers = [...newVal]
+        this.selectedAddresses = [...newVal]
       },
       immediate: true
     }
@@ -209,28 +222,32 @@ export default {
     // 初始化数据
     async initData() {
       this.searchKeyword = ''
+      this.searchForm.category = ''
       this.currentPage = 1
-      await this.fetchUserList()
+      await this.fetchAddressList()
     },
 
-    // 获取用户列表
-    async fetchUserList() {
+    // 获取地址列表
+    async fetchAddressList() {
       this.loading = true
       try {
         const params = {
-          pageNum: this.currentPage,
-          pageSize: this.pageSize
+          page: this.currentPage,
+          size: this.pageSize,
+          accountName: this.searchKeyword || undefined,
+          realAddress: this.searchKeyword || undefined,
+          category: this.searchForm.category || undefined
         }
         
-        const response = await getUserPage(params)
+        const response = await getAddressPage(params)
         if (response && response.data) {
-          this.userList = response.data.records || []
+          this.addressList = response.data.records || []
           this.total = response.data.total || 0
         }
-        this.filteredUserList = [...this.userList]
+        this.filteredAddressList = [...this.addressList]
       } catch (error) {
-        console.error('获取用户列表失败:', error)
-        this.$message.error('获取用户列表失败')
+        console.error('获取地址列表失败:', error)
+        this.$message.error('获取地址列表失败')
       } finally {
         this.loading = false
       }
@@ -238,28 +255,19 @@ export default {
 
     // 搜索处理
     handleSearch() {
-      if (!this.searchKeyword.trim()) {
-        this.filteredUserList = [...this.userList]
-        return
-      }
-      
-      const keyword = this.searchKeyword.toLowerCase()
-      this.filteredUserList = this.userList.filter(user => 
-        (user.username && user.username.toLowerCase().includes(keyword)) ||
-        (user.nickname && user.nickname.toLowerCase().includes(keyword)) ||
-        (user.city && user.city.toLowerCase().includes(keyword))
-      )
+      this.currentPage = 1
+      this.fetchAddressList()
     },
 
     // 分页处理
     handlePageChange(page) {
       this.currentPage = page
-      this.fetchUserList()
+      this.fetchAddressList()
     },
 
     // 选择变化处理
     handleSelectionChange(selection) {
-      this.selectedUsers = selection
+      this.selectedAddresses = selection
     },
 
     // 行点击处理（单选模式）
@@ -267,58 +275,54 @@ export default {
       if (this.multiple) return
       
       // 单选模式，直接选择该行
-      this.selectedUsers = [row]
+      this.selectedAddresses = [row]
     },
 
     // 获取行样式类名
     getRowClassName({ row }) {
-      if (this.selectedUsers.some(user => user.id === row.id)) {
+      if (this.selectedAddresses.some(address => address.id === row.id)) {
         return 'selected-row'
       }
       return ''
     },
 
-    // 判断用户是否可选
+    // 判断地址是否可选
     isSelectable(row) {
-      return !this.disabledUsers.includes(row.id)
+      return !this.disabledAddresses.includes(row.id)
     },
 
-    // 移除已选择的用户
-    removeUser(user) {
-      const index = this.selectedUsers.findIndex(u => u.id === user.id)
+    // 移除已选择的地址
+    removeAddress(address) {
+      const index = this.selectedAddresses.findIndex(a => a.id === address.id)
       if (index > -1) {
-        this.selectedUsers.splice(index, 1)
+        this.selectedAddresses.splice(index, 1)
       }
     },
 
     // 清空选择
     clearSelection() {
-      this.selectedUsers = []
+      this.selectedAddresses = []
     },
 
-    // 用户类型文本转换
-    useTypeText(useType) {
-      if (useType === 'person') return '用户'
-      if (useType === 'company') return '企业'
-      return '未知'
-    },
-
-    // 状态文本转换
-    statusText(status) {
-      if (status === 'use') return '正常'
-      if (status === 'disable') return '禁用'
-      return '未知'
+    // 获取分类标签类型
+    getCategoryTagType(category) {
+      const typeMap = {
+        '家庭地址': 'success',
+        '工作地址': 'primary',
+        '其他地址': 'info'
+      }
+      return typeMap[category] || 'info'
     },
 
     // 确认选择
     handleConfirm() {
-      if (this.selectedUsers.length === 0) {
-        this.$message.warning('请至少选择一个用户')
+      if (this.selectedAddresses.length === 0) {
+        this.$message.warning('请至少选择一个地址')
         return
       }
 
-      // 向父组件传递选中的用户
-      this.$emit('confirm', this.selectedUsers)
+      // 向父组件传递选中的地址
+      this.$emit('confirm', this.selectedAddresses)
       this.handleClose()
     },
 
@@ -332,11 +336,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.user-selector-dialog {
-  // 确保用户选择器弹窗在最顶层
+.address-selector-dialog {
+  // 确保地址选择器弹窗在最顶层
   z-index: 3000 !important;
   
-  .user-selector {
+  .address-selector {
     .search-container {
       margin-bottom: 20px;
       
@@ -345,7 +349,7 @@ export default {
       }
     }
 
-    .user-list-container {
+    .address-list-container {
       max-height: 400px;
       overflow-y: auto;
       
@@ -375,7 +379,7 @@ export default {
       text-align: right;
     }
 
-    .selected-users {
+    .selected-addresses {
       margin-top: 20px;
       padding: 15px;
       background-color: #f8f9fa;

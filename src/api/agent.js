@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取经办人分页列表
 export function getAgentPage(params) {
   return request({
-    url: '/api/agent/page',
+    url: '/processor/page',
     method: 'get',
     params
   })
@@ -12,7 +12,7 @@ export function getAgentPage(params) {
 // 获取经办人列表（不分页）
 export function getAgentList(params) {
   return request({
-    url: '/api/agent/list',
+    url: '/processor/list',
     method: 'get',
     params
   })
@@ -21,7 +21,7 @@ export function getAgentList(params) {
 // 获取经办人详情
 export function getAgentById(id) {
   return request({
-    url: `/api/agent/${id}`,
+    url: `/processor/${id}`,
     method: 'get'
   })
 }
@@ -29,7 +29,7 @@ export function getAgentById(id) {
 // 新增经办人
 export function addAgent(data) {
   return request({
-    url: '/api/agent',
+    url: '/processor',
     method: 'post',
     data
   })
@@ -38,7 +38,7 @@ export function addAgent(data) {
 // 更新经办人
 export function updateAgent(id, data) {
   return request({
-    url: `/api/agent/${id}`,
+    url: `/processor/${id}`,
     method: 'put',
     data
   })
@@ -47,7 +47,7 @@ export function updateAgent(id, data) {
 // 删除经办人
 export function deleteAgent(id) {
   return request({
-    url: `/api/agent/${id}`,
+    url: `/processor/${id}`,
     method: 'delete'
   })
 }
@@ -55,7 +55,7 @@ export function deleteAgent(id) {
 // 批量删除经办人
 export function batchDeleteAgent(ids) {
   return request({
-    url: '/api/agent/batch',
+    url: '/processor/batch',
     method: 'delete',
     data: { ids }
   })

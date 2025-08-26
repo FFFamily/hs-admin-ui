@@ -15,14 +15,22 @@
 
         <el-table v-loading="listLoading" :data="list" border fit highlight-current-row>
             <el-table-column label="合同名称" prop="name" width="200" align="center" show-overflow-tooltip />
+
             <el-table-column label="合同类型" prop="type" width="120" align="center">
                 <template slot-scope="scope">
-                    <el-tag :type="getTypeTagType(scope.row.type)" size="medium">
-                        {{ getTypeText(scope.row.type) }}
+                    <el-tag :type="getContractTypeTagType(scope.row.type)" size="medium">
+                        {{ getContractTypeText(scope.row.type) }}
                     </el-tag>
                 </template>
             </el-table-column>
             <el-table-column label="合作方" prop="partner" width="150" align="center" show-overflow-tooltip />
+            <el-table-column label="状态" prop="status" width="120" align="center" show-overflow-tooltip>
+                <template slot-scope="scope">
+                    <el-tag :type="getStatusType(scope.row.startTime, scope.row.endTime)" size="medium">
+                        {{ getStatusText(scope.row.startTime, scope.row.endTime) }}
+                    </el-tag>
+                </template>
+            </el-table-column>
             <el-table-column label="起始时间" prop="startTime" width="120" align="center">
                 <template slot-scope="scope">
                     {{ formatDate(scope.row.startTime) }}
@@ -84,12 +92,12 @@
                     <el-col :span="8">
                         <el-form-item label="合同类型" prop="type">
                             <el-select v-model="form.type" placeholder="请选择合同类型" style="width: 100%;">
-                                <el-option label="采购合同" value="purchase" />
-                                <el-option label="销售合同" value="sale" />
-                                <el-option label="运输合同" value="transport" />
-                                <el-option label="加工合同" value="process" />
-                                <el-option label="仓储合同" value="storage" />
-                                <el-option label="其他合同" value="other" />
+                                <el-option 
+                                    v-for="option in contractTypeOptions" 
+                                    :key="option.value" 
+                                    :label="option.label" 
+                                    :value="option.value" 
+                                />
                             </el-select>
                         </el-form-item>
                     </el-col>
@@ -117,7 +125,20 @@
                                 placeholder="请输入金额" style="width: 100%;" controls-position="right" />
                         </el-form-item>
                     </el-col>
-                    
+                    <el-col :span="12">
+                        <el-form-item label="合同文件" prop="file">
+                            <FileUploader
+                                v-model="form.file"
+                                :multiple="false"
+                                :limit="1"
+                                accept=".pdf"
+                                :max-size-mb="20"
+                                :button-mode="true"
+                                tips="仅支持PDF格式，文件大小不超过20MB"
+                                @preview="handleFilePreview"
+                            />
+                        </el-form-item>
+                    </el-col>
                 </el-row>
                 <el-divider content-position="center">合作方信息</el-divider>
                 <el-row :gutter="20">
@@ -135,33 +156,11 @@
                         </el-form-item>
                     </el-col>
                     <el-col :span="24">
-                        <el-form-item label="开票信息" prop="invoiceInfo">
+                        <el-form-item label="主开票信息" prop="invoiceInfo">
                             <el-input v-model="form.invoiceInfo" type="textarea" :rows="3" placeholder="请输入开票信息" />
                         </el-form-item>
                     </el-col>
                 </el-row>
-                <el-divider content-position="center">节点信息</el-divider>
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="走款节点" prop="payNode">
-                            <el-input v-model="form.payNode" placeholder="请输入走款节点" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="开票节点" prop="invoiceNode">
-                            <el-input v-model="form.invoiceNode" placeholder="请输入开票节点" />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-                <el-divider content-position="center">合同资金池</el-divider>
-                <el-row :gutter="20">
-                    <el-col :span="24">
-                        <el-form-item label="合同资金池" prop="pool">
-                            <el-input v-model="form.pool" placeholder="请输入合同资金池" />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click="dialogVisible = false">取消</el-button>
@@ -170,28 +169,28 @@
         </el-dialog>
 
         <!-- 货物明细对话框 -->
-        <el-dialog title="货物明细" :visible.sync="itemsDialogVisible" width="80%" :close-on-click-modal="false">
+        <el-dialog title="货物明细" :visible.sync="itemsDialogVisible" width="80%" :close-on-click-modal="false" @close="handleItemsDialogClose">
             <div class="items-header">
                 <h4>合同：{{ currentContract && currentContract.name ? currentContract.name : '--' }}</h4>
                 <el-button type="primary" size="small" icon="el-icon-plus" @click="handleAddItem">
-                    添加货物
+                    选择经营范围
                 </el-button>
             </div>
 
-            <el-table :data="contractItems" border fit>
-                <el-table-column label="货物编号" prop="goodNo" width="150" align="center" />
+            <el-table :data="contractItems" border fit show-summary :summary-method="getSummaries">
+                <el-table-column label="经营范围编号" prop="goodNo" width="150" align="center" />
                 <el-table-column label="货物分类" prop="goodType" width="120" align="center" />
                 <el-table-column label="货物名称" prop="goodName" width="200" align="center" show-overflow-tooltip />
                 <el-table-column label="货物型号" prop="goodModel" width="150" align="center" />
                 <el-table-column label="货物数量" prop="goodCount" width="100" align="center" />
                 <el-table-column label="货物单价" prop="goodPrice" width="120" align="center">
                     <template slot-scope="scope">
-                        ¥{{ formatAmount(scope.row.goodPrice) }}
+                        <span class="amount-text">¥{{ formatAmount(scope.row.goodPrice) }}</span>
                     </template>
                 </el-table-column>
                 <el-table-column label="货物总价" prop="goodTotalPrice" width="120" align="center">
                     <template slot-scope="scope">
-                        ¥{{ formatAmount(scope.row.goodTotalPrice) }}
+                        <span class="amount-text">¥{{ formatAmount(scope.row.goodTotalPrice) }}</span>
                     </template>
                 </el-table-column>
                 <el-table-column label="货物备注" prop="goodRemark" width="200" align="center" show-overflow-tooltip />
@@ -213,25 +212,25 @@
                 <el-form ref="itemForm" :model="itemForm" :rules="itemRules" label-width="100px">
                     <el-row :gutter="20">
                         <el-col :span="12">
-                            <el-form-item label="货物编号" prop="goodNo">
-                                <el-input v-model="itemForm.goodNo" placeholder="请输入货物编号" />
+                            <el-form-item label="经营范围编号" prop="goodNo">
+                                <el-input disabled v-model="itemForm.goodNo" placeholder="经营范围编号" readonly />
                             </el-form-item>
                         </el-col>
                         <el-col :span="12">
                             <el-form-item label="货物分类" prop="goodType">
-                                <el-input v-model="itemForm.goodType" placeholder="请输入货物分类" />
+                                <el-input disabled v-model="itemForm.goodType" placeholder="货物分类" readonly />
                             </el-form-item>
                         </el-col>
                     </el-row>
                     <el-row :gutter="20">
                         <el-col :span="12">
                             <el-form-item label="货物名称" prop="goodName">
-                                <el-input v-model="itemForm.goodName" placeholder="请输入货物名称" />
+                                <el-input disabled v-model="itemForm.goodName" placeholder="货物名称" readonly />
                             </el-form-item>
                         </el-col>
                         <el-col :span="12">
                             <el-form-item label="货物型号" prop="goodModel">
-                                <el-input v-model="itemForm.goodModel" placeholder="请输入货物型号" />
+                                <el-input disabled v-model="itemForm.goodModel" placeholder="货物型号" readonly />
                             </el-form-item>
                         </el-col>
                     </el-row>
@@ -239,18 +238,29 @@
                         <el-col :span="12">
                             <el-form-item label="货物数量" prop="goodCount">
                                 <el-input-number v-model="itemForm.goodCount" :min="1" placeholder="请输入数量"
-                                    style="width: 100%;" />
+                                    style="width: 100%;" @change="calculateTotalPrice" />
                             </el-form-item>
                         </el-col>
                         <el-col :span="12">
                             <el-form-item label="货物单价" prop="goodPrice">
                                 <el-input-number v-model="itemForm.goodPrice" :precision="2" :min="0" :max="999999.99"
-                                    :step="0.01" placeholder="请输入单价" style="width: 100%;" controls-position="right" />
+                                    :step="0.01" placeholder="请输入单价" style="width: 100%;" controls-position="right" @change="calculateTotalPrice" />
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <el-row :gutter="20">
+                        <el-col :span="12">
+                            <el-form-item label="货物总价" prop="goodTotalPrice">
+                                <el-input v-model="itemForm.goodTotalPrice" placeholder="货物总价" readonly>
+                                    <template slot="prepend">
+                                        <span class="amount-text">¥</span>
+                                    </template>
+                                </el-input>
                             </el-form-item>
                         </el-col>
                     </el-row>
                     <el-form-item label="货物备注" prop="goodRemark">
-                        <el-input v-model="itemForm.goodRemark" type="textarea" :rows="3" placeholder="请输入货物备注" />
+                        <el-input disabled v-model="itemForm.goodRemark" type="textarea" :rows="3" placeholder="请输入货物备注" />
                     </el-form-item>
                 </el-form>
                 <div slot="footer" class="dialog-footer">
@@ -267,12 +277,25 @@
         <!-- 搜索合作方选择器 -->
         <UserSelector :visible.sync="searchPartnerSelectorVisible" title="选择搜索合作方" :multiple="false"
             @confirm="handleSearchPartnerConfirm" @close="handleSearchPartnerClose" />
+
+        <!-- 经营范围选择器 -->
+        <BusinessScopeSelector 
+            :visible.sync="businessScopeSelectorVisible" 
+            title="选择经营范围" 
+            :multiple="false"
+            :only-show-enabled="true"
+            @confirm="handleBusinessScopeConfirm" 
+            @close="handleBusinessScopeClose" 
+        />
     </div>
 </template>
 
 <script>
 import { parseTime } from '@/utils'
 import UserSelector from '@/components/UserSelector'
+import FileUploader from '@/components/FileUploader'
+import BusinessScopeSelector from '@/components/BusinessScopeSelector'
+import { CONTRACT_TYPE_OPTIONS, getContractTypeText, getContractTypeTagType } from '@/constants/contractTypes'
 import {
     getRecycleContractPage,
     createRecycleContract,
@@ -288,10 +311,14 @@ import {
 export default {
     name: 'ContractRecycle',
     components: {
-        UserSelector
+        UserSelector,
+        FileUploader,
+        BusinessScopeSelector
     },
     data() {
         return {
+            getContractTypeTagType,
+            getContractTypeText,
             // 搜索表单
             searchForm: {
                 name: '',
@@ -330,6 +357,7 @@ export default {
                 invoiceNode: '',
                 totalAmount: 0,
                 pool: '',
+                file: '', // 合同文件
                 status: 'draft'
             },
             // 货物明细表单
@@ -354,10 +382,14 @@ export default {
             // 人员选择器控制
             partnerSelectorVisible: false,
             searchPartnerSelectorVisible: false,
+            // 经营范围选择器控制
+            businessScopeSelectorVisible: false,
             // 日期选择器配置
             pickerOptions: {
 
             },
+            // 合同类型选项
+            contractTypeOptions: CONTRACT_TYPE_OPTIONS,
             // 表单验证规则
             rules: {
                 name: [{ required: true, message: '请输入合同名称', trigger: 'blur' }],
@@ -381,8 +413,6 @@ export default {
                 ],
             },
             itemRules: {
-                goodNo: [{ required: true, message: '请输入货物编号', trigger: 'blur' }],
-                goodName: [{ required: true, message: '请输入货物名称', trigger: 'blur' }],
                 goodCount: [{ required: true, message: '请输入货物数量', trigger: 'blur' }],
                 goodPrice: [
                     { required: true, message: '请输入货物单价', trigger: 'blur' },
@@ -440,26 +470,27 @@ export default {
             this.fetchData()
         },
 
-        // 新增合同
-        handleAdd() {
-            this.dialogTitle = '新增合同'
-            this.form = {
-                name: '',
-                type: '',
-                partner: '', // 合作方ID
-                partnerName: '', // 合作方名称
-                startTime: '',
-                endTime: '',
-                mainBankCard: '',
-                invoiceInfo: '',
-                payNode: '',
-                invoiceNode: '',
-                totalAmount: 0,
-                pool: '',
-                status: 'draft'
-            }
-            this.dialogVisible = true
-        },
+                    // 新增合同
+            handleAdd() {
+                this.dialogTitle = '新增合同'
+                this.form = {
+                    name: '',
+                    type: '',
+                    partner: '', // 合作方ID
+                    partnerName: '', // 合作方名称
+                    startTime: '',
+                    endTime: '',
+                    mainBankCard: '',
+                    invoiceInfo: '',
+                    payNode: '',
+                    invoiceNode: '',
+                    totalAmount: 0,
+                    pool: '',
+                    file: '', // 合同文件
+                    status: 'draft'
+                }
+                this.dialogVisible = true
+            },
 
         // 编辑合同
         handleEdit(row) {
@@ -495,24 +526,106 @@ export default {
 
         // 添加货物
         handleAddItem() {
-            this.itemDialogTitle = '添加货物'
-            this.itemForm = {
-                goodNo: '',
-                goodType: '',
-                goodName: '',
-                goodModel: '',
-                goodCount: 1,
-                goodPrice: 0,
-                goodRemark: ''
-            }
-            this.itemDialogVisible = true
+            this.businessScopeSelectorVisible = true
         },
 
         // 编辑货物
         handleEditItem(row) {
             this.itemDialogTitle = '编辑货物'
             this.itemForm = { ...row }
+            // 确保总价字段存在
+            if (!this.itemForm.goodTotalPrice) {
+                this.calculateTotalPrice()
+            }
             this.itemDialogVisible = true
+        },
+
+        // 经营范围选择确认
+        handleBusinessScopeConfirm(selectedItems) {
+            if (selectedItems && selectedItems.length > 0) {
+                const selectedItem = selectedItems[0] // 单选模式，取第一个
+                
+                // 将选中的经营范围信息填充到货物表单中
+                this.itemForm = {
+                    goodNo: selectedItem.no || '',
+                    goodType: selectedItem.goodType || '',
+                    goodName: selectedItem.goodName || '',
+                    goodModel: selectedItem.goodModel || '',
+                    goodCount: 1,
+                    goodPrice: selectedItem.publicPrice || 0,
+                    goodRemark: ''
+                }
+                
+                // 计算初始总价
+                this.calculateTotalPrice()
+                
+                // 打开货物编辑对话框
+                this.itemDialogTitle = '添加货物'
+                this.itemDialogVisible = true
+            }
+        },
+
+        // 经营范围选择器关闭
+        handleBusinessScopeClose() {
+            this.businessScopeSelectorVisible = false
+        },
+
+        // 计算货物总价
+        calculateTotalPrice() {
+            const count = this.itemForm.goodCount || 0
+            const price = this.itemForm.goodPrice || 0
+            this.itemForm.goodTotalPrice = (count * price).toFixed(2)
+        },
+
+        // 货物明细对话框关闭
+        handleItemsDialogClose() {
+            // 刷新主列表数据
+            this.fetchData()
+        },
+
+        // 表格合计方法
+        getSummaries(param) {
+            const { columns, data } = param
+            const sums = []
+            columns.forEach((column, index) => {
+                if (index === 0) {
+                    sums[index] = '合计'
+                    return
+                }
+                
+                const values = data.map(item => Number(item[column.property]))
+                
+                if (!values.every(value => isNaN(value))) {
+                    if (column.property === 'goodCount') {
+                        // 货物数量合计
+                        sums[index] = values.reduce((prev, curr) => {
+                            const value = Number(curr)
+                            if (!isNaN(value)) {
+                                return prev + curr
+                            } else {
+                                return prev
+                            }
+                        }, 0)
+                    } else if (column.property === 'goodTotalPrice') {
+                        // 货物总价合计
+                        const total = values.reduce((prev, curr) => {
+                            const value = Number(curr)
+                            if (!isNaN(value)) {
+                                return prev + curr
+                            } else {
+                                return prev
+                            }
+                        }, 0)
+                        sums[index] = `¥${this.formatAmount(total)}`
+                    } else {
+                        sums[index] = ''
+                    }
+                } else {
+                    sums[index] = ''
+                }
+            })
+            
+            return sums
         },
 
         // 删除货物
@@ -587,8 +700,8 @@ export default {
                 if (valid) {
                     this.itemSubmitLoading = true
                     try {
-                        // 计算总价
-                        this.itemForm.goodTotalPrice = this.itemForm.goodCount * this.itemForm.goodPrice
+                        // 确保总价是最新的
+                        this.calculateTotalPrice()
 
                         // 添加合同ID
                         this.itemForm.recycleContractId = this.currentContract.id
@@ -689,6 +802,29 @@ export default {
             this.searchPartnerSelectorVisible = false
         },
 
+        // 下载文件
+        handleDownloadFile(fileUrl) {
+            if (!fileUrl) {
+                this.$message.warning('文件地址为空')
+                return
+            }
+            
+            // 创建下载链接
+            const link = document.createElement('a')
+            link.href = fileUrl.startsWith('http') ? fileUrl : process.env.VUE_APP_BASE_API + fileUrl
+            link.download = fileUrl.split('/').pop() || '合同文件'
+            link.target = '_blank'
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        },
+
+        // 预览文件
+        handleFilePreview(fileInfo) {
+            console.log('预览文件:', fileInfo.url)
+            // 文件预览已经在 FileUploader 组件中处理，这里可以添加额外的逻辑
+        },
+
         // 工具方法
         formatDateTime(time) {
             return parseTime(time)
@@ -699,42 +835,33 @@ export default {
         formatAmount(amount) {
             return amount ? amount.toLocaleString() : '0'
         },
-        getTypeText(type) {
-            const typeMap = {
-                purchase: '采购合同',
-                sale: '销售合同',
-                lease: '租赁合同',
-                recycle: '回收合同'
+        getStatusText(startTime, endTime) {
+            const now = new Date()
+            // 如果当前时间在起始时间之前，则状态为未生效
+            if (now < new Date(startTime)) {
+                return '未生效'
             }
-            return typeMap[type] || type
-        },
-        getTypeTagType(type) {
-            const typeTagMap = {
-                purchase: 'primary',
-                sale: 'success',
-                lease: 'warning',
-                recycle: 'info'
+            // 如果当前时间在结束时间之后，则状态为已终止
+            if (now > new Date(endTime)) {
+                return '已终止'
             }
-            return typeTagMap[type] || 'info'
-        },
-        getStatusText(status) {
-            const statusMap = {
-                draft: '草稿',
-                executing: '执行中',
-                completed: '已完成',
-                terminated: '已终止'
+            // 如果（结束日期 - 当前日期）小于7天
+            if (new Date(endTime) - now < 7 * 24 * 60 * 60 * 1000) {
+                return '临期'
             }
-            return statusMap[status] || status
+            // 如果当前时间在起始时间之后，结束时间之前，则状态为执行中
+            return '执行中'
         },
-        getStatusType(status) {
+        getStatusType(startTime, endTime) {
+            const status = this.getStatusText(startTime, endTime)
             const statusTypeMap = {
-                draft: 'info',
-                executing: 'primary',
-                completed: 'success',
-                terminated: 'danger'
+                未生效: 'info',
+                执行中: 'primary',
+                临期: 'success',
+                已终止: 'danger'
             }
             return statusTypeMap[status] || 'info'
-        }
+        },
     }
 }
 </script>
@@ -758,16 +885,36 @@ export default {
     margin-bottom: 20px;
 }
 
-.table-card {
-    .amount-text {
-        color: #f56c6c;
-        font-weight: bold;
+.amount-text {
+    font-weight: 600;
+    color: #e6a23c;
+}
+
+// 合计行样式
+::v-deep .el-table__footer-wrapper {
+    .el-table__footer {
+        background-color: #f5f7fa;
+        
+        td {
+            background-color: #f5f7fa;
+            font-weight: 600;
+            color: #303133;
+        }
+        
+        .cell {
+            font-weight: 600;
+        }
     }
 }
 
 .pagination {
     margin-top: 20px;
     text-align: right;
+}
+
+.no-file {
+    color: #909399;
+    font-size: 12px;
 }
 
 

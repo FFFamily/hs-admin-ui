@@ -13,6 +13,7 @@
           <el-button type="primary" @click="handleSearch">搜索</el-button>
           <el-button @click="handleReset">重置</el-button>
           <el-button type="primary" @click="handleAdd">新增地址</el-button>
+          <el-button type="success" @click="showAddressSelector">地址选择器</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -68,17 +69,22 @@
 
     <!-- 用户选择器 -->
     <UserSelector :visible.sync="userSelectorVisible" title="选择用户" :multiple="false" @confirm="handleUserSelected" />
+    
+    <!-- 地址选择器示例 -->
+    <AddressSelector :visible.sync="addressSelectorVisible" title="选择地址" :multiple="false" @confirm="handleAddressSelected" />
   </div>
 </template>
 
 <script>
 import { getAddressPage, createAddress, updateAddress, deleteAddress } from '@/api/address'
 import UserSelector from '@/components/UserSelector'
+import AddressSelector from '@/components/AddressSelector'
 
 export default {
   name: 'AddressManagement',
   components: {
-    UserSelector
+    UserSelector,
+    AddressSelector
   },
   data() {
     return {
@@ -86,6 +92,7 @@ export default {
       submitLoading: false,
       dialogVisible: false,
       userSelectorVisible: false,
+      addressSelectorVisible: false,
       isEdit: false,
       selectedRows: [],
 
@@ -269,6 +276,20 @@ export default {
         const user = users[0]
         this.form.accountId = user.id
         this.form.accountName = user.nickname || user.username
+      }
+    },
+
+    // 显示地址选择器
+    showAddressSelector() {
+      this.addressSelectorVisible = true
+    },
+
+    // 地址选择回调
+    handleAddressSelected(addresses) {
+      if (addresses && addresses.length > 0) {
+        const address = addresses[0]
+        this.$message.success(`选择了地址: ${address.accountName} - ${address.realAddress}`)
+        console.log('选中的地址:', address)
       }
     },
 

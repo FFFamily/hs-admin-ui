@@ -78,7 +78,7 @@ export const constantRoutes = [
       {
         path: 'processor',
         name: 'Processor',
-        component: () => import('@/views/admin/agent/index.vue'),
+        component: () => import('@/views/admin/processor/index.vue'),
         meta: { title: '用户经办人管理', icon: 'user' }
       },
       {
@@ -122,13 +122,13 @@ export const constantRoutes = [
       {
         path: 'purchaseOrder',
         name: 'PurchaseOrder',
-        component: () => import('@/views/recycle/order/purchaseOrder.vue'),
+        component: () => import('@/views/recycle/order/index.vue'),
         meta: { title: '订单管理', icon: 'table' }
       },
       {
         path: 'fundflow',
         name: 'FundFlow',
-        component: () => import('@/views/finance/fundflow/index.vue'),
+        component: () => import('@/views/recycle/order/fundflow/index.vue'),
         meta: { title: '走款管理', icon: 'table' }
       },
       {
