@@ -84,7 +84,7 @@ export const constantRoutes = [
       {
         path: 'bank',
         name: 'Bank',
-        component: () => import('@/views/system/account/index.vue'),
+        component: () => import('@/views/system/bankInfo/index.vue'),
         meta: { title: '银行账号管理', icon: 'user' }
       },
       {
