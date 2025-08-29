@@ -11,25 +11,26 @@
       <el-form :inline="true" :model="searchForm" ref="searchFormRef">
         <el-form-item label="用户账号" prop="username">
           <el-input
-            v-model="searchKeyword"
+            v-model="searchParams.username"
             placeholder="请输入用户账号、昵称搜索"
             class="search-input"
             clearable
-            @input="handleSearch"
           >
             <i slot="prefix" class="el-input__icon el-icon-search"></i>
           </el-input>
         </el-form-item>
         <el-form-item label="用户名称" prop="nickname">
           <el-input
-            v-model="searchKeyword"
+            v-model="searchParams.nickname"
             placeholder="请输入用户名称搜索"
             class="search-input"
             clearable
-            @input="handleSearch"
           >
             <i slot="prefix" class="el-input__icon el-icon-search"></i>
           </el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
         </el-form-item>
       </el-form>
 
@@ -169,6 +170,10 @@ export default {
       filteredUserList: [],
       selectedUsers: [],
       searchKeyword: '',
+      searchParams: {
+        username: '',
+        nickname: '',
+      },
       currentPage: 1,
       total: 0,
       searchForm: {},
@@ -238,17 +243,20 @@ export default {
 
     // 搜索处理
     handleSearch() {
-      if (!this.searchKeyword.trim()) {
+      getUserPage({
+        ...this.searchParams,
+        pageNum: this.currentPage,
+        pageSize: this.pageSize
+      }).then(res => {
+        if (res && res.data) {
+          this.userList = res.data.records || []
+          this.total = res.data.total || 0
+        }
         this.filteredUserList = [...this.userList]
-        return
-      }
-      
-      const keyword = this.searchKeyword.toLowerCase()
-      this.filteredUserList = this.userList.filter(user => 
-        (user.username && user.username.toLowerCase().includes(keyword)) ||
-        (user.nickname && user.nickname.toLowerCase().includes(keyword)) ||
-        (user.city && user.city.toLowerCase().includes(keyword))
-      )
+      }).catch(err => {
+        console.error('搜索用户失败:', err)
+        this.$message.error('搜索用户失败')
+      })
     },
 
     // 分页处理

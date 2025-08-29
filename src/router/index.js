@@ -88,12 +88,11 @@ export const constantRoutes = [
         meta: { title: '银行账号管理', icon: 'user' }
       },
       {
-        path: 'invoice',
-        name: 'Invoice',
-        component: () => import('@/views/system/account/index.vue'),
-        meta: { title: '发票抬头管理', icon: 'user' }
+        path: 'title',
+        name: 'InvoiceTitle',
+        component: () => import('@/views/invoice/title/index.vue'),
+        meta: { title: '发票抬头管理', icon: 'form' }
       }
-      
     ]
   },
   {
@@ -130,12 +129,6 @@ export const constantRoutes = [
         name: 'FundFlow',
         component: () => import('@/views/recycle/order/fundflow/index.vue'),
         meta: { title: '走款管理', icon: 'table' }
-      },
-      {
-        path: 'title',
-        name: 'InvoiceTitle',
-        component: () => import('@/views/invoice/title/index.vue'),
-        meta: { title: '发票抬头管理', icon: 'form' }
       },
       {
         path: 'list',
