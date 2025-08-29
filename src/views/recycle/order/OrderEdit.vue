@@ -19,20 +19,20 @@
       </el-row>
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="甲方" prop="contractReferencePrice">
-            <el-input v-model="detailData.contractReferencePrice" disabled placeholder="请输入甲方" />
+          <el-form-item label="甲方" prop="partyA">
+            <el-input v-model="detailData.partyA" disabled placeholder="请输入甲方" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="乙方" prop="contractReferencePrice">
-            <el-input v-model="detailData.contractReferencePrice" disabled placeholder="请输入乙方" />
+          <el-form-item label="乙方" prop="partyB">
+            <el-input v-model="detailData.partyB" disabled placeholder="请输入乙方" />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="合同金额" prop="contractReferencePrice">
-            <el-input v-model="detailData.contractReferencePrice" disabled placeholder="请输入合同金额">
+            <el-input v-model="detailData.contractPrice" disabled placeholder="请输入合同金额">
               <template slot="prepend">¥</template>
             </el-input>
           </el-form-item>
@@ -40,7 +40,7 @@
         <el-col :span="12">
           <el-form-item label="合作方" prop="contractPartner">
             <!---从甲方乙方中二选一-->
-            <el-select v-model="detailData.contractPartner" placeholder="请选择合作方" style="width: 100%;">
+            <el-select disabled v-model="detailData.contractPartner" placeholder="请选择合作方" style="width: 100%;">
               <el-option 
                 v-for="option in contractPartnerOptions" 
                 :key="option.value" 
@@ -438,12 +438,11 @@ export default {
       this.detailData.contractNo = contract.no
       this.detailData.contractName = contract.name
       this.detailData.contractPartner = contract.partner
-      // 引用合同中的总金额
-      if (contract.totalAmount != null && this.detailData.contractReferencePrice === '') {
-        this.detailData.totalAmount = contract.totalAmount
-      }
-      // 拉取合同明细，填充订单明细
-      this.fetchContractItems(contract.id)
+      // 甲方。乙方
+      this.detailData.partyA = contract.partyA
+      this.detailData.partyB = contract.partyB
+      // 合同金额
+      this.detailData.contractPrice = contract.totalAmount
     },
 
     // 获取合同明细并映射到订单明细
