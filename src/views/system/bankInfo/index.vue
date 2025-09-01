@@ -192,7 +192,7 @@ export default {
         })
       })
     },
-    // 显示用户选择器
+    // 显示用户选择器（用于选择账户ID）
     showUserSelector() {
       this.userSelectorVisible = true
     },

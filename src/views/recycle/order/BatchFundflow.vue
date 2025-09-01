@@ -4,7 +4,7 @@
       <el-table-column prop="orderNo" label="订单编号" width="150" align="center" />
       <el-table-column prop="orderType" label="订单类型" width="120" align="center">
         <template slot-scope="scope">
-          <el-tag :type="getOrderTypeTagType(scope.row.orderType)">
+          <el-tag :type="getOrderStatusTagType(scope.row.orderType)">
             {{ getOrderTypeText(scope.row.orderType) }}
           </el-tag>
         </template>
@@ -17,9 +17,9 @@
         </template>
       </el-table-column>
       <el-table-column prop="partner" label="合作方" width="150" align="center" show-overflow-tooltip />
-      <el-table-column prop="capitalPoolRemaining" label="资金池剩余" width="140" align="center">
+      <el-table-column prop="contractFundPoolBalance" label="合同资金池剩余金额" width="140" align="center">
         <template slot-scope="scope">
-          <span class="amount-text">¥{{ formatAmount(scope.row.capitalPoolRemaining) }}</span>
+          <span class="amount-text">¥{{ formatAmount(scope.row.contractFundPoolBalance) }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="orderTotalAmount" label="订单总金额" width="140" align="center">
@@ -37,10 +37,10 @@
           <span class="amount-text">¥{{ formatAmount(scope.row.orderShouldAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="plannedFundflowTime" label="本次计划走款时间" width="180" align="center">
+      <el-table-column prop="planPayTime" label="计划走款时间" width="180" align="center">
         <template slot-scope="scope">
           <el-date-picker
-            v-model="scope.row.plannedFundflowTime"
+            v-model="scope.row.planPayTime"
             type="datetime"
             placeholder="选择走款时间"
             format="yyyy-MM-dd HH:mm:ss"
@@ -49,48 +49,45 @@
           />
         </template>
       </el-table-column>
-      <el-table-column prop="plannedFundflowAmount" label="本次计划走款金额" width="160" align="center">
+      <el-table-column prop="fundFlowAmount" label="走款金额" width="160" align="center">
         <template slot-scope="scope">
           <el-input-number
-            v-model="scope.row.plannedFundflowAmount"
+            v-model="scope.row.fundFlowAmount"
             :min="0"
             :precision="2"
-            :max="scope.row.orderShouldAmount"
             controls-position="right"
             style="width: 100%;"
             @change="onAmountChange(scope.row)"
           />
         </template>
       </el-table-column>
-      <el-table-column prop="plannedLoanAmount" label="计划贷款走款" width="140" align="center">
+      <el-table-column prop="fundAmount" label="货款走款金额" width="140" align="center">
         <template slot-scope="scope">
           <el-input-number
-            v-model="scope.row.plannedLoanAmount"
+            v-model="scope.row.loanAmount"
             :min="0"
             :precision="2"
-            :max="scope.row.plannedFundflowAmount"
             controls-position="right"
             style="width: 100%;"
             @change="onLoanAmountChange(scope.row)"
           />
         </template>
       </el-table-column>
-      <el-table-column prop="plannedCapitalPoolAmount" label="计划资金池走款" width="150" align="center">
+      <el-table-column prop="fundPoolAmount" label="资金池走款金额" width="150" align="center">
         <template slot-scope="scope">
           <el-input-number
-            v-model="scope.row.plannedCapitalPoolAmount"
+            v-model="scope.row.fundPoolAmount"
             :min="0"
             :precision="2"
-            :max="scope.row.plannedFundflowAmount"
             controls-position="right"
             style="width: 100%;"
             @change="onCapitalPoolAmountChange(scope.row)"
           />
         </template>
       </el-table-column>
-      <el-table-column prop="fundflowBank" label="走款银行" width="150" align="center">
+      <el-table-column prop="fundBank" label="贷款走款银行" width="150" align="center">
         <template slot-scope="scope">
-          <el-select v-model="scope.row.fundflowBank" placeholder="选择银行" style="width: 100%;">
+          <el-select v-model="scope.row.fundBank" placeholder="选择银行" style="width: 100%;">
             <el-option label="中国工商银行" value="ICBC" />
             <el-option label="中国建设银行" value="CCB" />
             <el-option label="中国农业银行" value="ABC" />
@@ -115,11 +112,11 @@
 
 <script>
 import { 
-  getOrderTypeTagType,
   getOrderTypeText,
   getOrderStatusTagType,
   getOrderStatusText
 } from '@/constants/orderTypes'
+import { batchAddFundFlow } from '@/api/fundFlow'
 
 export default {
   name: 'BatchFundflow',
@@ -137,7 +134,10 @@ export default {
     return {
       loading: false,
       saveLoading: false,
-      fundflowList: []
+      fundflowList: [],
+      getOrderTypeText,
+      getOrderStatusTagType,
+      getOrderStatusText,
     }
   },
   watch: {
@@ -158,27 +158,29 @@ export default {
   methods: {
     // 初始化数据
     initData() {
+      console.log(this.selectedOrders)
       if (!this.selectedOrders || this.selectedOrders.length === 0) {
+        this.$message.error('请选择订单')
         this.fundflowList = []
         return
       }
-
       // 将选中的订单转换为走款列表
       this.fundflowList = this.selectedOrders.map(order => ({
+        ...order,
         orderId: order.id,
         orderNo: order.no,
         orderType: order.type,
         orderStatus: order.status,
-        partner: order.partner,
-        capitalPoolRemaining: this.getCapitalPoolRemaining(), // 模拟获取资金池剩余
+        partner: order.contractPartner,
+        contractFundPoolBalance: this.getCapitalPoolRemaining(), // 模拟获取资金池剩余
         orderTotalAmount: order.totalAmount || 0,
         orderActualAmount: order.actualAmount || 0, // 已走款金额
         orderShouldAmount: (order.totalAmount || 0) - (order.actualAmount || 0), // 应走款金额
-        plannedFundflowTime: '', // 本次计划走款时间
-        plannedFundflowAmount: 0, // 本次计划走款金额
-        plannedLoanAmount: 0, // 计划贷款走款
-        plannedCapitalPoolAmount: 0, // 计划资金池走款
-        fundflowBank: '' // 走款银行
+        planPayTime: '', // 计划走款时间
+        fundFlowAmount: 0, // 走款金额
+        fundAmount: 0, // 贷款走款金额
+        fundPoolAmount: 0, // 资金池走款金额
+        fundBank: '' // 贷款走款银行
       }))
     },
 
@@ -189,39 +191,39 @@ export default {
 
     // 金额变化处理
     onAmountChange(row) {
-      const plannedAmount = row.plannedFundflowAmount || 0
-      const loanAmount = row.plannedLoanAmount || 0
-      const capitalPoolAmount = row.plannedCapitalPoolAmount || 0
+      const fundFlowAmount = row.fundFlowAmount || 0
+      const loanAmount = row.fundAmount || 0
+      const fundPoolAmount = row.fundPoolAmount || 0
       
-      // 如果贷款走款 + 资金池走款 > 计划走款金额，则调整资金池走款
-      if (loanAmount + capitalPoolAmount > plannedAmount) {
-        row.plannedCapitalPoolAmount = Math.max(0, plannedAmount - loanAmount)
+      // 如果贷款走款 + 资金池走款 > 走款金额，则调整资金池走款
+      if (loanAmount + fundPoolAmount > fundFlowAmount) {
+        row.fundPoolAmount = Math.max(0, fundFlowAmount - loanAmount)
       }
     },
 
     // 贷款金额变化处理
     onLoanAmountChange(row) {
-      const plannedAmount = row.plannedFundflowAmount || 0
-      const loanAmount = row.plannedLoanAmount || 0
+      const fundFlowAmount = row.fundFlowAmount || 0
+      const loanAmount = row.fundAmount || 0
       
-      // 如果贷款走款 > 计划走款金额，则限制贷款走款
-      if (loanAmount > plannedAmount) {
-        row.plannedLoanAmount = plannedAmount
+      // 如果贷款走款 > 走款金额，则限制贷款走款
+      if (loanAmount > fundFlowAmount) {
+        row.fundAmount = fundFlowAmount
       }
       
       // 调整资金池走款
-      row.plannedCapitalPoolAmount = Math.max(0, plannedAmount - loanAmount)
+      row.fundPoolAmount = Math.max(0, fundFlowAmount - loanAmount)
     },
 
     // 资金池金额变化处理
     onCapitalPoolAmountChange(row) {
-      const plannedAmount = row.plannedFundflowAmount || 0
-      const loanAmount = row.plannedLoanAmount || 0
-      const capitalPoolAmount = row.plannedCapitalPoolAmount || 0
+      const fundFlowAmount = row.fundFlowAmount || 0
+      const loanAmount = row.fundAmount || 0
+      const fundPoolAmount = row.fundPoolAmount || 0
       
-      // 如果贷款走款 + 资金池走款 > 计划走款金额，则限制资金池走款
-      if (loanAmount + capitalPoolAmount > plannedAmount) {
-        row.plannedCapitalPoolAmount = Math.max(0, plannedAmount - loanAmount)
+      // 如果贷款走款 + 资金池走款 > 走款金额，则限制资金池走款
+      if (loanAmount + fundPoolAmount > fundFlowAmount) {
+        row.fundPoolAmount = Math.max(0, fundFlowAmount - loanAmount)
       }
     },
 
@@ -237,10 +239,10 @@ export default {
     handleSave() {
       // 验证必填字段
       const invalidRows = this.fundflowList.filter(row => {
-        return !row.plannedFundflowTime || 
-               !row.plannedFundflowAmount || 
-               row.plannedFundflowAmount <= 0 ||
-               !row.fundflowBank
+        return !row.planPayTime || 
+               !row.fundFlowAmount || 
+               row.fundFlowAmount <= 0 ||
+               !row.fundBank
       })
 
       if (invalidRows.length > 0) {
@@ -250,15 +252,15 @@ export default {
 
       // 验证金额逻辑
       const invalidAmountRows = this.fundflowList.filter(row => {
-        const plannedAmount = row.plannedFundflowAmount || 0
-        const loanAmount = row.plannedLoanAmount || 0
-        const capitalPoolAmount = row.plannedCapitalPoolAmount || 0
+        const fundFlowAmount = row.fundFlowAmount || 0
+        const loanAmount = row.fundAmount || 0
+        const fundPoolAmount = row.fundPoolAmount || 0
         
-        return plannedAmount !== (loanAmount + capitalPoolAmount)
+        return fundFlowAmount !== (loanAmount + fundPoolAmount)
       })
 
       if (invalidAmountRows.length > 0) {
-        this.$message.error('计划走款金额必须等于贷款走款金额加资金池走款金额')
+        this.$message.error('走款金额必须等于贷款走款金额加资金池走款金额')
         return
       }
 
@@ -266,16 +268,48 @@ export default {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(() => {
+      }).then(async () => {
         this.saveLoading = true
         
-        // 模拟保存操作
-        setTimeout(() => {
-          this.saveLoading = false
+        try {
+          // 准备批量走款数据
+          const batchData = this.fundflowList.map(i => {
+            return {
+              contractNo: i.contractNo,
+              contractName: i.contractName,
+              orderId: i.orderId,
+              orderNo: i.orderNo,
+              orderType: i.orderType,
+              orderTotalAmount: i.orderTotalAmount,
+              orderShouldAmount: i.orderShouldAmount,
+              orderActualAmount: i.orderActualAmount,
+              fundFlowDirection: i.fundFlowDirection,
+              fundFlowAmount: i.fundFlowAmount,
+              //货款方向
+              fundDirection: i.fundDirection,
+              fundAmount: i.fundAmount,
+              fundBank: i.fundBank,
+
+              partner: i.partner,
+              planPayTime: i.planPayTime,
+              fundFlowAmount: i.fundFlowAmount,
+              fundAmount: i.fundAmount,
+              fundPoolAmount: i.fundPoolAmount,
+            }
+          });
+          
+          // 调用批量新增走款API
+          await batchAddFundFlow(batchData)
+          
           this.$message.success('批量走款信息保存成功')
           this.$emit('success', this.fundflowList)
           this.handleCancel()
-        }, 1000)
+        } catch (error) {
+          console.error('批量走款保存失败:', error)
+          this.$message.error('批量走款保存失败，请重试')
+        } finally {
+          this.saveLoading = false
+        }
       }).catch(() => {
         // 用户取消
       })

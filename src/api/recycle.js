@@ -10,7 +10,7 @@ export function getRecyclePage(params) {
 
 export function getRecycleDetail(id) {
   return request({
-    url: `/recycle/order/${id}`,
+    url: `/recycle/order/get/${id}`,
     method: 'get'
   })
 }
@@ -45,5 +45,22 @@ export function updateRecycle(data) {
     url: `/recycle/order/update`,
     method: 'put',
     data
+  })
+}
+
+// 生成结算单PDF
+export function generateSettlementPDF(orderId) {
+  return request({
+    url: `/recycle/order/settlement/pdf/${orderId}`,
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+// 获取结算单数据
+export function getSettlementData(orderId) {
+  return request({
+    url: `/recycle/order/settlement/data/${orderId}`,
+    method: 'get'
   })
 } 

@@ -112,7 +112,7 @@
           <el-button size="mini" type="primary" icon="el-icon-sell" @click="handleSettle(scope.row)">
             申请单
           </el-button>
-          <el-button size="mini" type="primary" icon="el-icon-sell" @click="handleSettle(scope.row)">
+          <el-button size="mini" type="primary" icon="el-icon-sell" @click="handleSettlementPDF(scope.row)">
             结算单
           </el-button>
         </template>
@@ -160,6 +160,7 @@ import UserSelector from '@/components/UserSelector'
 import OrderEdit from './OrderEdit.vue'
 import BatchFundflow from './BatchFundflow.vue'
 import BatchInvoice from './BatchInvoice.vue'
+
 import { 
   ORDER_TYPE_OPTIONS, 
   ORDER_STATUS_OPTIONS,
@@ -265,6 +266,19 @@ export default {
         console.log(row)
       })
     },
+
+    // 生成结算单PDF
+    handleSettlementPDF(row) {
+      // 跳转到结算单页面
+      this.$router.push({
+        name: 'SettlementPDF',
+        params: { orderId: row.id },
+        query: { 
+          orderData: JSON.stringify(row)
+        }
+      })
+    },
+
     // 搜索
     handleSearch() {
       this.pagination.page = 1
@@ -516,6 +530,13 @@ export default {
       return time ? parseTime(time) : '--'
     },
 
+    // 格式化日期
+    formatDate(date) {
+      if (!date) return '--'
+      const d = new Date(date)
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    },
+
     // 获取订单类型显示文本
     getOrderTypeText(type) {
       const textMap = {
@@ -603,8 +624,6 @@ export default {
       // 可以在这里添加取消时的逻辑
     },
 
-
-
     // 金额格式化
     formatAmount(amount) {
       const num = Number(amount) || 0
@@ -631,7 +650,5 @@ export default {
       text-align: right;
     }
   }
-
-
 }
-</style>
+</style> 

@@ -135,6 +135,13 @@ export const constantRoutes = [
         name: 'InvoiceList',
         component: () => import('@/views/invoice/list/index.vue'),
         meta: { title: '发票管理', icon: 'table' }
+      },
+      {
+        path: 'settlement/:orderId',
+        name: 'SettlementPDF',
+        component: () => import('@/views/recycle/order/SettlementPDF.vue'),
+        meta: { title: '结算单预览', icon: 'document' },
+        hidden: true
       }
     ]
   },

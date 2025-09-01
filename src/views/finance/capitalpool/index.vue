@@ -10,11 +10,15 @@
 
     <el-table :data="list" v-loading="listLoading" border fit highlight-current-row style="margin-top: 20px;">
       <el-table-column prop="no" label="资金池编号" width="180" />
-      <el-table-column prop="contractId" label="合同编号" width="220" />
+      <el-table-column prop="contractNo" label="合同编号" width="220" />
       <el-table-column prop="contractName" label="合同名称" width="140" />
-      <el-table-column prop="partner" label="合作方" width="140" />
+      <el-table-column prop="contractPartner" label="合作方" width="140" />
       <el-table-column prop="contractName" label="合同类型" width="140" />
-      <el-table-column prop="fundPoolDirection" label="资金池方向" width="140" />
+      <el-table-column prop="fundPoolDirection" label="资金池方向" width="140" >
+        <template slot-scope="scope">
+          {{ getFundPoolDirectionName(scope.row.fundPoolDirection) }}
+        </template>
+      </el-table-column>
       <el-table-column prop="balance" label="当前余额" width="140">
         <template slot-scope="scope">¥{{ formatAmount(scope.row.balance) }}</template>
       </el-table-column> 
@@ -62,8 +66,8 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="合作方" prop="partner">
-                <el-input v-model="form.partner" placeholder="请输入合作方" />
+              <el-form-item label="合作方" prop="contractPartner">
+                <el-input v-model="form.contractPartner" placeholder="请输入合作方" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -77,8 +81,7 @@
             <el-col :span="12">
               <el-form-item label="资金池方向" prop="fundPoolDirection">
                 <el-select v-model="form.fundPoolDirection" placeholder="请选择资金池方向" style="width: 100%;">
-                  <el-option label="收款" value="收款" />
-                  <el-option label="付款" value="付款" />
+                  <el-option v-for="item in FUND_POOL_DIRECTION" :key="item.value" :label="item.label" :value="item.value" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -153,12 +156,14 @@
 <script>
 import { getCapitalPoolPage, createCapitalPool, updateCapitalPool, deleteCapitalPool, getCapitalPoolDetails } from '@/api/capitalPool'
 import ContractSelector from '@/components/ContractSelector'
-
+import { FUND_POOL_DIRECTION, getFundPoolDirectionName } from '@/constants/pool'
 export default {
   name: 'CapitalPool',
   components: { ContractSelector },
   data() {
     return {
+      getFundPoolDirectionName,
+      FUND_POOL_DIRECTION,
       list: [],
       listLoading: false,
       searchForm: {
@@ -177,7 +182,7 @@ export default {
         no: '',
         contractNo: '',
         contractName: '',
-        partner: '',
+        contractPartner: '',
         fundPoolDirection: '',
         initialAmount: 0,
         initialBalanceVoucher: ''
@@ -186,7 +191,7 @@ export default {
         no: [{ required: true, message: '请输入编号', trigger: 'blur' }],
         contractNo: [{ required: true, message: '请输入合同编号', trigger: 'blur' }],
         contractName: [{ required: true, message: '请输入合同名称', trigger: 'blur' }],
-        partner: [{ required: true, message: '请输入合作方', trigger: 'blur' }],
+        contractPartner: [{ required: true, message: '请输入合作方', trigger: 'blur' }],
         fundPoolDirection: [{ required: true, message: '请选择资金池方向', trigger: 'change' }],
         initialAmount: [{ required: true, message: '请输入初始金额', trigger: 'blur' }],
         initialBalanceVoucher: [{ required: true, message: '请输入初始余额凭证', trigger: 'blur' }]
@@ -237,7 +242,7 @@ export default {
         no: '', 
         contractNo: '', 
         contractName: '', 
-        partner: '', 
+        contractPartner: '', 
         fundPoolDirection: '', 
         initialAmount: 0, 
         initialBalanceVoucher: '' 
@@ -255,9 +260,9 @@ export default {
     handleContractConfirm(selected) {
       const contract = Array.isArray(selected) ? selected[0] : selected
       if (!contract) return
-      this.form.contractNo = contract.no || contract.contractNo || ''
-      this.form.contractName = contract.name || contract.contractName || ''
-      this.form.partner = contract.partner || ''
+      this.form.contractNo = contract.no 
+      this.form.contractName = contract.name 
+      this.form.contractPartner = contract.partner
       this.contractSelectorVisible = false
     },
     handleDelete(row) {

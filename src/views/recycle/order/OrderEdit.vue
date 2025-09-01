@@ -218,7 +218,7 @@
           </el-table>
 
           <!-- 进项订单明细组件 -->
-          <purchase-item :dialog-mode="dialogMode" :items="detailData.items" :items-loading="itemsLoading"
+          <purchase-item :dialog-mode="dialogMode" :order-data="detailData" :items="detailData.items" :items-loading="itemsLoading"
             @selection-change="handleSelectionChange" @recalc-order-amount="recalcOrderAmount" @add-item="addOrderItem"
             @delete-items="deleteSelectedItems" />
         </el-tab-pane>
@@ -250,6 +250,9 @@
     <!-- 交付地址选择弹窗组件 -->
     <address-selector :visible.sync="deliverySelectorVisible" title="选择交付地址" :multiple="false"
       @confirm="handleDeliverySelected" />
+    <!-- 银行信息选择弹窗组件 -->
+    <bank-info-selector :visible.sync="bankInfoSelectorVisible" title="选择走款账号" :multiple="false"
+      @confirm="handleBankInfoSelected" />
   </el-dialog>
 </template>
 
@@ -260,6 +263,7 @@ import ImageUploader from '@/components/ImageUploader/index.vue'
 import ContractSelector from '@/components/ContractSelector'
 import AgentSelector from '@/components/AgentSelector'
 import AddressSelector from '@/components/AddressSelector'
+import BankInfoSelector from '@/components/BankInfoSelector'
 import { getContractItems } from '@/api/recycleContract'
 import PurchaseItem from './item/PurchaseItem.vue'
 import SalesItem from './item/SalesItem.vue'
@@ -277,7 +281,7 @@ import {
 
 export default {
   name: 'OrderEdit',
-  components: { ContractSelector, AgentSelector, AddressSelector, ImageUploader, PurchaseItem, SalesItem },
+  components: { ContractSelector, AgentSelector, AddressSelector, BankInfoSelector, ImageUploader, PurchaseItem, SalesItem },
   props: {
     visible: {
       type: Boolean,
@@ -307,6 +311,8 @@ export default {
       warehouseSelectorVisible: false,
       // 交付地址选择弹窗
       deliverySelectorVisible: false,
+      // 银行信息选择弹窗
+      bankInfoSelectorVisible: false,
       // 枚举选项
       orderTypeOptions: ORDER_TYPE_OPTIONS,
       orderStatusOptions: ORDER_STATUS_OPTIONS,
@@ -518,7 +524,18 @@ export default {
 
     // 打开走款账号选择器
     openPaymentAccountSelector() {
-      this.$message.info('走款账号选择功能暂未实现')
+      this.bankInfoSelectorVisible = true
+    },
+
+    // 处理银行信息选择确认
+    handleBankInfoSelected(bankInfos) {
+      if (bankInfos && bankInfos.length > 0) {
+        const selectedBankInfo = bankInfos[0]
+        // 显示格式：开户行 - 银行卡号
+        this.detailData.paymentAccount = `${selectedBankInfo.bankName} - ${selectedBankInfo.cardNumber}`
+        this.$message.success('走款账号选择成功')
+      }
+      this.bankInfoSelectorVisible = false
     },
 
     // 获取弹框标题
@@ -553,6 +570,7 @@ export default {
         contractPartner: '',
         warehouseAddress: '',
         deliveryAddress: '',
+        paymentAccount: '',
         items: []
       }
     },

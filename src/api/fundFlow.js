@@ -38,8 +38,17 @@ export function updateFundFlow(data) {
 // 删除资金走款记录
 export function deleteFundFlow(id) {
   return request({
-    url: `/recycle/fund/${id}`,
+    url: `/recycle/fund/delete/${id}`,
     method: 'delete'
+  })
+}
+
+// 批量新增资金走款记录
+export function batchAddFundFlow(data) {
+  return request({
+    url: '/recycle/fund/addBatch',
+    method: 'post',
+    data
   })
 }
 

@@ -3,165 +3,93 @@
     <!-- 订单明细 -->
     <el-divider content-position="left">订单明细</el-divider>
     <el-form>
-                  <el-form-item>
-              <el-button type="primary" @click="clearAllPrices">货物单价清零</el-button>
-              <el-button type="primary" @click="addOrderItem">新增行</el-button>
-              <el-button type="danger" @click="deleteSelectedItems" :disabled="selectedItems.length === 0">删除行</el-button>
-            </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="clearAllPrices">货物单价清零</el-button>
+        <el-button type="primary" @click="addOrderItem">新增行</el-button>
+        <el-button type="danger" @click="deleteSelectedItems" :disabled="selectedItems.length === 0">删除行</el-button>
+      </el-form-item>
     </el-form>
-    <el-table 
-      :data="items" 
-      border 
-      fit 
-      style="width: 100%" 
-      v-loading="itemsLoading"
-      @selection-change="handleSelectionChange"
-      :show-summary="true"
-      :summary-method="getPurchaseSummary"
-    >
+    <el-table :data="items" border fit style="width: 100%" v-loading="itemsLoading"
+      @selection-change="handleSelectionChange" :show-summary="true" :summary-method="getPurchaseSummary">
       <el-table-column type="selection" width="55" align="center" />
-                    <el-table-column prop="goodNo" label="货物编号" width="180" align="center">
-                <template slot-scope="scope">
-                  <div class="good-no-container">
-                    <el-input 
-                      v-model="scope.row.goodNo" 
-                      placeholder="请输入货物编号" 
-                      :disabled="!scope.row.goodNo"
-                      readonly
-                    />
-                    <el-button 
-                      type="primary" 
-                      size="mini" 
-                      icon="el-icon-search"
-                      @click="openBusinessScopeSelector(scope.$index)"
-                      style="margin-left: 5px;"
-                    >
-                      搜索
-                    </el-button>
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column prop="goodType" label="货物分类" width="120" align="center">
-                <template slot-scope="scope">
-                  <el-input 
-                    v-model="scope.row.goodType" 
-                    placeholder="请输入货物分类" 
-                    :disabled="!scope.row.goodNo"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column prop="goodName" label="货物名称" min-width="160" show-overflow-tooltip>
-                <template slot-scope="scope">
-                  <el-input 
-                    v-model="scope.row.goodName" 
-                    placeholder="请输入货物名称" 
-                    :disabled="!scope.row.goodNo"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column prop="goodModel" label="货物型号" width="140" align="center">
-                <template slot-scope="scope">
-                  <el-input 
-                    v-model="scope.row.goodModel" 
-                    placeholder="请输入货物型号" 
-                    :disabled="!scope.row.goodNo"
-                  />
-                </template>
-              </el-table-column>
-                    <el-table-column prop="goodCount" label="货物数量" width="120" align="center">
-                <template slot-scope="scope">
-                  <el-input-number 
-                    v-model="scope.row.goodCount" 
-                    :min="1" 
-                    :precision="0"
-                    controls-position="right" 
-                    @change="onItemFieldChange(scope.row)"
-                    :disabled="!scope.row.goodNo"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column prop="goodWeight" label="货物重量" width="120" align="center">
-                <template slot-scope="scope">
-                  <el-input 
-                    v-model="scope.row.goodWeight" 
-                    placeholder="请输入货物重量" 
-                    :disabled="!scope.row.goodNo"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column prop="goodPrice" label="货物单价" width="140" align="center">
-                <template slot-scope="scope">
-                  <el-input-number 
-                    v-model="scope.row.goodPrice" 
-                    :min="0" 
-                    :precision="2"
-                    controls-position="right" 
-                    @change="onItemFieldChange(scope.row)"
-                    :disabled="!scope.row.goodNo"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column prop="goodTotalPrice" label="货物总价" width="160" align="center">
-                <template slot-scope="scope">
-                  <span class="amount-text">¥{{ formatAmount(scope.row.goodTotalPrice) }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column prop="goodRemark" label="货物备注" min-width="180">
-                <template slot-scope="scope">
-                  <el-input 
-                    v-model="scope.row.goodRemark" 
-                    placeholder="请输入备注" 
-                    :disabled="!scope.row.goodNo"
-                  />
-                </template>
-              </el-table-column>
+      <el-table-column prop="goodNo" label="货物编号" width="180" align="center">
+        <template slot-scope="scope">
+          <div class="good-no-container">
+            <el-input v-model="scope.row.goodNo" placeholder="请输入货物编号" :disabled="!scope.row.goodNo" readonly />
+            <el-button  type="primary" size="mini" icon="el-icon-search" @click="openBusinessScopeSelector(scope.$index)"
+              style="margin-left: 5px;">
+              搜索
+            </el-button>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="goodType" label="货物分类" width="120" align="center">
+        <template slot-scope="scope">
+          <el-input v-model="scope.row.goodType" placeholder="请输入货物分类" :disabled="!scope.row.goodNo" />
+        </template>
+      </el-table-column>
+      <el-table-column prop="goodName" label="货物名称" min-width="160" show-overflow-tooltip>
+        <template slot-scope="scope">
+          <el-input v-model="scope.row.goodName" placeholder="请输入货物名称" :disabled="!scope.row.goodNo" />
+        </template>
+      </el-table-column>
+      <el-table-column prop="goodModel" label="货物型号" width="140" align="center">
+        <template slot-scope="scope">
+          <el-input v-model="scope.row.goodModel" placeholder="请输入货物型号" :disabled="!scope.row.goodNo" />
+        </template>
+      </el-table-column>
+      <el-table-column prop="goodCount" label="货物数量" width="120" align="center">
+        <template slot-scope="scope">
+          <el-input-number v-model="scope.row.goodCount" :min="1" :precision="0" controls-position="right"
+            @change="onItemFieldChange(scope.row)" :disabled="!scope.row.goodNo" />
+        </template>
+      </el-table-column>
+      <el-table-column prop="goodWeight" label="货物重量" width="120" align="center">
+        <template slot-scope="scope">
+          <el-input v-model="scope.row.goodWeight" placeholder="请输入货物重量" :disabled="!scope.row.goodNo" />
+        </template>
+      </el-table-column>
+      <el-table-column prop="goodPrice" label="货物单价" width="140" align="center">
+        <template slot-scope="scope">
+          <el-input-number v-model="scope.row.goodPrice" :min="0" :precision="2" controls-position="right"
+            @change="onItemFieldChange(scope.row)" :disabled="!scope.row.goodNo" />
+        </template>
+      </el-table-column>
+      <el-table-column prop="goodTotalPrice" label="货物总价" width="160" align="center">
+        <template slot-scope="scope">
+          <span class="amount-text">¥{{ formatAmount(scope.row.goodTotalPrice) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="goodRemark" label="货物备注" min-width="180">
+        <template slot-scope="scope">
+          <el-input v-model="scope.row.goodRemark" placeholder="请输入备注" :disabled="!scope.row.goodNo" />
+        </template>
+      </el-table-column>
       <el-table-column label="评级系数" width="200" align="center">
         <template slot-scope="scope">
-          <el-input 
-            v-model="scope.row.goodRating" 
-            placeholder="请输入评级系数" 
-            :disabled="!scope.row.goodNo"
-          />
+          <el-input v-model="scope.row.goodRating" placeholder="请输入评级系数" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
       <el-table-column label="评级调价" width="200" align="center">
         <template slot-scope="scope">
-          <el-input 
-            v-model="scope.row.goodRatingPrice" 
-            placeholder="请输入评级调价" 
-            :disabled="!scope.row.goodNo"
-          />
+          <el-input v-model="scope.row.goodRatingPrice" placeholder="请输入评级调价" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
       <el-table-column label="其他调价" width="200" align="center">
         <template slot-scope="scope">
-          <el-input 
-            v-model="scope.row.otherRatingPrice" 
-            placeholder="请输入其他调价" 
-            :disabled="!scope.row.goodNo"
-          />
+          <el-input v-model="scope.row.otherRatingPrice" placeholder="请输入其他调价" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
       <el-table-column label="订单金额" width="200" align="center">
         <template slot-scope="scope">
-          <el-input 
-            v-model="scope.row.orderAmount" 
-            placeholder="请输入订单金额" 
-            :disabled="!scope.row.goodNo"
-          />
+          <el-input v-model="scope.row.orderAmount" placeholder="请输入订单金额" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
     </el-table>
 
     <!-- 经营范围选择器 -->
-    <BusinessScopeSelector 
-      :visible.sync="businessScopeSelectorVisible" 
-      title="选择经营范围" 
-      :multiple="false"
-      :only-show-enabled="true"
-      @confirm="handleBusinessScopeConfirm" 
-      @close="handleBusinessScopeClose" 
-    />
+    <BusinessScopeSelector :visible.sync="businessScopeSelectorVisible" title="选择经营范围" :multiple="false"
+      :only-show-enabled="true" @confirm="handleBusinessScopeConfirm" @close="handleBusinessScopeClose" />
   </div>
 </template>
 
@@ -182,6 +110,10 @@ export default {
     items: {
       type: Array,
       default: () => []
+    },
+    orderData: {
+      type: Object,
+      default: () => { }
     },
     itemsLoading: {
       type: Boolean,
@@ -212,7 +144,7 @@ export default {
     handleBusinessScopeConfirm(selectedItems) {
       if (selectedItems && selectedItems.length > 0 && this.currentRowIndex >= 0) {
         const selectedItem = selectedItems[0] // 单选模式，取第一个
-        
+
         // 将选中的经营范围信息映射到当前行
         const currentRow = this.items[this.currentRowIndex]
         if (currentRow) {
@@ -223,7 +155,7 @@ export default {
           currentRow.goodPrice = selectedItem.publicPrice || 0
           currentRow.goodCount = 1
           currentRow.goodTotalPrice = this.calcTotal(currentRow.goodCount, currentRow.goodPrice)
-          
+
           // 触发重新计算订单金额
           this.$emit('recalc-order-amount')
         }
@@ -243,7 +175,7 @@ export default {
         this.$message.warning('没有可清零的货物明细')
         return
       }
-      
+
       this.$confirm('确定要将所有货物的单价清零吗？', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -263,6 +195,7 @@ export default {
     // 新增订单明细行
     addOrderItem() {
       const newItem = {
+        recycleOrderId: this.orderData.id,
         goodNo: '',
         goodType: '',
         goodName: '',
@@ -273,7 +206,7 @@ export default {
         goodWeight: '',
         goodRemark: ''
       }
-      
+
       this.$emit('add-item', newItem)
       this.$message.success('新增行成功')
     },
@@ -284,7 +217,7 @@ export default {
         this.$message.warning('请先选择要删除的行')
         return
       }
-      
+
       this.$confirm(`确定要删除选中的 ${this.selectedItems.length} 行数据吗？`, '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -411,4 +344,4 @@ export default {
     align-items: center;
   }
 }
-</style> 
+</style>

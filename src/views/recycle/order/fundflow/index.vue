@@ -22,6 +22,7 @@
       <el-form-item>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
         <el-button @click="handleReset">重置</el-button>
+        <el-button type="success" @click="handleAdd">新增</el-button>
       </el-form-item>
     </el-form>
 
@@ -29,23 +30,46 @@
       <el-table-column prop="partner" label="合作方" min-width="140" />
       <el-table-column prop="contractNo" label="合同编号" width="160" />
       <el-table-column prop="orderNo" label="订单编号" width="160" />
-      <el-table-column prop="contractStatus" label="合同状态" width="120" />
-      <el-table-column prop="orderStatus" label="订单状态" min-width="160" />
-      <el-table-column prop="orderType" label="订单类型" width="120" />
-      <el-table-column prop="fundPoolDirection" label="资金池剩余金额" width="120" />
-      <el-table-column prop="fundFlowDirection" label="走款方向" width="120" />
-      <el-table-column prop="fundFlowAmount" label="走款金额" width="120" />
-      <el-table-column prop="fundPoolDirection" label="资金池方向" width="120">
+      <el-table-column prop="contractStatus" label="合同状态" width="120">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.fundPoolDirection === '+' ? 'success' : 'danger'">
-            {{ scope.row.fundPoolDirection === '+' ? '进' : '出' }}
+          <el-tag :type="getStatusType(scope.row.contractStartTime, scope.row.contractEndTime)" size="medium">
+            {{ getStatusText(scope.row.contractStartTime, scope.row.contractEndTime) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="shouldPay" label="资金池走款金额" width="120" />
-      <el-table-column prop="loanDirection" label="贷款方向" width="120" />
-      <el-table-column prop="loanAmount" label="贷款走款金额" width="120" />
-      <el-table-column prop="loanBank" label="贷款走款银行" width="120" />
+      <el-table-column prop="orderType" label="订单类型" width="120" >
+        <template slot-scope="scope">
+          <el-tag size="medium">
+            {{ getOrderTypeText(scope.row.orderType) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="contractFundPoolRemainingAmount" label="资金池剩余金额" width="120" />
+      <el-table-column prop="fundFlowDirection" label="走款方向" width="120">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.fundFlowDirection === '0' ? 'danger' : 'success'">
+            {{ (fundDirectionOptions.find(item => item.value === scope.row.fundFlowDirection) || {}).label }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="fundFlowAmount" label="走款金额" width="120" />
+      <el-table-column prop="contractFundPoolDirection" label="资金池方向" width="120">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.contractFundPoolDirection === '0' ? 'success' : 'danger'">
+            {{ getFundPoolDirectionName(scope.row.contractFundPoolDirection) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="contractFundPoolAmount" label="资金池走款金额" width="120" />
+      <el-table-column prop="fundDirection" label="货款方向" width="120">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.fundDirection === '0' ? 'danger' : 'success'">
+            {{ (fundDirectionOptions.find(item => item.value === scope.row.fundDirection) || {}).label }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="fundAmount" label="货款走款金额" width="120" />
+      <el-table-column prop="fundBank" label="货款走款银行" width="120" />
       <el-table-column prop="planPayTime" label="计划走款时间" width="120" />
       <el-table-column prop="processor" label="经办人" width="120" />
       <el-table-column prop="voucher" label="凭证" min-width="120" />
@@ -59,16 +83,9 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination
-      :current-page="pagination.page"
-      :page-sizes="[10, 20, 50, 100]"
-      :page-size="pagination.size"
-      :total="pagination.total"
-      layout="total, sizes, prev, pager, next, jumper"
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      style="margin-top: 20px; text-align: right;"
-    />
+    <el-pagination :current-page="pagination.page" :page-sizes="[10, 20, 50, 100]" :page-size="pagination.size"
+      :total="pagination.total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+      @current-change="handleCurrentChange" style="margin-top: 20px; text-align: right;" />
 
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="700px">
       <el-form :model="form" :rules="rules" ref="form" label-width="140px">
@@ -95,7 +112,10 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="合同状态" prop="contractStatus">
-                <el-input v-model="form.contractStatus" placeholder="请输入合同状态" />
+                <el-select v-model="form.contractStatus" placeholder="请选择状态">
+                  <el-option v-for="option in orderStatusOptions" :key="option.value" :label="option.label"
+                    :value="option.value" />
+                </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -109,13 +129,13 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="订单总金额" prop="orderStatus">
-                <el-input v-model="form.orderStatus" placeholder="请输入订单总金额" />
+              <el-form-item label="订单总金额" prop="orderTotalAmount">
+                <el-input v-model="form.orderTotalAmount" placeholder="请输入订单总金额" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="订单应走金额" prop="orderStatus">
-                <el-input v-model="form.orderStatus" placeholder="请输入订单应走金额" />
+              <el-form-item label="订单应走金额" prop="orderShouldPayAmount">
+                <el-input v-model="form.orderShouldPayAmount" placeholder="请输入订单应走金额" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -128,18 +148,22 @@
         <div class="form-section">
           <el-row :gutter="16">
             <el-col :span="12">
-              <el-form-item label="合同资金池方向" prop="contractFundPoolDirection">
-                <el-input v-model="form.contractFundPoolDirection" placeholder="请输入合同资金池方向" />
+              <el-form-item label="资金池方向" prop="contractFundPoolDirection">
+                <el-select v-model="form.contractFundPoolDirection" placeholder="请选择">
+                  <el-option v-for="option in fundPoolDirectionOptions" :key="option.value" :label="option.label" :value="option.value" />
+                </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="合同资金池剩余金额" prop="contractFundPoolId">
-                <el-input v-model="form.contractFundPoolId" placeholder="请输入合同资金池剩余金额" />
+              <el-form-item label="合同资金池剩余金额" prop="contractFundPoolRemainingAmount">
+                <el-input v-model="form.contractFundPoolRemainingAmount" placeholder="请输入合同资金池剩余金额" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="走款方向" prop="fundFlowDirection">
-                <el-input v-model="form.fundFlowDirection" placeholder="请输入走款方向" />
+                <el-select v-model="form.fundFlowDirection" placeholder="请选择">
+                  <el-option v-for="option in fundDirectionOptions" :key="option.value" :label="option.label" :value="option.value" />
+                </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -148,36 +172,38 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="资金池方向" prop="fundPoolDirection">
-                <el-select v-model="form.fundPoolDirection" placeholder="请选择">
-                  <el-option label="进(+ )" value="+" />
-                  <el-option label="出(- )" value="-" />
+              <el-form-item label="资金池方向" prop="contractFundPoolDirection">
+                <el-select v-model="form.contractFundPoolDirection" placeholder="请选择">
+                  <el-option v-for="option in fundPoolDirectionOptions" :key="option.value" :label="option.label" :value="option.value" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="资金走款金额" prop="fundPoolDirection">
-                <el-input v-model="form.fundPoolDirection" placeholder="请输入资金走款金额" />
+              <el-form-item label="资金走款金额" prop="contractFundPoolAmount">
+                <el-input v-model="form.contractFundPoolAmount" placeholder="请输入资金走款金额" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="贷款方向" prop="fundPoolDirection">
-                <el-input v-model="form.fundPoolDirection" placeholder="请输入贷款方向" />
+              <el-form-item label="货款方向" prop="fundDirection">
+                <el-select v-model="form.fundDirection" placeholder="请选择">
+                  <el-option v-for="option in fundDirectionOptions" :key="option.value" :label="option.label" :value="option.value" />
+                </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="贷款走款金额" prop="fundPoolDirection">
-                <el-input v-model="form.fundPoolDirection" placeholder="请输入贷款走款金额" />
+              <el-form-item label="货款走款金额" prop="fundAmount">
+                <el-input v-model="form.fundAmount" placeholder="请输入货款走款金额" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="贷款走款银行" prop="fundPoolDirection">
-                <el-input v-model="form.fundPoolDirection" placeholder="请输入贷款走款银行" />
+              <el-form-item label="货款走款银行" prop="fundBank">
+                <el-input v-model="form.fundBank" placeholder="请输入货款走款银行" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="计划走款时间" prop="fundPoolDirection">
-                <el-input v-model="form.fundPoolDirection" placeholder="请输入计划走款时间" />
+              <el-form-item label="计划走款时间" prop="planPayTime">
+                <el-date-picker v-model="form.planPayTime" type="datetime" placeholder="选择计划走款时间" style="width: 100%;"
+                  value-format="yyyy-MM-dd HH:mm:ss" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -192,19 +218,16 @@
     <el-dialog title="确认走款" :visible.sync="confirmDialogVisible" width="500px">
       <el-form :model="confirmForm" :rules="confirmRules" ref="confirmForm" label-width="120px">
         <el-form-item label="经办人" prop="processor">
-          <el-input v-model="confirmForm.processor" placeholder="请输入经办人" />
+          <el-input v-model="confirmForm.processor" placeholder="请选择经办人" readonly @focus="openAgentSelector">
+            <el-button slot="append" icon="el-icon-search" @click="openAgentSelector">选择</el-button>
+          </el-input>
         </el-form-item>
         <el-form-item label="凭证" prop="voucher">
           <el-input v-model="confirmForm.voucher" placeholder="请输入凭证" />
         </el-form-item>
         <el-form-item label="支付时间" prop="payFundTime">
-          <el-date-picker 
-            v-model="confirmForm.payFundTime" 
-            type="datetime" 
-            placeholder="选择支付时间" 
-            style="width: 100%;" 
-            value-format="yyyy-MM-dd HH:mm:ss" 
-          />
+          <el-date-picker v-model="confirmForm.payFundTime" type="datetime" placeholder="选择支付时间" style="width: 100%;"
+            value-format="yyyy-MM-dd HH:mm:ss" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -213,24 +236,30 @@
       </div>
     </el-dialog>
 
-    <contract-selector
-      :visible.sync="contractSelectorVisible"
-      title="选择合同"
-      :multiple="false"
-      :show-pagination="true"
-      @confirm="handleContractConfirm"
-    />
+    <contract-selector :visible.sync="contractSelectorVisible" title="选择合同" :multiple="false" :show-pagination="true"
+      @confirm="handleContractConfirm" />
+    
+    <agent-selector :visible.sync="agentSelectorVisible" title="选择经办人" :multiple="false" :show-pagination="true"
+      @confirm="handleAgentConfirm" />
   </div>
-  
+
 </template>
 
 <script>
 import { getFundFlowPage, addFundFlow, updateFundFlow, deleteFundFlow } from '@/api/fundFlow'
 import ContractSelector from '@/components/ContractSelector'
+import AgentSelector from '@/components/AgentSelector'
+import {
 
+  ORDER_STATUS_OPTIONS,
+  getOrderTypeText
+} from '@/constants/orderTypes'
+import { getStatusText, getStatusType } from '@/constants/constract'
+import { FUND_DIRECTION } from '@/constants/fund'
+import { FUND_POOL_DIRECTION, getFundPoolDirectionName } from '@/constants/pool'
 export default {
   name: 'FundFlow',
-  components: { ContractSelector },
+  components: { ContractSelector, AgentSelector },
   data() {
     return {
       list: [],
@@ -239,8 +268,19 @@ export default {
         no: '',
         contractNo: '',
         partner: '',
+        orderNo: '',
+        orderType: '',
+        orderStatus: '',
+        fundFlowDirection: '',
         payFundTimeRange: []
       },
+      orderStatusOptions: ORDER_STATUS_OPTIONS,
+      fundDirectionOptions: FUND_DIRECTION,
+      fundPoolDirectionOptions: FUND_POOL_DIRECTION,
+      getStatusText,
+      getStatusType,
+      getOrderTypeText,
+      getFundPoolDirectionName,
       pagination: {
         page: 1,
         size: 10,
@@ -257,22 +297,35 @@ export default {
         partner: '',
         orderId: '',
         orderNo: '',
+        orderType: '',
+        orderStatus: '',
+        orderTotalAmount: '',
+        orderShouldPayAmount: '',
+        contractFundPoolDirection: '0',
+        contractFundPoolRemainingAmount: '',
         shouldPay: null,
         thisPay: null,
         fundPoolId: '',
-        fundPoolDirection: '+',
+        fundDirection: '0',
+        fundFlowDirection: '0',
+        fundFlowAmount: '',
+        contractFundPoolAmount: '',
+        fundAmount: '',
+        fundBank: '',
+        planPayTime: '',
         processor: '',
         voucher: '',
         payFundTime: ''
       },
       rules: {
-        no: [{ required: true, message: '请输入编号', trigger: 'blur' }],
-        contractNo: [{ required: true, message: '请输入合同编号', trigger: 'blur' }],
-        thisPay: [{ required: true, message: '请输入本次交易金额', trigger: 'blur' }],
-        fundPoolDirection: [{ required: true, message: '请选择方向', trigger: 'change' }],
-        payFundTime: [{ required: true, message: '请选择支付时间', trigger: 'change' }]
+        contractNo: [{ required: true, message: '请选择合同编号', trigger: 'blur' }],
+        fundFlowDirection: [{ required: true, message: '请选择走款方向', trigger: 'change' }],
+        fundFlowAmount: [{ required: true, message: '请输入走款金额', trigger: 'blur' }],
+        contractFundPoolDirection: [{ required: true, message: '请选择资金池方向', trigger: 'change' }],
+        fundDirection: [{ required: true, message: '请选择货款方向', trigger: 'change' }]
       },
       contractSelectorVisible: false,
+      agentSelectorVisible: false,
       // 确认弹框相关数据
       confirmDialogVisible: false,
       confirmForm: {
@@ -306,8 +359,10 @@ export default {
         this.list = res.data.records || res.data || []
         this.pagination.total = res.data.total || 0
         this.listLoading = false
-      }).catch(() => {
+      }).catch((error) => {
+        console.error('获取数据失败:', error)
         this.listLoading = false
+        this.$message.error('获取数据失败')
       })
     },
     handleSearch() {
@@ -315,7 +370,16 @@ export default {
       this.fetchData()
     },
     handleReset() {
-      this.searchForm = { no: '', contractNo: '', partner: '', payFundTimeRange: [] }
+      this.searchForm = { 
+        no: '', 
+        contractNo: '', 
+        partner: '', 
+        orderNo: '', 
+        orderType: '', 
+        orderStatus: '', 
+        fundFlowDirection: '', 
+        payFundTimeRange: [] 
+      }
       this.pagination.page = 1
       this.fetchData()
     },
@@ -330,10 +394,22 @@ export default {
         partner: '',
         orderId: '',
         orderNo: '',
+        orderType: '',
+        orderStatus: '',
+        orderTotalAmount: '',
+        orderShouldPayAmount: '',
+        contractFundPoolDirection: '0',
+        contractFundPoolRemainingAmount: '',
         shouldPay: null,
         thisPay: null,
         fundPoolId: '',
-        fundPoolDirection: '+',
+        fundDirection: '0',
+        fundFlowDirection: '0',
+        fundFlowAmount: '',
+        contractFundPoolAmount: '',
+        fundAmount: '',
+        fundBank: '',
+        planPayTime: '',
         processor: '',
         voucher: '',
         payFundTime: ''
@@ -350,7 +426,18 @@ export default {
       this.form.contractName = contract.name || contract.contractName || ''
       this.form.contractType = contract.type || ''
       this.form.partner = contract.partner || ''
+      this.form.contractFundPoolDirection = contract.fundPoolDirection || '0'
+      this.form.contractFundPoolRemainingAmount = contract.fundPoolRemainingAmount || ''
       this.contractSelectorVisible = false
+    },
+    openAgentSelector() {
+      this.agentSelectorVisible = true
+    },
+    handleAgentConfirm(selected) {
+      const agent = Array.isArray(selected) ? selected[0] : selected
+      if (!agent) return
+      this.confirmForm.processor = agent.name || agent.accountName || agent.username || ''
+      this.agentSelectorVisible = false
     },
     handleEdit(row) {
       this.dialogTitle = '编辑走款'
@@ -369,22 +456,22 @@ export default {
     handleConfirmSubmit() {
       this.$refs.confirmForm.validate((valid) => {
         if (!valid) return
-        
+
         // 这里调用确认走款的API
-        // 假设有一个confirmFundFlow的API方法
         const confirmData = {
           id: this.confirmForm.id,
           processor: this.confirmForm.processor,
           voucher: this.confirmForm.voucher,
           payFundTime: this.confirmForm.payFundTime
         }
-        
+
         // 这里需要根据实际的API调整
         updateFundFlow(confirmData).then(() => {
           this.$message.success('确认走款成功')
           this.confirmDialogVisible = false
           this.fetchData()
-        }).catch(() => {
+        }).catch((error) => {
+          console.error('确认走款失败:', error)
           this.$message.error('确认走款失败')
         })
       })
@@ -395,9 +482,12 @@ export default {
           deleteFundFlow(row.id).then(() => {
             this.$message.success('删除成功')
             this.fetchData()
+          }).catch((error) => {
+            console.error('删除失败:', error)
+            this.$message.error('删除失败')
           })
         })
-        .catch(() => {})
+        .catch(() => { })
     },
     handleSave() {
       this.$refs.form.validate((valid) => {
@@ -407,6 +497,9 @@ export default {
           this.$message.success(this.form.id ? '更新成功' : '新增成功')
           this.dialogVisible = false
           this.fetchData()
+        }).catch((error) => {
+          console.error(this.form.id ? '更新失败:' : '新增失败:', error)
+          this.$message.error(this.form.id ? '更新失败' : '新增失败')
         })
       })
     },
@@ -444,6 +537,4 @@ export default {
 .el-divider {
   margin: 24px 0 16px 0;
 }
-
 </style>
-
