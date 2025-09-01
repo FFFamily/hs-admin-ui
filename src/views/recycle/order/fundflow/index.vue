@@ -77,7 +77,7 @@
       <el-table-column label="操作" width="280" align="center" fixed="right">
         <template slot-scope="scope">
           <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button size="mini" type="success" @click="handleConfirm(scope.row)">确认</el-button>
+          <el-button v-if="!hasConfirmInfo(scope.row)" size="mini" type="success" @click="handleConfirm(scope.row)">确认</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
@@ -88,54 +88,54 @@
       @current-change="handleCurrentChange" style="margin-top: 20px; text-align: right;" />
 
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="700px">
-      <el-form :model="form" :rules="rules" ref="form" label-width="140px">
+      <el-form :model="form" :rules="rules" ref="form" label-width="100px">
         <!-- 分割线 -->
         <el-divider content-position="left">基本信息</el-divider>
         <div class="form-section">
           <el-row :gutter="16">
             <el-col :span="12">
               <el-form-item label="合同编号" prop="contractNo">
-                <el-input v-model="form.contractNo" placeholder="请选择合同" readonly @focus="openContractSelector">
-                  <el-button slot="append" icon="el-icon-search" @click="openContractSelector">选择</el-button>
+                <el-input disabled v-model="form.contractNo" placeholder="请选择合同" readonly @focus="openContractSelector">
                 </el-input>
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="合同名称" prop="contractName">
-                <el-input v-model="form.contractName" placeholder="请输入合同名称" />
+                <el-input disabled v-model="form.contractName" placeholder="请输入合同名称" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="合作方" prop="partner">
-                <el-input v-model="form.partner" placeholder="请输入合作方" />
+                <el-input disabled v-model="form.partner" placeholder="请输入合作方" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="合同状态" prop="contractStatus">
-                <el-select v-model="form.contractStatus" placeholder="请选择状态">
-                  <el-option v-for="option in orderStatusOptions" :key="option.value" :label="option.label"
-                    :value="option.value" />
-                </el-select>
+                <el-tag :type="getStatusType(form.contractStartTime, form.contractEndTime)" size="medium">
+                    {{ getStatusText(form.contractStartTime, form.contractEndTime) }}
+                </el-tag>
               </el-form-item>
             </el-col>
-            <el-col :span="12">
+            <el-col :span="24">
               <el-form-item label="订单编号" prop="orderNo">
-                <el-input v-model="form.orderNo" placeholder="请输入订单编号" />
+                <el-input disabled v-model="form.orderNo" placeholder="请输入订单编号" />
               </el-form-item>
             </el-col>
-            <el-col :span="12">
+            <el-col :span="24">
               <el-form-item label="订单类型" prop="orderType">
-                <el-input v-model="form.orderType" placeholder="请输入订单类型" />
+                <el-tag size="medium">
+                  {{ getOrderTypeText(form.orderType) }}
+                </el-tag>
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="订单总金额" prop="orderTotalAmount">
-                <el-input v-model="form.orderTotalAmount" placeholder="请输入订单总金额" />
+                <el-input disabled v-model="form.orderTotalAmount" placeholder="请输入订单总金额" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="订单应走金额" prop="orderShouldPayAmount">
-                <el-input v-model="form.orderShouldPayAmount" placeholder="请输入订单应走金额" />
+              <el-form-item label="订单应走金额" prop="orderShouldAmount">
+                <el-input disabled v-model="form.orderShouldAmount" placeholder="请输入订单应走金额" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -155,7 +155,7 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="合同资金池剩余金额" prop="contractFundPoolRemainingAmount">
+              <el-form-item label-width="140px" label="合同资金池剩余金额" prop="contractFundPoolRemainingAmount">
                 <el-input v-model="form.contractFundPoolRemainingAmount" placeholder="请输入合同资金池剩余金额" />
               </el-form-item>
             </el-col>
@@ -202,8 +202,8 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="计划走款时间" prop="planPayTime">
-                <el-date-picker v-model="form.planPayTime" type="datetime" placeholder="选择计划走款时间" style="width: 100%;"
-                  value-format="yyyy-MM-dd HH:mm:ss" />
+                <el-date-picker v-model="form.planPayTime" type="date" placeholder="选择计划走款时间" style="width: 100%;"
+                  value-format="yyyy-MM-dd" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -511,6 +511,10 @@ export default {
     handleCurrentChange(val) {
       this.pagination.page = val
       this.fetchData()
+    },
+    // 判断是否有确认信息
+    hasConfirmInfo(row) {
+      return row.processor || row.voucher || row.payFundTime
     }
   }
 }
