@@ -2,6 +2,35 @@
     <div class="app-container">
         <!-- 搜索表单 -->
         <el-form :inline="true" :model="searchForm" class="search-form" @submit.native.prevent>
+            <el-form-item label="合同名称：">
+                <el-input v-model="searchForm.name" placeholder="请输入合同名称" clearable />
+            </el-form-item>
+            <el-form-item label="合同编号：">
+                <el-input v-model="searchForm.no" placeholder="请输入合同编号" clearable />
+            </el-form-item>
+            <el-form-item label="合同类型：">
+                <el-select v-model="searchForm.type" placeholder="请选择合同类型" clearable>
+                    <el-option 
+                        v-for="option in contractTypeOptions" 
+                        :key="option.value" 
+                        :label="option.label" 
+                        :value="option.value" 
+                    />
+                </el-select>
+            </el-form-item>
+            <el-form-item label="合作方：">
+                <el-input v-model="searchForm.partnerName" placeholder="请选择合作方" readonly @click="showSearchPartnerSelector">
+                    <el-button slot="append" icon="el-icon-search" @click="showSearchPartnerSelector"></el-button>
+                </el-input>
+            </el-form-item>
+            <el-form-item label="状态：">
+                <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
+                    <el-option label="未开始" value="not_started" />
+                    <el-option label="进行中" value="in_progress" />
+                    <el-option label="已结束" value="ended" />
+                    <el-option label="已过期" value="expired" />
+                </el-select>
+            </el-form-item>
             <el-form-item>
                 <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
                 <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
@@ -18,12 +47,10 @@
 
             <el-table-column label="合同类型" prop="type" width="120" align="center">
                 <template slot-scope="scope">
-                    <el-tag :type="getContractTypeTagType(scope.row.type)" size="medium">
-                        {{ getContractTypeText(scope.row.type) }}
-                    </el-tag>
+                    {{ getContractTypeText(scope.row.type) }}
                 </template>
             </el-table-column>
-            <el-table-column label="合作方" prop="partner" width="150" align="center" show-overflow-tooltip />
+            <el-table-column label="合作方" prop="partnerName" width="150" align="center" show-overflow-tooltip />
             <el-table-column label="状态" prop="status" width="120" align="center" show-overflow-tooltip>
                 <template slot-scope="scope">
                     <el-tag :type="getStatusType(scope.row.startTime, scope.row.endTime)" size="medium">
@@ -54,13 +81,13 @@
             <el-table-column label="操作" align="center" fixed="right">
                 <template slot-scope="scope">
                     <el-button size="mini" type="warning" icon="el-icon-edit" @click="handleEdit(scope.row)">
-                        编辑
+                       
                     </el-button>
                     <el-button size="mini" type="info" icon="el-icon-document" @click="handleViewItems(scope.row)">
                         货物明细
                     </el-button>
                     <el-button size="mini" type="danger" icon="el-icon-delete" @click="handleDelete(scope.row)">
-                        删除
+                        
                     </el-button>
                 </template>
             </el-table-column>
@@ -144,7 +171,7 @@
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item label="甲方" prop="partyA">
-                            <el-input v-model="form.partyA" placeholder="请选择甲方" readonly
+                            <el-input v-model="form.partyAName" placeholder="请选择甲方" readonly
                                 @click="showPartyASelector">
                                 <el-button slot="append" icon="el-icon-search" @click="showPartyASelector"></el-button>
                             </el-input>
@@ -152,7 +179,7 @@
                     </el-col>
                     <el-col :span="12">
                         <el-form-item label="乙方" prop="partyB">
-                            <el-input v-model="form.partyB" placeholder="请选择乙方" readonly
+                            <el-input v-model="form.partyBName" placeholder="请选择乙方" readonly
                                 @click="showPartyBSelector">
                                 <el-button slot="append" icon="el-icon-search" @click="showPartyBSelector"></el-button>
                             </el-input>
@@ -169,28 +196,28 @@
                             >
                                 <el-option 
                                     v-if="form.partyA" 
-                                    :label="`甲方：${form.partyA}`" 
-                                    :value="form.partyAId"
+                                    :label="`甲方：${form.partyAName}`" 
+                                    :value="form.partyA"
                                 />
                                 <el-option 
                                     v-if="form.partyB" 
-                                    :label="`乙方：${form.partyB}`" 
-                                    :value="form.partyBId"
+                                    :label="`乙方：${form.partyBName}`" 
+                                    :value="form.partyB"
                                 />
                             </el-select>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
                         <el-form-item label="主银行卡号" prop="mainBankCard">
-                            <el-input :value="getMainBankCardDisplayValue()" placeholder="请选择银行卡号" readonly
+                            <el-input :value="getMainBankCardDisplayValue()" placeholder="请选1择银行卡号" readonly
                                 @click="showMainBankCardSelector">
                                 <el-button slot="append" icon="el-icon-search" @click="showMainBankCardSelector"></el-button>
                             </el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="24">
-                        <el-form-item label="主开票信息" prop="invoiceInfo">
-                            <el-input v-model="form.invoiceInfo" type="textarea" :rows="3" placeholder="请输入开票信息" />
+                        <el-form-item label="主开票信息" prop="mainInvoice">
+                            <el-input v-model="form.mainInvoice" type="textarea" :rows="3" placeholder="请输入开票信息" />
                         </el-form-item>
                     </el-col>
                 </el-row>
@@ -230,10 +257,10 @@
                 <el-table-column label="操作" align="center">
                     <template slot-scope="scope">
                         <el-button size="mini" type="warning" icon="el-icon-edit" @click="handleEditItem(scope.row)">
-                            编辑
+                            
                         </el-button>
                         <el-button size="mini" type="danger" icon="el-icon-delete" @click="handleDeleteItem(scope.row)">
-                            删除
+                            
                         </el-button>
                     </template>
                 </el-table-column>
@@ -293,7 +320,7 @@
                         </el-col>
                     </el-row>
                     <el-form-item label="货物备注" prop="goodRemark">
-                        <el-input disabled v-model="itemForm.goodRemark" type="textarea" :rows="3" placeholder="请输入货物备注" />
+                        <el-input v-model="itemForm.goodRemark" type="textarea" :rows="3" placeholder="请输入货物备注" />
                     </el-form-item>
                 </el-form>
                 <div slot="footer" class="dialog-footer">
@@ -302,12 +329,6 @@
                 </div>
             </el-dialog>
         </el-dialog>
-
-
-
-        <!-- 搜索合作方选择器 -->
-        <UserSelector :visible.sync="searchPartnerSelectorVisible" title="选择搜索合作方" :multiple="false"
-            @confirm="handleSearchPartnerConfirm" @close="handleSearchPartnerClose" />
 
         <!-- 甲方选择器 -->
         <UserSelector :visible.sync="partyASelectorVisible" title="选择甲方" :multiple="false"
@@ -335,6 +356,15 @@
             :filter-account-id="form.partner"
             @confirm="handleMainBankCardConfirm" 
             @close="handleMainBankCardClose" 
+        />
+
+        <!-- 搜索合作方选择器 -->
+        <UserSelector 
+            :visible.sync="searchPartnerSelectorVisible" 
+            title="选择合作方" 
+            :multiple="false"
+            @confirm="handleSearchPartnerConfirm" 
+            @close="handleSearchPartnerClose" 
         />
     </div>
 </template>
@@ -405,11 +435,12 @@ export default {
                 partyB: '', // 乙方
                 partyBName: '', // 乙方名称
                 partner: '', // 合作方（从甲方或乙方中选择）
+                partnerName: '', // 合作方名称
                 startTime: '',
                 endTime: '',
                 mainBankCard: '',
                 mainBankCardName: '', // 主银行卡号名称
-                invoiceInfo: '',
+                mainInvoice: '',
                 payNode: '',
                 invoiceNode: '',
                 totalAmount: 0,
@@ -544,11 +575,12 @@ export default {
                     partyB: '', // 乙方
                     partyBName: '', // 乙方名称
                     partner: '', // 合作方（从甲方或乙方中选择）
+                    partnerName: '', // 合作方名称
                     startTime: '',
                     endTime: '',
                     mainBankCard: '',
                     mainBankCardName: '', // 主银行卡号名称
-                    invoiceInfo: '',
+                    mainInvoice: '',
                     payNode: '',
                     invoiceNode: '',
                     totalAmount: 0,
@@ -572,6 +604,18 @@ export default {
                 this.form.partyB = ''
                 this.form.partyBName = ''
             }
+            // 确保合作方名称字段存在并根据合作方ID设置正确的名称
+            if (this.form.partner) {
+                if (this.form.partner === this.form.partyA) {
+                    this.form.partnerName = this.form.partyAName
+                } else if (this.form.partner === this.form.partyB) {
+                    this.form.partnerName = this.form.partyBName
+                } else {
+                    this.form.partnerName = ''
+                }
+            } else {
+                this.form.partnerName = ''
+            }
             // 确保主银行卡号名称字段存在
             if (this.form.mainBankCard && !this.form.mainBankCardName) {
                 this.form.mainBankCardName = this.form.mainBankCard
@@ -592,7 +636,6 @@ export default {
                 const response = await getContractItems(row.id)
                 this.contractItems = response.data || []
             } catch (error) {
-                console.error('获取货物明细失败:', error)
                 this.$message.error('获取货物明细失败')
                 // 使用模拟数据作为备选
                 this.contractItems = []
@@ -756,7 +799,6 @@ export default {
                         } else {
                             await createRecycleContract(this.form)
                         }
-
                         this.$message.success(this.form.id ? '更新成功' : '创建成功')
                         this.dialogVisible = false
                         this.fetchData()
@@ -843,6 +885,16 @@ export default {
             // 当合作方变化时，清空主银行卡号相关信息
             this.form.mainBankCard = ''
             this.form.mainBankCardName = ''
+            
+            // 根据选择的合作方ID设置合作方名称
+            if (value === this.form.partyA) {
+                this.form.partnerName = this.form.partyAName
+            } else if (value === this.form.partyB) {
+                this.form.partnerName = this.form.partyBName
+            } else {
+                this.form.partnerName = ''
+            }
+            console.log(value)
         },
 
         // 显示搜索合作方选择器
@@ -853,8 +905,9 @@ export default {
         // 搜索合作方选择确认
         handleSearchPartnerConfirm(users) {
             if (users && users.length > 0) {
-                const user = users[0] // 单选模式，取第一个用户
+                const user = users[0] 
                 this.searchForm.partner = user.id
+                this.searchForm.partnerName = user.nickname
             }
             this.searchPartnerSelectorVisible = false
         },
@@ -873,18 +926,19 @@ export default {
         handlePartyAConfirm(users) {
             if (users && users.length > 0) {
                 const user = users[0] // 单选模式，取第一个用户
-                this.form.partyA = user.nickname
-                this.form.partyAId = user.id
-                // 如果当前选择的合作方是甲方，则清空合作方选择
-                if (this.form.partner === this.form.partyAId) {
+                this.form.partyA = user.id 
+                this.form.partyAName = user.nickname
+                // 如果当前选择的合作方是甲方，则清空合作方选择并更新合作方名称
+                if (this.form.partner === this.form.partyA) {
                     this.form.partner = ''
+                    this.form.partnerName = ''
                 }
             } else {
                 // 如果没有选择用户，清空甲方信息
                 this.form.partyA = ''
-                this.form.partyAId = ''
+                this.form.partyAName = ''
                 // 如果当前选择的合作方是甲方，则清空合作方选择
-                if (this.form.partner === this.form.partyAId) {
+                if (this.form.partner === this.form.partyA) {
                     this.form.partner = ''
                 }
             }
@@ -905,18 +959,19 @@ export default {
         handlePartyBConfirm(users) {
             if (users && users.length > 0) {
                 const user = users[0] // 单选模式，取第一个用户
-                this.form.partyB = user.nickname
-                this.form.partyBId = user.id
-                // 如果当前选择的合作方是乙方，则清空合作方选择
-                if (this.form.partner === this.form.partyBId) {
+                this.form.partyB = user.id
+                this.form.partyBName = user.nickname
+                // 如果当前选择的合作方是乙方，则清空合作方选择并更新合作方名称
+                if (this.form.partner === this.form.partyB) {
                     this.form.partner = ''
+                    this.form.partnerName = ''
                 }
             } else {
                 // 如果没有选择用户，清空乙方信息
                 this.form.partyB = ''
-                this.form.partyBId = ''
+                this.form.partyBName = ''
                 // 如果当前选择的合作方是乙方，则清空合作方选择
-                if (this.form.partner === this.form.partyBId) {
+                if (this.form.partner === this.form.partyB) {
                     this.form.partner = ''
                 }
             }

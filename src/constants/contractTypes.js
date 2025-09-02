@@ -47,6 +47,19 @@ export function getContractTypeTagType(type) {
   return tagTypeMap[type] || 'info'
 }
 
+// 获取合同类型标签颜色
+export function getContractTypeTagColor(type) {
+  const colorMap = {
+    [CONTRACT_TYPES.PURCHASE]: 'red',
+    [CONTRACT_TYPES.SALE]: 'green',
+    [CONTRACT_TYPES.TRANSPORT]: 'orange',
+    [CONTRACT_TYPES.PROCESS]: 'blue',
+    [CONTRACT_TYPES.STORAGE]: 'purple',
+    [CONTRACT_TYPES.OTHER]: 'gray'
+  }
+  return colorMap[type] || 'red'
+}
+
 // 获取合同状态标签类型
 export function getContractStatusTagType(status) {
   const tagTypeMap = {
