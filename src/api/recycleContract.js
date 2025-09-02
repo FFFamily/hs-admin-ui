@@ -8,6 +8,13 @@ export function getRecycleContractPage(params) {
     params
   })
 }
+// 根据合同编号获取合同
+export function getContractByNo(contractNo) {
+  return request({
+    url: `/recycle/contract/getByNo/${contractNo}`,
+    method: 'get'
+  })
+}
 
 // 获取合同回收详情
 export function getRecycleContractDetail(id) {

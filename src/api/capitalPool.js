@@ -8,6 +8,13 @@ export function getCapitalPoolPage(params) {
     params
   })
 }
+// 根据合同号获取资金池
+export function getCapitalPoolByContractNo(contractNo) {
+  return request({
+    url: `/recycle/capital-pool/getByContractNo/${contractNo}`,
+    method: 'get'
+  })
+}
 
 // 资金池详情
 export function getCapitalPoolDetail(id) {

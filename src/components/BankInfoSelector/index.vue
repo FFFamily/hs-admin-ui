@@ -10,7 +10,7 @@
     <div class="bank-info-selector">
       <!-- 搜索区域 -->
       <el-form :inline="true" :model="searchForm" ref="searchFormRef">
-        <el-form-item label="账户ID" prop="accountId">
+        <el-form-item label="账户ID" prop="accountId" v-if="!filterAccountId">
           <el-input
             v-model="searchParams.accountId"
             placeholder="请输入账户ID"
@@ -173,6 +173,11 @@ export default {
     disabledBankInfos: {
       type: Array,
       default: () => []
+    },
+    // 过滤的账户ID，如果传入则只显示该账户的银行信息
+    filterAccountId: {
+      type: [String, Number],
+      default: ''
     }
   },
   data() {
@@ -224,7 +229,7 @@ export default {
     // 初始化数据
     async initData() {
       this.searchParams = {
-        accountId: '',
+        accountId: this.filterAccountId || '',
         bankName: '',
         cardNumber: ''
       }
@@ -239,6 +244,11 @@ export default {
         const params = {
           pageNum: this.currentPage,
           pageSize: this.pageSize
+        }
+        
+        // 如果传入了filterAccountId，则自动添加到搜索参数中
+        if (this.filterAccountId) {
+          params.accountId = this.filterAccountId
         }
         
         const response = await getBankInfoList(params)
@@ -257,11 +267,18 @@ export default {
 
     // 搜索处理
     handleSearch() {
-      getBankInfoList({
+      const searchParams = {
         ...this.searchParams,
         pageNum: this.currentPage,
         pageSize: this.pageSize
-      }).then(res => {
+      }
+      
+      // 如果传入了filterAccountId，则自动添加到搜索参数中
+      if (this.filterAccountId) {
+        searchParams.accountId = this.filterAccountId
+      }
+      
+      getBankInfoList(searchParams).then(res => {
         if (res && res.data) {
           this.bankInfoList = res.data.records || []
           this.total = res.data.total || 0

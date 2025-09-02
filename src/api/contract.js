@@ -56,4 +56,5 @@ export function getContractLogList(contractId) {
     url: `/system/contract/log/list/${contractId}`,
     method: 'get'
   })
-}   
+
+}

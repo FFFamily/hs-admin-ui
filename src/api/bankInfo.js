@@ -50,3 +50,11 @@ export function setDefaultBankInfo(id) {
     method: 'put'
   })
 }
+
+// 根据用户ID获取银行账号列表
+export function getBankInfoByUserId(accountId) {
+  return request({
+    url: `/account/bank-card/account/${accountId}`,
+    method: 'get'
+  })
+}

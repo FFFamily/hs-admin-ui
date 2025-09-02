@@ -19,7 +19,10 @@
       <el-table-column prop="partner" label="合作方" width="150" align="center" show-overflow-tooltip />
       <el-table-column prop="contractFundPoolBalance" label="合同资金池剩余金额" width="140" align="center">
         <template slot-scope="scope">
-          <span class="amount-text">¥{{ formatAmount(scope.row.contractFundPoolBalance) }}</span>
+          <span v-if="typeof scope.row.contractFundPoolBalance === 'string'" class="error-text">
+            {{ scope.row.contractFundPoolBalance }}
+          </span>
+          <span v-else class="amount-text">¥{{ formatAmount(scope.row.contractFundPoolBalance) }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="orderTotalAmount" label="订单总金额" width="140" align="center">
@@ -85,19 +88,21 @@
           />
         </template>
       </el-table-column>
-      <el-table-column prop="fundBank" label="贷款走款银行" width="150" align="center">
+      <el-table-column prop="fundBank" label="货款走款银行" width="200" align="center">
         <template slot-scope="scope">
-          <el-select v-model="scope.row.fundBank" placeholder="选择银行" style="width: 100%;">
-            <el-option label="中国工商银行" value="ICBC" />
-            <el-option label="中国建设银行" value="CCB" />
-            <el-option label="中国农业银行" value="ABC" />
-            <el-option label="中国银行" value="BOC" />
-            <el-option label="交通银行" value="BOCOM" />
-            <el-option label="招商银行" value="CMB" />
-            <el-option label="中信银行" value="CITIC" />
-            <el-option label="浦发银行" value="SPDB" />
-            <el-option label="民生银行" value="CMBC" />
-            <el-option label="兴业银行" value="CIB" />
+          <el-select 
+            v-model="scope.row.fundBank" 
+            placeholder="选择银行账号" 
+            style="width: 100%;"
+            @change="onBankChange(scope.row)"
+            filterable
+          >
+            <el-option 
+              v-for="bank in scope.row.partnerBankList" 
+              :key="bank.id"
+              :label="`${bank.bankName} - ${bank.cardNumber}`" 
+              :value="bank.id"
+            />
           </el-select>
         </template>
       </el-table-column>
@@ -117,7 +122,9 @@ import {
   getOrderStatusText
 } from '@/constants/orderTypes'
 import { batchAddFundFlow } from '@/api/fundFlow'
-
+import { getCapitalPoolByContractNo } from '@/api/capitalPool'
+import { getBankInfoByUserId } from '@/api/bankInfo'
+import { getContractByNo } from '@/api/recycleContract'
 export default {
   name: 'BatchFundflow',
   props: {
@@ -157,42 +164,107 @@ export default {
   },
   methods: {
     // 初始化数据
-    initData() {
-      console.log(this.selectedOrders)
+    async initData() {
       if (!this.selectedOrders || this.selectedOrders.length === 0) {
         this.$message.error('请选择订单')
         this.fundflowList = []
         return
       }
-      // 将选中的订单转换为走款列表
-      this.fundflowList = this.selectedOrders.map(order => ({
-        ...order,
-        orderId: order.id,
-        orderNo: order.no,
-        orderType: order.type,
-        orderStatus: order.status,
-        partner: order.contractPartner,
-        contractFundPoolBalance: this.getCapitalPoolRemaining(), // 模拟获取资金池剩余
-        orderTotalAmount: order.totalAmount || 0,
-        orderActualAmount: order.actualAmount || 0, // 已走款金额
-        orderShouldAmount: (order.totalAmount || 0) - (order.actualAmount || 0), // 应走款金额
-        planPayTime: '', // 计划走款时间
-        fundFlowAmount: 0, // 走款金额
-        fundAmount: 0, // 贷款走款金额
-        fundPoolAmount: 0, // 资金池走款金额
-        fundBank: '' // 贷款走款银行
-      }))
+      
+      this.loading = true
+      try {
+        // 将选中的订单转换为走款列表，并异步获取资金池余额和银行账号
+        const fundflowList = []
+        for (const order of this.selectedOrders) {
+          const [contractFundPoolBalance, mainBankInfo, partnerBankList] = await Promise.all([
+            this.getCapitalPoolRemaining(order.contractNo),
+            this.getMainBankInfo(order.contractNo),
+            this.getPartnerBankList(order.contractPartner)
+          ])
+          fundflowList.push({
+            ...order,
+            orderId: order.id,
+            orderNo: order.no,
+            orderType: order.type,
+            orderStatus: order.status,
+            partner: order.contractPartner,
+            contractFundPoolBalance: contractFundPoolBalance,
+            orderTotalAmount: order.totalAmount || 0,
+            orderActualAmount: order.actualAmount || 0, // 已走款金额
+            orderShouldAmount: (order.totalAmount || 0) - (order.actualAmount || 0), // 应走款金额
+            planPayTime: '', // 计划走款时间
+            fundFlowAmount: 0, // 走款金额
+            fundAmount: 0, // 贷款走款金额
+            fundPoolAmount: 0, // 资金池走款金额
+            fundBank: mainBankInfo,
+            mainBankInfo: mainBankInfo, // 主银行账号信息
+            partnerBankList: partnerBankList || [] // 合作方银行账号列表
+          })
+        }
+        this.fundflowList = fundflowList
+      } catch (error) {
+        console.error('初始化数据失败:', error)
+        this.$message.error('获取资金池信息失败，请重试')
+      } finally {
+        this.loading = false
+      }
     },
 
-    // 获取资金池剩余金额（模拟数据）
-    getCapitalPoolRemaining() {
-      return Math.floor(Math.random() * 1000000) + 500000 // 50万到150万之间
+    // 获取资金池剩余金额
+    async getCapitalPoolRemaining(contractNo) {
+      try {
+        const res = await getCapitalPoolByContractNo(contractNo)
+        console.log("资金池接口返回:", res)
+        
+        if (!res.data || res.data === null) {
+          return "合同尚未创建资金池"
+        }
+        
+        // 确保返回的是数字类型
+        const balance = Number(res.data.balance) || 0
+        return balance
+      } catch (error) {
+        console.error('获取资金池余额失败:', error)
+        return "获取失败"
+      }
+    },
+
+    // 获取合同主银行账号
+    async getMainBankInfo(contractNo) {
+      try {
+        const res = await getContractByNo(contractNo)
+        if(res.data == null){
+          return null;
+        }
+        return res.data.mainBankCard;
+      } catch (error) {
+        console.error('获取主银行账号失败:', error)
+        return null
+      }
+    },
+
+    // 获取合作方银行账号列表
+    async getPartnerBankList(accountId) {
+      try {
+        if (!accountId) {
+          return []
+        }
+        const res = await getBankInfoByUserId(accountId)
+        
+        if (res.data && Array.isArray(res.data)) {
+          return res.data
+        }
+        return []
+      } catch (error) {
+        console.error('获取合作方银行账号失败:', error)
+        return []
+      }
     },
 
     // 金额变化处理
     onAmountChange(row) {
       const fundFlowAmount = row.fundFlowAmount || 0
-      const loanAmount = row.fundAmount || 0
+      const loanAmount = row.loanAmount || 0
       const fundPoolAmount = row.fundPoolAmount || 0
       
       // 如果贷款走款 + 资金池走款 > 走款金额，则调整资金池走款
@@ -204,11 +276,11 @@ export default {
     // 贷款金额变化处理
     onLoanAmountChange(row) {
       const fundFlowAmount = row.fundFlowAmount || 0
-      const loanAmount = row.fundAmount || 0
+      const loanAmount = row.loanAmount || 0
       
       // 如果贷款走款 > 走款金额，则限制贷款走款
       if (loanAmount > fundFlowAmount) {
-        row.fundAmount = fundFlowAmount
+        row.loanAmount = fundFlowAmount
       }
       
       // 调整资金池走款
@@ -218,7 +290,7 @@ export default {
     // 资金池金额变化处理
     onCapitalPoolAmountChange(row) {
       const fundFlowAmount = row.fundFlowAmount || 0
-      const loanAmount = row.fundAmount || 0
+      const loanAmount = row.loanAmount || 0
       const fundPoolAmount = row.fundPoolAmount || 0
       
       // 如果贷款走款 + 资金池走款 > 走款金额，则限制资金池走款
@@ -227,11 +299,40 @@ export default {
       }
     },
 
+    // 银行选择变化处理
+    onBankChange(row) {
+      console.log('银行选择变化:', row.fundBank)
+      // 可以在这里添加银行选择后的逻辑处理
+    },
+
+    // 根据ID获取银行信息
+    getBankInfoById(bankId, mainBankInfo, partnerBankList) {
+      if (!bankId) return null
+      
+      // 先检查是否是主银行账号
+      if (mainBankInfo && mainBankInfo.id === bankId) {
+        return mainBankInfo
+      }
+      
+      // 再检查合作方银行账号列表
+      if (partnerBankList && Array.isArray(partnerBankList)) {
+        return partnerBankList.find(bank => bank.id === bankId) || null
+      }
+      
+      return null
+    },
+
 
 
     // 格式化金额
     formatAmount(amount) {
+      // 如果是字符串类型（如"合同尚未创建资金池"），直接返回
+      if (typeof amount === 'string') {
+        return amount
+      }
+      
       const num = Number(amount) || 0
+      console.log("当前金额", num)
       return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
     },
 
@@ -253,7 +354,7 @@ export default {
       // 验证金额逻辑
       const invalidAmountRows = this.fundflowList.filter(row => {
         const fundFlowAmount = row.fundFlowAmount || 0
-        const loanAmount = row.fundAmount || 0
+        const loanAmount = row.loanAmount || 0
         const fundPoolAmount = row.fundPoolAmount || 0
         
         return fundFlowAmount !== (loanAmount + fundPoolAmount)
@@ -287,14 +388,13 @@ export default {
               fundFlowAmount: i.fundFlowAmount,
               //货款方向
               fundDirection: i.fundDirection,
-              fundAmount: i.fundAmount,
+              fundAmount: i.loanAmount,
               fundBank: i.fundBank,
+              fundBankInfo: this.getBankInfoById(i.fundBank, i.mainBankInfo, i.partnerBankList),
+              fundPoolAmount: i.fundPoolAmount,
 
               partner: i.partner,
               planPayTime: i.planPayTime,
-              fundFlowAmount: i.fundFlowAmount,
-              fundAmount: i.fundAmount,
-              fundPoolAmount: i.fundPoolAmount,
             }
           });
           
@@ -330,7 +430,27 @@ export default {
   color: #e6a23c;
 }
 
+.error-text {
+  font-weight: 500;
+  color: #f56c6c;
+  font-size: 12px;
+}
+
 .dialog-footer {
   text-align: right;
+}
+
+// 银行账号选择器样式
+:deep(.el-select-dropdown__item) {
+  &.is-selected {
+    color: #409EFF;
+    font-weight: 600;
+  }
+}
+
+:deep(.el-select) {
+  .el-input__inner {
+    font-size: 13px;
+  }
 }
 </style> 

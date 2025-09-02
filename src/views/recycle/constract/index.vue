@@ -170,19 +170,22 @@
                                 <el-option 
                                     v-if="form.partyA" 
                                     :label="`甲方：${form.partyA}`" 
-                                    :value="form.partyA"
+                                    :value="form.partyAId"
                                 />
                                 <el-option 
                                     v-if="form.partyB" 
                                     :label="`乙方：${form.partyB}`" 
-                                    :value="form.partyB"
+                                    :value="form.partyBId"
                                 />
                             </el-select>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
                         <el-form-item label="主银行卡号" prop="mainBankCard">
-                            <el-input v-model="form.mainBankCard" placeholder="请输入银行卡号" />
+                            <el-input :value="getMainBankCardDisplayValue()" placeholder="请选择银行卡号" readonly
+                                @click="showMainBankCardSelector">
+                                <el-button slot="append" icon="el-icon-search" @click="showMainBankCardSelector"></el-button>
+                            </el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="24">
@@ -323,6 +326,16 @@
             @confirm="handleBusinessScopeConfirm" 
             @close="handleBusinessScopeClose" 
         />
+
+        <!-- 主银行卡号选择器 -->
+        <BankInfoSelector 
+            :visible.sync="mainBankCardSelectorVisible" 
+            title="选择主银行卡号" 
+            :multiple="false"
+            :filter-account-id="form.partner"
+            @confirm="handleMainBankCardConfirm" 
+            @close="handleMainBankCardClose" 
+        />
     </div>
 </template>
 
@@ -331,6 +344,7 @@ import { parseTime } from '@/utils'
 import UserSelector from '@/components/UserSelector'
 import FileUploader from '@/components/FileUploader'
 import BusinessScopeSelector from '@/components/BusinessScopeSelector'
+import BankInfoSelector from '@/components/BankInfoSelector'
 import { CONTRACT_TYPE_OPTIONS, getContractTypeText, getContractTypeTagType } from '@/constants/contractTypes'
 import { getStatusText, getStatusType } from '@/constants/constract'
 import {
@@ -350,7 +364,8 @@ export default {
     components: {
         UserSelector,
         FileUploader,
-        BusinessScopeSelector
+        BusinessScopeSelector,
+        BankInfoSelector
     },
     data() {
         return {
@@ -363,7 +378,6 @@ export default {
                 name: '',
                 type: '',
                 partner: '', // 合作方ID
-                partnerName: '', // 合作方名称
                 status: '',
                 dateRange: []
             },
@@ -391,10 +405,10 @@ export default {
                 partyB: '', // 乙方
                 partyBName: '', // 乙方名称
                 partner: '', // 合作方（从甲方或乙方中选择）
-                partnerName: '', // 合作方名称
                 startTime: '',
                 endTime: '',
                 mainBankCard: '',
+                mainBankCardName: '', // 主银行卡号名称
                 invoiceInfo: '',
                 payNode: '',
                 invoiceNode: '',
@@ -430,6 +444,8 @@ export default {
             partyBSelectorVisible: false,
             // 经营范围选择器控制
             businessScopeSelectorVisible: false,
+            // 主银行卡号选择器控制
+            mainBankCardSelectorVisible: false,
             // 日期选择器配置
             pickerOptions: {
 
@@ -510,7 +526,6 @@ export default {
                 name: '',
                 type: '',
                 partner: '', // 合作方ID
-                partnerName: '', // 合作方名称
                 status: '',
                 dateRange: []
             }
@@ -529,10 +544,10 @@ export default {
                     partyB: '', // 乙方
                     partyBName: '', // 乙方名称
                     partner: '', // 合作方（从甲方或乙方中选择）
-                    partnerName: '', // 合作方名称
                     startTime: '',
                     endTime: '',
                     mainBankCard: '',
+                    mainBankCardName: '', // 主银行卡号名称
                     invoiceInfo: '',
                     payNode: '',
                     invoiceNode: '',
@@ -548,10 +563,6 @@ export default {
         handleEdit(row) {
             this.dialogTitle = '编辑合同'
             this.form = { ...row }
-            // 确保合作方名称字段存在
-            if (this.form.partner && !this.form.partnerName) {
-                this.form.partnerName = this.form.partner
-            }
             // 确保甲方和乙方字段存在
             if (!this.form.partyA) {
                 this.form.partyA = ''
@@ -560,6 +571,10 @@ export default {
             if (!this.form.partyB) {
                 this.form.partyB = ''
                 this.form.partyBName = ''
+            }
+            // 确保主银行卡号名称字段存在
+            if (this.form.mainBankCard && !this.form.mainBankCardName) {
+                this.form.mainBankCardName = this.form.mainBankCard
             }
             this.dialogVisible = true
         },
@@ -825,11 +840,9 @@ export default {
 
         // 合作方选择变化
         handlePartnerChange(value) {
-            if (value === this.form.partyA) {
-                this.form.partnerName = this.form.partyAName
-            } else if (value === this.form.partyB) {
-                this.form.partnerName = this.form.partyBName
-            }
+            // 当合作方变化时，清空主银行卡号相关信息
+            this.form.mainBankCard = ''
+            this.form.mainBankCardName = ''
         },
 
         // 显示搜索合作方选择器
@@ -842,7 +855,6 @@ export default {
             if (users && users.length > 0) {
                 const user = users[0] // 单选模式，取第一个用户
                 this.searchForm.partner = user.id
-                this.searchForm.partnerName = user.nickname || user.username
             }
             this.searchPartnerSelectorVisible = false
         },
@@ -862,19 +874,18 @@ export default {
             if (users && users.length > 0) {
                 const user = users[0] // 单选模式，取第一个用户
                 this.form.partyA = user.nickname
-                this.form.partyAName = user.nickname || user.username
-                // 如果当前选择的合作方是甲方，则更新合作方名称
-                if (this.form.partner === this.form.partyA) {
-                    this.form.partnerName = this.form.partyAName
+                this.form.partyAId = user.id
+                // 如果当前选择的合作方是甲方，则清空合作方选择
+                if (this.form.partner === this.form.partyAId) {
+                    this.form.partner = ''
                 }
             } else {
                 // 如果没有选择用户，清空甲方信息
                 this.form.partyA = ''
-                this.form.partyAName = ''
+                this.form.partyAId = ''
                 // 如果当前选择的合作方是甲方，则清空合作方选择
-                if (this.form.partner === this.form.partyA) {
+                if (this.form.partner === this.form.partyAId) {
                     this.form.partner = ''
-                    this.form.partnerName = ''
                 }
             }
             this.partyASelectorVisible = false
@@ -895,19 +906,18 @@ export default {
             if (users && users.length > 0) {
                 const user = users[0] // 单选模式，取第一个用户
                 this.form.partyB = user.nickname
-                this.form.partyBName = user.nickname || user.username
-                // 如果当前选择的合作方是乙方，则更新合作方名称
-                if (this.form.partner === this.form.partyB) {
-                    this.form.partnerName = this.form.partyBName
+                this.form.partyBId = user.id
+                // 如果当前选择的合作方是乙方，则清空合作方选择
+                if (this.form.partner === this.form.partyBId) {
+                    this.form.partner = ''
                 }
             } else {
                 // 如果没有选择用户，清空乙方信息
                 this.form.partyB = ''
-                this.form.partyBName = ''
+                this.form.partyBId = ''
                 // 如果当前选择的合作方是乙方，则清空合作方选择
-                if (this.form.partner === this.form.partyB) {
+                if (this.form.partner === this.form.partyBId) {
                     this.form.partner = ''
-                    this.form.partnerName = ''
                 }
             }
             this.partyBSelectorVisible = false
@@ -916,6 +926,29 @@ export default {
         // 乙方选择器关闭
         handlePartyBClose() {
             this.partyBSelectorVisible = false
+        },
+
+        // 显示主银行卡号选择器
+        showMainBankCardSelector() {
+            this.mainBankCardSelectorVisible = true
+        },
+
+        // 主银行卡号选择确认
+        handleMainBankCardConfirm(selectedBankCard) {
+            if (selectedBankCard && selectedBankCard.length > 0) {
+                const bankInfo = selectedBankCard[0]
+                this.form.mainBankCard = bankInfo.cardNumber
+                this.form.mainBankCardName = `${bankInfo.cardNumber}`
+            } else {
+                this.form.mainBankCard = ''
+                this.form.mainBankCardName = ''
+            }
+            this.mainBankCardSelectorVisible = false
+        },
+
+        // 主银行卡号选择器关闭
+        handleMainBankCardClose() {
+            this.mainBankCardSelectorVisible = false
         },
 
         // 下载文件
@@ -950,6 +983,12 @@ export default {
         },
         formatAmount(amount) {
             return amount ? amount.toLocaleString() : '0'
+        },
+        getMainBankCardDisplayValue() {
+            if (this.form.mainBankCardName) {
+                return this.form.mainBankCardName;
+            }
+            return this.form.mainBankCard;
         }
     }
 }
