@@ -12,18 +12,15 @@
     <el-table :data="items" border fit style="width: 100%" v-loading="itemsLoading"
       @selection-change="handleSelectionChange" :show-summary="true" :summary-method="getPurchaseSummary">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column prop="goodNo" label="货物编号" width="180" align="center">
+      <el-table-column prop="goodNo" label="货物编号" fixed="left" width="180" align="center">
         <template slot-scope="scope">
-          <div class="good-no-container">
-            <el-input v-model="scope.row.goodNo" placeholder="请输入货物编号" :disabled="!scope.row.goodNo" readonly />
-            <el-button  type="primary" size="mini" icon="el-icon-search" @click="openBusinessScopeSelector(scope.$index)"
-              style="margin-left: 5px;">
-              搜索
-            </el-button>
-          </div>
+          <el-input v-model="scope.row.goodNo" placeholder="选择货物" :disabled="!scope.row.goodNo" readonly>
+              <el-button slot="append" icon="el-icon-search" @click="openBusinessScopeSelector(scope.$index)">
+              </el-button>
+            </el-input>
         </template>
       </el-table-column>
-      <el-table-column prop="goodType" label="货物分类" width="120" align="center">
+      <el-table-column prop="goodType" label="货物分类" width="160" align="center">
         <template slot-scope="scope">
           <el-input v-model="scope.row.goodType" placeholder="请输入货物分类" :disabled="!scope.row.goodNo" />
         </template>
@@ -38,9 +35,9 @@
           <el-input v-model="scope.row.goodModel" placeholder="请输入货物型号" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
-      <el-table-column prop="goodCount" label="货物数量" width="120" align="center">
+      <el-table-column prop="goodCount" label="货物数量" width="210" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.goodCount" :min="1" :precision="0" controls-position="right"
+          <el-input-number v-model="scope.row.goodCount" :min="1" :precision="0"
             @change="onItemFieldChange(scope.row)" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
@@ -49,13 +46,13 @@
           <el-input v-model="scope.row.goodWeight" placeholder="请输入货物重量" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
-      <el-table-column prop="goodPrice" label="货物单价" width="140" align="center">
+      <el-table-column prop="goodPrice" label="货物单价" width="210" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.goodPrice" :min="0" :precision="2" controls-position="right"
+          <el-input-number v-model="scope.row.goodPrice" :min="0" :precision="2" 
             @change="onItemFieldChange(scope.row)" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
-      <el-table-column prop="goodTotalPrice" label="货物总价" width="160" align="center">
+      <el-table-column prop="goodTotalPrice" fixed="right" label="货物总价" width="160" align="center">
         <template slot-scope="scope">
           <span class="amount-text">¥{{ formatAmount(scope.row.goodTotalPrice) }}</span>
         </template>
@@ -80,9 +77,9 @@
           <el-input v-model="scope.row.otherRatingPrice" placeholder="请输入其他调价" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
-      <el-table-column label="订单金额" width="200" align="center">
+      <el-table-column label="订单金额" width="210" align="center">
         <template slot-scope="scope">
-          <el-input v-model="scope.row.orderAmount" placeholder="请输入订单金额" :disabled="!scope.row.goodNo" />
+          <el-input-number v-model="scope.row.orderAmount" placeholder="订单金额" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
     </el-table>
@@ -200,7 +197,7 @@ export default {
         goodType: '',
         goodName: '',
         goodModel: '',
-        goodCount: 1,
+        goodCount: 0,
         goodPrice: 0,
         goodTotalPrice: 0,
         goodWeight: '',

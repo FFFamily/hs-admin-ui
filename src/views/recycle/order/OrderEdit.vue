@@ -20,12 +20,12 @@
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="甲方" prop="partyA">
-            <el-input v-model="detailData.partyA" disabled placeholder="请输入甲方" />
+            <el-input v-model="detailData.partyAName" disabled placeholder="请输入甲方" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="乙方" prop="partyB">
-            <el-input v-model="detailData.partyB" disabled placeholder="请输入乙方" />
+            <el-input v-model="detailData.partyBName" disabled placeholder="请输入乙方" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -39,15 +39,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="合作方" prop="contractPartner">
-            <!---从甲方乙方中二选一-->
-            <el-select disabled v-model="detailData.contractPartner" placeholder="请选择合作方" style="width: 100%;">
-              <el-option 
-                v-for="option in contractPartnerOptions" 
-                :key="option.value" 
-                :label="option.label" 
-                :value="option.value" 
-              />
-            </el-select>
+            <el-input v-model="detailData.contractPartnerName" disabled placeholder="请输入合作方" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -182,9 +174,7 @@
             <el-table-column prop="orderNo" label="关联订单编号" width="180" align="center" />
             <el-table-column prop="orderType" label="订单类型" width="120" align="center">
               <template slot-scope="scope">
-                <el-tag :type="getOrderTypeTagType(scope.row.orderType)">
                   {{ getOrderTypeText(scope.row.orderType) }}
-                </el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="orderAmount" label="订单金额" width="140" align="center">
@@ -272,7 +262,6 @@ import {
   ORDER_STATUS_OPTIONS, 
   FLOW_DIRECTION_OPTIONS, 
   CONTRACT_PARTNER_OPTIONS,
-  getOrderTypeTagType,
   getOrderStatusTagType,
   getOrderTypeText,
   getOrderStatusText
@@ -318,6 +307,9 @@ export default {
       orderStatusOptions: ORDER_STATUS_OPTIONS,
       flowDirectionOptions: FLOW_DIRECTION_OPTIONS,
       contractPartnerOptions: CONTRACT_PARTNER_OPTIONS,
+      getOrderTypeText,
+      getOrderStatusText,
+      getOrderStatusTagType,
       // 表单验证规则
       formRules: {
         type: [
@@ -426,9 +418,9 @@ export default {
       const agent = Array.isArray(selected) ? selected[0] : selected
       if (!agent) return
       // 经办人显示编号和姓名
-      this.detailData.processor = `${agent.no} - ${agent.name}`
+      this.detailData.processor = agent.name
       // 回填电话
-      this.detailData.processorPhone = agent.phone || this.detailData.processorPhone
+      this.detailData.processorPhone = agent.phone
     },
 
     // 打开合同选择器
@@ -444,9 +436,12 @@ export default {
       this.detailData.contractNo = contract.no
       this.detailData.contractName = contract.name
       this.detailData.contractPartner = contract.partner
+      this.detailData.contractPartnerName = contract.partnerName
       // 甲方。乙方
       this.detailData.partyA = contract.partyA
+      this.detailData.partyAName = contract.partyAName
       this.detailData.partyB = contract.partyB
+      this.detailData.partyBName = contract.partyBName
       // 合同金额
       this.detailData.contractPrice = contract.totalAmount
     },
@@ -497,10 +492,7 @@ export default {
     handleWarehouseSelected(selected) {
       if (selected && selected.length > 0) {
         const address = selected[0]
-        this.detailData.warehouseAddress = `${address.accountName} - ${address.realAddress}`
-        if (address.remark) {
-          this.detailData.warehouseAddress += ` (${address.remark})`
-        }
+        this.detailData.warehouseAddress = address.realAddress
         this.$message.success('仓库地址选择成功')
       }
     },
@@ -514,10 +506,7 @@ export default {
     handleDeliverySelected(selected) {
       if (selected && selected.length > 0) {
         const address = selected[0]
-        this.detailData.deliveryAddress = `${address.accountName} - ${address.realAddress}`
-        if (address.remark) {
-          this.detailData.deliveryAddress += ` (${address.remark})`
-        }
+        this.detailData.deliveryAddress = address.realAddress
         this.$message.success('交付地址选择成功')
       }
     },
@@ -532,7 +521,7 @@ export default {
       if (bankInfos && bankInfos.length > 0) {
         const selectedBankInfo = bankInfos[0]
         // 显示格式：开户行 - 银行卡号
-        this.detailData.paymentAccount = `${selectedBankInfo.bankName} - ${selectedBankInfo.cardNumber}`
+        this.detailData.paymentAccount = selectedBankInfo.cardNumber
         this.$message.success('走款账号选择成功')
       }
       this.bankInfoSelectorVisible = false

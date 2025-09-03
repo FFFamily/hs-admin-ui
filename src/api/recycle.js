@@ -17,7 +17,7 @@ export function getRecycleDetail(id) {
 
 export function deleteRecycle(id) {
   return request({
-    url: `/recycle/order/${id}`,
+    url: `/recycle/order/delete/${id}`,
     method: 'delete'
   })
 }
