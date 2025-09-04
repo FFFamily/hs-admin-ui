@@ -22,12 +22,11 @@
       <el-form-item>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
         <el-button @click="handleReset">重置</el-button>
-        <el-button type="success" @click="handleAdd">新增</el-button>
       </el-form-item>
     </el-form>
 
     <el-table :data="list" v-loading="listLoading" border fit highlight-current-row style="margin-top: 20px;">
-      <el-table-column prop="partner" label="合作方" min-width="140" />
+      <el-table-column prop="partnerName" label="合作方" min-width="140" />
       <el-table-column prop="contractNo" label="合同编号" width="160" />
       <el-table-column prop="orderNo" label="订单编号" width="160" />
       <el-table-column prop="contractStatus" label="合同状态" width="120">
@@ -47,30 +46,51 @@
       <el-table-column prop="fundFlowDirection" label="走款方向" width="120">
         <template slot-scope="scope">
           <el-tag :type="scope.row.fundFlowDirection === '0' ? 'danger' : 'success'">
-            {{ (fundDirectionOptions.find(item => item.value === scope.row.fundFlowDirection) || {}).label }}
+            {{ getFundPoolDirectionName(scope.row.fundFlowDirection) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="fundFlowAmount" label="走款金额" width="120" />
-      <el-table-column prop="fundPoolDirection" label="资金池方向" width="120">
+      <el-table-column prop="fundFlowAmount" label="走款金额" width="120">
         <template slot-scope="scope">
-            {{ getFundPoolDirectionName(scope.row.fundPoolDirection) }}
+          <span class="amount-text amount-flow">¥{{ formatAmount(scope.row.fundFlowAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="contractFundPoolAmount" label="资金池走款金额" width="120" />
+      <el-table-column prop="fundPoolDirection" label="资金池方向" width="120">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.fundPoolDirection === '0' ? 'danger' : 'success'">
+            {{ getFundPoolDirectionName(scope.row.fundPoolDirection) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="fundPoolAmount" label="资金池走款金额" width="130">
+        <template slot-scope="scope">
+          <span class="amount-text amount-pool">¥{{ formatAmount(scope.row.fundPoolAmount) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="fundDirection" label="货款方向" width="120">
         <template slot-scope="scope">
           <el-tag :type="scope.row.fundDirection === '0' ? 'danger' : 'success'">
-            {{ (fundDirectionOptions.find(item => item.value === scope.row.fundDirection) || {}).label }}
+            {{ getFundPoolDirectionName(scope.row.fundDirection) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="fundAmount" label="货款走款金额" width="120" />
+      <el-table-column prop="fundAmount" label="货款走款金额" width="120">
+        <template slot-scope="scope">
+          <span class="amount-text amount-fund">¥{{ formatAmount(scope.row.fundAmount) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="fundBank" label="货款走款银行" width="120" />
-      <el-table-column prop="planPayTime" label="计划走款时间" width="120" />
+      <el-table-column prop="planPayTime" label="计划走款时间" width="160" />
       <el-table-column prop="processor" label="经办人" width="120" />
       <el-table-column prop="voucher" label="凭证" min-width="120" />
       <el-table-column prop="payFundTime" label="支付时间" width="180" />
+      <el-table-column prop="status" label="走款状态" width="100">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.status === fundFlowStatus.CONFIRM ? 'success' : 'warning'" size="medium">
+            {{ fundFlowStatusText[scope.row.status] || '未知' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="280" align="center" fixed="right">
         <template slot-scope="scope">
           <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
@@ -85,7 +105,7 @@
       @current-change="handleCurrentChange" style="margin-top: 20px; text-align: right;" />
 
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="700px">
-      <el-form :model="form" :rules="rules" ref="form" label-width="100px">
+      <el-form :model="form" :rules="rules" ref="form" label-width="100px" :disabled="form.status === fundFlowStatus.CONFIRM">
         <!-- 分割线 -->
         <el-divider content-position="left">基本信息</el-divider>
         <div class="form-section">
@@ -198,7 +218,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="handleSave">{{ form.id ? '更新' : '添加' }}</el-button>
+        <el-button type="primary" @click="handleSave" :disabled="form.status === fundFlowStatus.CONFIRM">{{ form.id ? '更新' : '添加' }}</el-button>
       </div>
     </el-dialog>
     <!-- 确认走款弹框 -->
@@ -236,7 +256,7 @@
 </template>
 
 <script>
-import { getFundFlowPage, addFundFlow, updateFundFlow, deleteFundFlow } from '@/api/fundFlow'
+import { getFundFlowPage, addFundFlow, updateFundFlow, deleteFundFlow, submitFundFlow } from '@/api/fundFlow'
 import ContractSelector from '@/components/ContractSelector'
 import AgentSelector from '@/components/AgentSelector'
 import BankInfoSelector from '@/components/BankInfoSelector'
@@ -248,11 +268,21 @@ import {
 import { getStatusText, getStatusType } from '@/constants/constract'
 import { FUND_DIRECTION } from '@/constants/fund'
 import { FUND_POOL_DIRECTION, getFundPoolDirectionName } from '@/constants/pool'
+import { parseTime } from '@/utils'
 export default {
   name: 'FundFlow',
   components: { ContractSelector, AgentSelector, BankInfoSelector },
   data() {
     return {
+      // 走款状态常量
+      fundFlowStatus: {
+        WAIT: 'wait',
+        CONFIRM: 'confirm'
+      },
+      fundFlowStatusText: {
+        wait: '待确认',
+        confirm: '已确认'
+      },
       list: [],
       listLoading: false,
       searchForm: {
@@ -404,7 +434,8 @@ export default {
         planPayTime: '',
         processor: '',
         voucher: '',
-        payFundTime: ''
+        payFundTime: '',
+        status: this.fundFlowStatus.WAIT
       }
       this.dialogVisible = true
     },
@@ -463,11 +494,12 @@ export default {
           id: this.confirmForm.id,
           processor: this.confirmForm.processor,
           voucher: this.confirmForm.voucher,
-          payFundTime: this.confirmForm.payFundTime
+          payFundTime: this.confirmForm.payFundTime,
+          status: this.fundFlowStatus.CONFIRM
         }
 
         // 这里需要根据实际的API调整
-        updateFundFlow(confirmData).then(() => {
+        submitFundFlow(confirmData).then(() => {
           this.$message.success('确认走款成功')
           this.confirmDialogVisible = false
           this.fetchData()
@@ -478,6 +510,12 @@ export default {
       })
     },
     handleDelete(row) {
+      // 已确认状态的走款不允许删除
+      if (row.status === this.fundFlowStatus.CONFIRM) {
+        this.$message.warning('已确认的走款不允许删除')
+        return
+      }
+      
       this.$confirm('确定要删除该记录吗？', '提示', { type: 'warning' })
         .then(() => {
           deleteFundFlow(row.id).then(() => {
@@ -491,6 +529,12 @@ export default {
         .catch(() => { })
     },
     handleSave() {
+      // 已确认状态的走款不允许编辑
+      if (this.form.status === this.fundFlowStatus.CONFIRM) {
+        this.$message.warning('已确认的走款不允许编辑')
+        return
+      }
+      
       this.$refs.form.validate((valid) => {
         if (!valid) return
         const action = this.form.id ? updateFundFlow : addFundFlow
@@ -515,7 +559,16 @@ export default {
     },
     // 判断是否有确认信息
     hasConfirmInfo(row) {
-      return row.processor || row.voucher || row.payFundTime
+      return row.status === this.fundFlowStatus.CONFIRM || row.processor || row.voucher || row.payFundTime
+    },
+    // 格式化日期时间
+    formatDateTime(time) {
+      return time ? parseTime(time) : '--'
+    },
+    // 金额格式化
+    formatAmount(amount) {
+      const num = Number(amount) || 0
+      return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
     }
   }
 }
@@ -541,5 +594,21 @@ export default {
 
 .el-divider {
   margin: 24px 0 16px 0;
+}
+
+.amount-text {
+  font-weight: 600;
+}
+
+.amount-text.amount-flow {
+  color: #e6a23c; /* 走款金额 - 橙色 */
+}
+
+.amount-text.amount-pool {
+  color: #67c23a; /* 资金池金额 - 绿色 */
+}
+
+.amount-text.amount-fund {
+  color: #409eff; /* 货款金额 - 蓝色 */
 }
 </style>

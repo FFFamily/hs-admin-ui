@@ -12,7 +12,7 @@
       <el-table-column prop="no" label="资金池编号" width="180" />
       <el-table-column prop="contractNo" label="合同编号" width="220" />
       <el-table-column prop="contractName" label="合同名称" width="140" />
-      <el-table-column prop="contractPartner" label="合作方" width="140" />
+      <el-table-column prop="contractPartnerName" label="合作方" width="140" />
       <el-table-column prop="contractName" label="合同类型" width="140" />
       <el-table-column prop="fundPoolDirection" label="资金池方向" width="140" >
         <template slot-scope="scope">
@@ -66,8 +66,8 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="合作方" prop="contractPartner">
-                <el-input v-model="form.contractPartner" placeholder="请输入合作方" />
+              <el-form-item label="合作方" prop="contractPartnerName">
+                <el-input v-model="form.contractPartnerName" placeholder="请输入合作方" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -183,6 +183,7 @@ export default {
         contractNo: '',
         contractName: '',
         contractPartner: '',
+        contractPartnerName: '',
         fundPoolDirection: '',
         initialAmount: 0,
         initialBalanceVoucher: ''
@@ -191,7 +192,7 @@ export default {
         no: [{ required: true, message: '请输入编号', trigger: 'blur' }],
         contractNo: [{ required: true, message: '请输入合同编号', trigger: 'blur' }],
         contractName: [{ required: true, message: '请输入合同名称', trigger: 'blur' }],
-        contractPartner: [{ required: true, message: '请输入合作方', trigger: 'blur' }],
+        contractPartnerName: [{ required: true, message: '请输入合作方', trigger: 'blur' }],
         fundPoolDirection: [{ required: true, message: '请选择资金池方向', trigger: 'change' }],
         initialAmount: [{ required: true, message: '请输入初始金额', trigger: 'blur' }],
         initialBalanceVoucher: [{ required: true, message: '请输入初始余额凭证', trigger: 'blur' }]
@@ -243,6 +244,7 @@ export default {
         contractNo: '', 
         contractName: '', 
         contractPartner: '', 
+        contractPartnerName: '',
         fundPoolDirection: '', 
         initialAmount: 0, 
         initialBalanceVoucher: '' 
@@ -260,9 +262,11 @@ export default {
     handleContractConfirm(selected) {
       const contract = Array.isArray(selected) ? selected[0] : selected
       if (!contract) return
+      this.form.contractId = contract.id
       this.form.contractNo = contract.no 
       this.form.contractName = contract.name 
       this.form.contractPartner = contract.partner
+      this.form.contractPartnerName = contract.partnerName
       this.contractSelectorVisible = false
     },
     handleDelete(row) {

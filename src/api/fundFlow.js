@@ -35,6 +35,15 @@ export function updateFundFlow(data) {
   })
 }
 
+// 提交确认资金走款
+export function submitFundFlow(data) {
+  return request({
+    url: '/recycle/fund/confirm',
+    method: 'post',
+    data
+  })
+}
+
 // 删除资金走款记录
 export function deleteFundFlow(id) {
   return request({

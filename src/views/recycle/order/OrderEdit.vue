@@ -433,6 +433,7 @@ export default {
       const contract = Array.isArray(selected) ? selected[0] : selected
       if (!contract) return
       // 优先使用合同编号字段，如无则使用ID占位
+      this.detailData.contractId = contract.id
       this.detailData.contractNo = contract.no
       this.detailData.contractName = contract.name
       this.detailData.contractPartner = contract.partner
