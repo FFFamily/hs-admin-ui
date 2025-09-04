@@ -22,7 +22,7 @@
       <el-table-column prop="balance" label="当前余额" width="140">
         <template slot-scope="scope">¥{{ formatAmount(scope.row.balance) }}</template>
       </el-table-column> 
-      <el-table-column label="操作" width="260" align="center">
+      <el-table-column label="操作"  align="center">
         <template slot-scope="scope">
           <el-button size="mini" @click="handleViewDetail(scope.row)">明细</el-button>
           <el-button size="mini" type="warning" @click="handleEdit(scope.row)">编辑</el-button>

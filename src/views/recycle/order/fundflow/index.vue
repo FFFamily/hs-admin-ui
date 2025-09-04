@@ -44,7 +44,6 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="contractFundPoolRemainingAmount" label="资金池剩余金额" width="120" />
       <el-table-column prop="fundFlowDirection" label="走款方向" width="120">
         <template slot-scope="scope">
           <el-tag :type="scope.row.fundFlowDirection === '0' ? 'danger' : 'success'">
@@ -53,11 +52,9 @@
         </template>
       </el-table-column>
       <el-table-column prop="fundFlowAmount" label="走款金额" width="120" />
-      <el-table-column prop="contractFundPoolDirection" label="资金池方向" width="120">
+      <el-table-column prop="fundPoolDirection" label="资金池方向" width="120">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.contractFundPoolDirection === '0' ? 'success' : 'danger'">
-            {{ getFundPoolDirectionName(scope.row.contractFundPoolDirection) }}
-          </el-tag>
+            {{ getFundPoolDirectionName(scope.row.fundPoolDirection) }}
         </template>
       </el-table-column>
       <el-table-column prop="contractFundPoolAmount" label="资金池走款金额" width="120" />
@@ -148,18 +145,6 @@
         <div class="form-section">
           <el-row :gutter="16">
             <el-col :span="12">
-              <el-form-item label="资金池方向" prop="contractFundPoolDirection">
-                <el-select v-model="form.contractFundPoolDirection" placeholder="请选择">
-                  <el-option v-for="option in fundPoolDirectionOptions" :key="option.value" :label="option.label" :value="option.value" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label-width="140px" label="合同资金池剩余金额" prop="contractFundPoolRemainingAmount">
-                <el-input v-model="form.contractFundPoolRemainingAmount" placeholder="请输入合同资金池剩余金额" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
               <el-form-item label="走款方向" prop="fundFlowDirection">
                 <el-select v-model="form.fundFlowDirection" placeholder="请选择">
                   <el-option v-for="option in fundDirectionOptions" :key="option.value" :label="option.label" :value="option.value" />
@@ -172,15 +157,15 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="资金池方向" prop="contractFundPoolDirection">
-                <el-select v-model="form.contractFundPoolDirection" placeholder="请选择">
+              <el-form-item label="资金池方向" prop="fundPoolDirection">
+                <el-select v-model="form.fundPoolDirection" placeholder="请选择">
                   <el-option v-for="option in fundPoolDirectionOptions" :key="option.value" :label="option.label" :value="option.value" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="资金走款金额" prop="contractFundPoolAmount">
-                <el-input v-model="form.contractFundPoolAmount" placeholder="请输入资金走款金额" />
+                <el-input v-model="form.fundPoolAmount" placeholder="请输入资金走款金额" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -195,9 +180,11 @@
                 <el-input v-model="form.fundAmount" placeholder="请输入货款走款金额" />
               </el-form-item>
             </el-col>
-            <el-col :span="12">
+            <el-col :span="24">
               <el-form-item label="货款走款银行" prop="fundBank">
-                <el-input v-model="form.fundBank" placeholder="请输入货款走款银行" />
+                <el-input v-model="form.fundBank" placeholder="请选择货款走款银行" readonly @focus="openBankInfoSelector">
+                  <el-button slot="append" icon="el-icon-search" @click="openBankInfoSelector">选择</el-button>
+                </el-input>
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -241,6 +228,9 @@
     
     <agent-selector :visible.sync="agentSelectorVisible" title="选择经办人" :multiple="false" :show-pagination="true"
       @confirm="handleAgentConfirm" />
+    
+    <bank-info-selector :visible.sync="bankInfoSelectorVisible" title="选择银行信息" :multiple="false" :show-pagination="true"
+      @confirm="handleBankInfoConfirm" />
   </div>
 
 </template>
@@ -249,6 +239,7 @@
 import { getFundFlowPage, addFundFlow, updateFundFlow, deleteFundFlow } from '@/api/fundFlow'
 import ContractSelector from '@/components/ContractSelector'
 import AgentSelector from '@/components/AgentSelector'
+import BankInfoSelector from '@/components/BankInfoSelector'
 import {
 
   ORDER_STATUS_OPTIONS,
@@ -259,7 +250,7 @@ import { FUND_DIRECTION } from '@/constants/fund'
 import { FUND_POOL_DIRECTION, getFundPoolDirectionName } from '@/constants/pool'
 export default {
   name: 'FundFlow',
-  components: { ContractSelector, AgentSelector },
+  components: { ContractSelector, AgentSelector, BankInfoSelector },
   data() {
     return {
       list: [],
@@ -326,6 +317,7 @@ export default {
       },
       contractSelectorVisible: false,
       agentSelectorVisible: false,
+      bankInfoSelectorVisible: false,
       // 确认弹框相关数据
       confirmDialogVisible: false,
       confirmForm: {
@@ -438,6 +430,15 @@ export default {
       if (!agent) return
       this.confirmForm.processor = agent.name || agent.accountName || agent.username || ''
       this.agentSelectorVisible = false
+    },
+    openBankInfoSelector() {
+      this.bankInfoSelectorVisible = true
+    },
+    handleBankInfoConfirm(selected) {
+      const bankInfo = Array.isArray(selected) ? selected[0] : selected
+      if (!bankInfo) return
+      this.form.fundBank = bankInfo.bankName || ''
+      this.bankInfoSelectorVisible = false
     },
     handleEdit(row) {
       this.dialogTitle = '编辑走款'

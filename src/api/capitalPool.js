@@ -53,7 +53,7 @@ export function deleteCapitalPool(id) {
 // 获取资金池明细（根据资金池ID）
 export function getCapitalPoolDetails(capitalPoolId) {
   return request({
-    url: `/recycle/capital-pool-detail/get/${capitalPoolId}`,
+    url: `/recycle/capital-pool/item/get/${capitalPoolId}`,
     method: 'get'
   })
 }

@@ -1,5 +1,5 @@
 <template>
-  <el-dialog title="批量走款" :visible.sync="visible" width="90%" :close-on-click-modal="false" top="5vh">
+  <el-dialog title="批量走款" :visible.sync="visible" width="90%" :close-on-click-modal="false" top="5vh">    
     <el-table :data="fundflowList" border fit style="width: 100%" v-loading="loading">
       <el-table-column prop="orderNo" label="订单编号" width="150" align="center" />
       <el-table-column prop="orderType" label="订单类型" width="120" align="center">
@@ -16,11 +16,14 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="partner" label="合作方" width="150" align="center" show-overflow-tooltip />
-      <el-table-column prop="contractFundPoolBalance" label="合同资金池剩余金额" width="140" align="center">
+      <el-table-column prop="partnerName" label="合作方" width="150" align="center" show-overflow-tooltip />
+      <el-table-column prop="contractFundPoolBalance" label="合同资金池剩余金额" width="150" align="center">
         <template slot-scope="scope">
           <span v-if="typeof scope.row.contractFundPoolBalance === 'string'" class="error-text">
             {{ scope.row.contractFundPoolBalance }}
+          </span>
+          <span v-else-if="scope.row.contractFundPoolBalance === 0" class="warning-text">
+            余额不足
           </span>
           <span v-else class="amount-text">¥{{ formatAmount(scope.row.contractFundPoolBalance) }}</span>
         </template>
@@ -40,7 +43,7 @@
           <span class="amount-text">¥{{ formatAmount(scope.row.orderShouldAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="planPayTime" label="计划走款时间" width="180" align="center">
+      <el-table-column prop="planPayTime" label="本次计划走款时间" width="180" align="center">
         <template slot-scope="scope">
           <el-date-picker
             v-model="scope.row.planPayTime"
@@ -52,22 +55,22 @@
           />
         </template>
       </el-table-column>
-      <el-table-column prop="fundFlowAmount" label="走款金额" width="160" align="center">
+      <el-table-column prop="fundFlowAmount" label="本次计划走款金额" width="160" align="center">
         <template slot-scope="scope">
           <el-input-number
+            disabled
             v-model="scope.row.fundFlowAmount"
             :min="0"
             :precision="2"
             controls-position="right"
             style="width: 100%;"
-            @change="onAmountChange(scope.row)"
           />
         </template>
       </el-table-column>
-      <el-table-column prop="fundAmount" label="货款走款金额" width="140" align="center">
+      <el-table-column prop="fundAmount" label="计划货款走款" width="140" align="center">
         <template slot-scope="scope">
           <el-input-number
-            v-model="scope.row.loanAmount"
+            v-model="scope.row.fundAmount"
             :min="0"
             :precision="2"
             controls-position="right"
@@ -76,7 +79,7 @@
           />
         </template>
       </el-table-column>
-      <el-table-column prop="fundPoolAmount" label="资金池走款金额" width="150" align="center">
+      <el-table-column prop="fundPoolAmount" label="计划资金池走款" width="150" align="center">
         <template slot-scope="scope">
           <el-input-number
             v-model="scope.row.fundPoolAmount"
@@ -84,11 +87,13 @@
             :precision="2"
             controls-position="right"
             style="width: 100%;"
+            :disabled="!scope.row.hasFundPool"
+            :placeholder="scope.row.hasFundPool ? '请输入金额' : '无资金池'"
             @change="onCapitalPoolAmountChange(scope.row)"
           />
         </template>
       </el-table-column>
-      <el-table-column prop="fundBank" label="货款走款银行" width="200" align="center">
+      <el-table-column prop="fundBank" label="走款银行" width="200" align="center">
         <template slot-scope="scope">
           <el-select 
             v-model="scope.row.fundBank" 
@@ -99,8 +104,8 @@
           >
             <el-option 
               v-for="bank in scope.row.partnerBankList" 
-              :key="bank.id"
-              :label="`${bank.bankName} - ${bank.cardNumber}`" 
+              :key="bank.cardNumber"
+              :label="`${bank.cardNumber}`" 
               :value="bank.id"
             />
           </el-select>
@@ -110,7 +115,7 @@
 
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleCancel">取消</el-button>
-      <el-button type="primary" @click="handleSave" :loading="saveLoading">保存</el-button>
+      <el-button type="primary" @click="handleSave" :loading="saveLoading" :disabled="hasNoFundPoolContract">保存</el-button>
     </div>
   </el-dialog>
 </template>
@@ -162,6 +167,11 @@ export default {
       immediate: true
     }
   },
+  computed: {
+    hasNoFundPoolContract() {
+      return this.fundflowList.some(row => typeof row.contractFundPoolBalance === 'string');
+    }
+  },
   methods: {
     // 初始化数据
     async initData() {
@@ -181,6 +191,12 @@ export default {
             this.getMainBankInfo(order.contractNo),
             this.getPartnerBankList(order.contractPartner)
           ])
+          // 找到默认的银行卡
+          const defaultBank = partnerBankList.find(bank => bank.isDefault)
+          
+          // 判断合同是否有资金池
+          const hasFundPool = typeof contractFundPoolBalance === 'number'
+          
           fundflowList.push({
             ...order,
             orderId: order.id,
@@ -188,17 +204,19 @@ export default {
             orderType: order.type,
             orderStatus: order.status,
             partner: order.contractPartner,
+            partnerName: order.contractPartnerName,
             contractFundPoolBalance: contractFundPoolBalance,
             orderTotalAmount: order.totalAmount || 0,
             orderActualAmount: order.actualAmount || 0, // 已走款金额
             orderShouldAmount: (order.totalAmount || 0) - (order.actualAmount || 0), // 应走款金额
             planPayTime: '', // 计划走款时间
             fundFlowAmount: 0, // 走款金额
-            fundAmount: 0, // 贷款走款金额
+            fundAmount: 0, // 货款走款金额
             fundPoolAmount: 0, // 资金池走款金额
-            fundBank: mainBankInfo,
+            fundBank: defaultBank?.id || '', // 使用银行ID而不是卡号
             mainBankInfo: mainBankInfo, // 主银行账号信息
-            partnerBankList: partnerBankList || [] // 合作方银行账号列表
+            partnerBankList: partnerBankList || [], // 合作方银行账号列表
+            hasFundPool: hasFundPool // 标记是否有资金池
           })
         }
         this.fundflowList = fundflowList
@@ -261,42 +279,16 @@ export default {
       }
     },
 
-    // 金额变化处理
-    onAmountChange(row) {
-      const fundFlowAmount = row.fundFlowAmount || 0
-      const loanAmount = row.loanAmount || 0
-      const fundPoolAmount = row.fundPoolAmount || 0
-      
-      // 如果贷款走款 + 资金池走款 > 走款金额，则调整资金池走款
-      if (loanAmount + fundPoolAmount > fundFlowAmount) {
-        row.fundPoolAmount = Math.max(0, fundFlowAmount - loanAmount)
-      }
-    },
-
-    // 贷款金额变化处理
+    // 货款金额变化处理
     onLoanAmountChange(row) {
-      const fundFlowAmount = row.fundFlowAmount || 0
-      const loanAmount = row.loanAmount || 0
-      
-      // 如果贷款走款 > 走款金额，则限制贷款走款
-      if (loanAmount > fundFlowAmount) {
-        row.loanAmount = fundFlowAmount
-      }
-      
-      // 调整资金池走款
-      row.fundPoolAmount = Math.max(0, fundFlowAmount - loanAmount)
+      // 计划走款 = 计划货款走款 + 计划资金池走款
+      row.fundFlowAmount = (row.fundAmount || 0) + (row.fundPoolAmount || 0)
     },
 
     // 资金池金额变化处理
     onCapitalPoolAmountChange(row) {
-      const fundFlowAmount = row.fundFlowAmount || 0
-      const loanAmount = row.loanAmount || 0
-      const fundPoolAmount = row.fundPoolAmount || 0
-      
-      // 如果贷款走款 + 资金池走款 > 走款金额，则限制资金池走款
-      if (loanAmount + fundPoolAmount > fundFlowAmount) {
-        row.fundPoolAmount = Math.max(0, fundFlowAmount - loanAmount)
-      }
+      // 计划走款 = 计划货款走款 + 计划资金池走款
+      row.fundFlowAmount = (row.fundAmount || 0) + (row.fundPoolAmount || 0)
     },
 
     // 银行选择变化处理
@@ -330,9 +322,7 @@ export default {
       if (typeof amount === 'string') {
         return amount
       }
-      
       const num = Number(amount) || 0
-      console.log("当前金额", num)
       return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
     },
 
@@ -351,17 +341,39 @@ export default {
         return
       }
 
+      // 验证合同是否都有资金池
+      const noFundPoolRows = this.fundflowList.filter(row => {
+        return typeof row.contractFundPoolBalance === 'string'
+      })
+
+      if (noFundPoolRows.length > 0) {
+        const orderNos = noFundPoolRows.map(row => row.orderNo).join('、')
+        this.$message.error(`以下订单对应的合同尚未创建资金池，无法进行走款操作：${orderNos}`)
+        return
+      }
+
       // 验证金额逻辑
       const invalidAmountRows = this.fundflowList.filter(row => {
         const fundFlowAmount = row.fundFlowAmount || 0
-        const loanAmount = row.loanAmount || 0
+        const fundAmount = row.fundAmount || 0
         const fundPoolAmount = row.fundPoolAmount || 0
         
-        return fundFlowAmount !== (loanAmount + fundPoolAmount)
+        return fundFlowAmount !== (fundAmount + fundPoolAmount)
       })
 
       if (invalidAmountRows.length > 0) {
-        this.$message.error('走款金额必须等于贷款走款金额加资金池走款金额')
+        this.$message.error('走款金额必须等于货款走款金额加资金池走款金额')
+        return
+      }
+
+      // 验证资金池走款金额不超过可用余额
+      const invalidFundPoolRows = this.fundflowList.filter(row => {
+        const availableBalance = Number(row.contractFundPoolBalance) || 0
+        return row.fundPoolAmount > availableBalance
+      })
+
+      if (invalidFundPoolRows.length > 0) {
+        this.$message.error('资金池走款金额不能超过可用余额')
         return
       }
 
@@ -376,11 +388,8 @@ export default {
           // 准备批量走款数据
           const batchData = this.fundflowList.map(i => {
             return {
-              contractNo: i.contractNo,
-              contractName: i.contractName,
+              contractId: i.contractId,
               orderId: i.orderId,
-              orderNo: i.orderNo,
-              orderType: i.orderType,
               orderTotalAmount: i.orderTotalAmount,
               orderShouldAmount: i.orderShouldAmount,
               orderActualAmount: i.orderActualAmount,
@@ -388,20 +397,18 @@ export default {
               fundFlowAmount: i.fundFlowAmount,
               //货款方向
               fundDirection: i.fundDirection,
-              fundAmount: i.loanAmount,
+              fundAmount: i.fundAmount,
               fundBank: i.fundBank,
               fundBankInfo: this.getBankInfoById(i.fundBank, i.mainBankInfo, i.partnerBankList),
               fundPoolAmount: i.fundPoolAmount,
-
               partner: i.partner,
+              partnerName: i.partnerName,
               planPayTime: i.planPayTime,
             }
           });
           
           // 调用批量新增走款API
           await batchAddFundFlow(batchData)
-          
-          this.$message.success('批量走款信息保存成功')
           this.$emit('success', this.fundflowList)
           this.handleCancel()
         } catch (error) {
@@ -434,6 +441,23 @@ export default {
   font-weight: 500;
   color: #f56c6c;
   font-size: 12px;
+}
+
+.warning-text {
+  font-weight: 500;
+  color: #e6a23c;
+  font-size: 12px;
+}
+
+.no-fund-pool-tip {
+  font-size: 11px;
+  color: #f56c6c;
+  margin-top: 2px;
+  text-align: center;
+}
+
+.info-tips {
+  margin-bottom: 20px;
 }
 
 .dialog-footer {

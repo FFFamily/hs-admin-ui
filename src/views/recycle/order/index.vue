@@ -70,8 +70,8 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="甲方" prop="partner" width="120" align="center" show-overflow-tooltip />
-      <el-table-column label="乙方" prop="partner" width="120" align="center" show-overflow-tooltip />
+      <el-table-column label="甲方" prop="partyAName" width="120" align="center" show-overflow-tooltip />
+      <el-table-column label="乙方" prop="partyBName" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="经办人" prop="processor" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="订单识别码" prop="identifyCode" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="订单总金额" prop="totalAmount" width="120" align="center">
@@ -90,8 +90,8 @@
           {{ formatDateTime(scope.row.endTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="订单应走金额" prop="orderAmount" width="120" align="center" show-overflow-tooltip />
-      <el-table-column label="订单实走金额" prop="orderAmount" width="120" align="center" show-overflow-tooltip />
+      <el-table-column label="订单应走金额" prop="contractPrice" width="120" align="center" show-overflow-tooltip />
+      <el-table-column label="订单实走金额" prop="totalAmount" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="订单应开发票" prop="orderAmount" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="订单实开发票" prop="orderAmount" width="120" align="center" show-overflow-tooltip />
 
