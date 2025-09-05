@@ -195,7 +195,7 @@
 </template>
 
 <script>
-import { generateSettlementPDF } from '@/api/recycle'
+import { generateSettlementPDF, getRecycleDetail } from '@/api/recycle'
 import { parseTime } from '@/utils'
 import { 
   getOrderTypeText,
@@ -242,24 +242,44 @@ export default {
     // 从路由参数获取订单ID
     this.orderId = this.$route.params.orderId || this.$route.query.orderId
     
-    // 从路由query获取订单数据
-    if (this.$route.query.orderData) {
-      try {
-        this.orderData = JSON.parse(this.$route.query.orderData)
-      } catch (error) {
-        console.error('解析订单数据失败:', error)
-      }
-    }
-    
-    if (this.orderId && !this.orderData.id) {
+    // 如果有orderId，则从API获取订单数据
+    if (this.orderId) {
       this.loadOrderData()
     }
   },
   methods: {
     // 加载订单数据
-    loadOrderData() {
-      // 这里可以从API加载订单数据，或者从路由参数传递
-      // 暂时使用模拟数据
+    async loadOrderData() {
+      if (!this.orderId) return
+      
+      try {
+        const response = await getRecycleDetail(this.orderId)
+        this.orderData = response.data || {}
+        
+        // 如果API返回的数据中没有items，则使用模拟数据
+        if (!this.orderData.items || this.orderData.items.length === 0) {
+          this.loadMockOrderItems()
+        } else {
+          // 将API返回的items转换为PDF需要的格式
+          this.orderItems = this.orderData.items.map((item, index) => ({
+            type: 'goods',
+            name: item.goodName || '商品' + (index + 1),
+            specification: item.goodModel || '标准规格',
+            quantity: item.goodCount || 0,
+            unitPrice: item.goodPrice || 0,
+            amount: item.goodTotalPrice || 0
+          }))
+        }
+      } catch (error) {
+        console.error('获取订单数据失败:', error)
+        this.$message.error('获取订单数据失败')
+        // 如果API调用失败，使用模拟数据
+        this.loadMockOrderData()
+      }
+    },
+    
+    // 加载模拟订单数据（作为备用）
+    loadMockOrderData() {
       this.orderData = {
         id: this.orderId,
         no: 'RO' + this.orderId,
@@ -277,6 +297,11 @@ export default {
         deliveryAddress: '北京市朝阳区交付地址',
         totalAmount: 100000
       }
+      this.loadMockOrderItems()
+    },
+    
+    // 加载模拟订单明细数据
+    loadMockOrderItems() {
 
       // 模拟订单明细数据
       this.orderItems = [
@@ -838,6 +863,131 @@ export default {
             .notes-text {
               font-size: 12px;
               color: #666;
+              margin: 0;
+            }
+            
+            .order-details-info {
+              margin-bottom: 30px;
+            }
+            
+            .order-details-info .info-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 15px;
+            }
+            
+            .order-details-info .info-item {
+              display: flex;
+              align-items: center;
+            }
+            
+            .order-details-info .info-item .label {
+              font-weight: bold;
+              min-width: 180px;
+            }
+            
+            .order-details-info .info-item .value {
+              margin-left: 10px;
+            }
+            
+            .company-info-footer {
+              margin-top: 50px;
+              text-align: right;
+            }
+            
+            .company-info-footer .company-name {
+              font-size: 16px;
+              font-weight: bold;
+              margin-bottom: 10px;
+            }
+            
+            .company-info-footer .settlement-date {
+              font-size: 12px;
+              color: #666;
+            }
+            
+            .adjustment-section {
+              margin-top: 30px;
+            }
+            
+            .adjustment-section .adjustment-content {
+              margin-bottom: 20px;
+            }
+            
+            .adjustment-section .adjustment-summary {
+              font-size: 14px;
+              margin-bottom: 15px;
+              text-align: left;
+            }
+            
+            .adjustment-section .adjustment-details {
+              margin-left: 20px;
+            }
+            
+            .adjustment-section .adjustment-item {
+              display: flex;
+              align-items: flex-start;
+              margin-bottom: 10px;
+              line-height: 1.6;
+            }
+            
+            .adjustment-section .adjustment-number {
+              font-weight: bold;
+              margin-right: 8px;
+              min-width: 30px;
+            }
+            
+            .adjustment-section .adjustment-label {
+              font-weight: bold;
+              margin-right: 8px;
+              min-width: 80px;
+            }
+            
+            .adjustment-section .adjustment-value {
+              flex: 1;
+            }
+            
+            .settlement-amount-section {
+              margin-top: 30px;
+            }
+            
+            .settlement-amount-section .settlement-content {
+              margin-bottom: 20px;
+            }
+            
+            .settlement-amount-section .settlement-summary {
+              font-size: 14px;
+              margin-bottom: 15px;
+              line-height: 1.6;
+            }
+            
+            .settlement-amount-section .settlement-amount-words {
+              font-size: 14px;
+              margin-bottom: 15px;
+              line-height: 1.6;
+            }
+            
+            .settlement-amount-section .settlement-account {
+              font-size: 14px;
+              margin-bottom: 15px;
+              line-height: 1.6;
+            }
+            
+            .settlement-amount-section .settlement-request {
+              font-size: 14px;
+              margin-bottom: 15px;
+              line-height: 1.6;
+            }
+            
+            .final-notes-section {
+              margin-top: 30px;
+              margin-bottom: 30px;
+            }
+            
+            .final-notes-section .final-notes-text {
+              font-size: 12px;
+              color: #666;
+              line-height: 1.6;
               margin: 0;
             }
             

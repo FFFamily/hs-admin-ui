@@ -284,6 +284,10 @@ export default {
     orderId: {
       type: [String, Number],
       default: null
+    },
+    identifyCode: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -389,6 +393,10 @@ export default {
     async initData() {
       if (this.dialogMode === 'add') {
         this.detailData = this.getDefaultFormData()
+        // 如果传入了订单识别码，则设置到表单中
+        if (this.identifyCode) {
+          this.detailData.identifyCode = this.identifyCode
+        }
       } else if (this.orderId) {
         try {
           const response = await getRecycleDetail(this.orderId)

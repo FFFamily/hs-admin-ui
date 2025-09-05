@@ -78,7 +78,7 @@
                     {{ formatDateTime(scope.row.createTime) }}
                 </template>
             </el-table-column>
-            <el-table-column label="操作" align="center" fixed="right">
+            <el-table-column label="操作" align="center" width="230" fixed="right">
                 <template slot-scope="scope">
                     <el-button size="mini" type="warning" icon="el-icon-edit" @click="handleEdit(scope.row)">
                        

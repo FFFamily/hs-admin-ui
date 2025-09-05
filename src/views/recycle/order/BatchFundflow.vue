@@ -367,15 +367,15 @@ export default {
       }
 
       // 验证资金池走款金额不超过可用余额
-      const invalidFundPoolRows = this.fundflowList.filter(row => {
-        const availableBalance = Number(row.contractFundPoolBalance) || 0
-        return row.fundPoolAmount > availableBalance
-      })
+      // const invalidFundPoolRows = this.fundflowList.filter(row => {
+      //   const availableBalance = Number(row.contractFundPoolBalance) || 0
+      //   return row.fundPoolAmount > availableBalance
+      // })
 
-      if (invalidFundPoolRows.length > 0) {
-        this.$message.error('资金池走款金额不能超过可用余额')
-        return
-      }
+      // if (invalidFundPoolRows.length > 0) {
+      //   this.$message.error('资金池走款金额不能超过可用余额')
+      //   return
+      // }
 
       this.$confirm('确定要保存批量走款信息吗？', '提示', {
         confirmButtonText: '确定',

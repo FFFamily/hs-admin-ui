@@ -97,7 +97,7 @@
 
       <el-table-column label="操作" width="590" align="center" fixed="right">
         <template slot-scope="scope">
-          <el-button size="mini" type="primary" icon="el-icon-sell" @click="handleSettle(scope.row)">
+          <el-button size="mini" type="primary" icon="el-icon-sell" @click="handleCreateOrder(scope.row)">
             创建订单
           </el-button>
           <el-button size="mini" type="success" icon="el-icon-sell" @click="handleSettle(scope.row)">
@@ -129,6 +129,7 @@
       :visible.sync="detailVisible" 
       :mode="dialogMode" 
       :order-id="currentOrderId"
+      :identify-code="currentIdentifyCode"
       @success="handleEditSuccess"
       @cancel="handleEditCancel" />
 
@@ -194,6 +195,7 @@ export default {
       detailVisible: false,
       dialogMode: 'add', // 'add', 'edit'
       currentOrderId: null,
+      currentIdentifyCode: '',
       assignPersonVisible: false,
       selectedProcessor: '',
       userList: [],
@@ -272,10 +274,7 @@ export default {
       // 跳转到结算单页面
       this.$router.push({
         name: 'SettlementPDF',
-        params: { orderId: row.id },
-        query: { 
-          orderData: JSON.stringify(row)
-        }
+        params: { orderId: row.id }
       })
     },
 
@@ -314,6 +313,15 @@ export default {
     handleAdd() {
       this.dialogMode = 'add'
       this.currentOrderId = null
+      this.currentIdentifyCode = ''
+      this.detailVisible = true
+    },
+
+    // 创建订单（从现有订单创建）
+    handleCreateOrder(row) {
+      this.dialogMode = 'add'
+      this.currentOrderId = null
+      this.currentIdentifyCode = row.identifyCode || ''
       this.detailVisible = true
     },
 
