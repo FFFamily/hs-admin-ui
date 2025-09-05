@@ -1,12 +1,9 @@
 <template>
   <div class="bank-info-list">
-    <el-card>
+
       <el-form :inline="true" :model="search" label-width="80px">
-        <el-form-item label="账户ID">
-          <el-input v-model="search.accountId" placeholder="请输入账户ID" style="width: 180px; margin-right: 10px;" clearable />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="showUserSelector">选择用户</el-button>
+        <el-form-item label="账户名称">
+          <el-input v-model="search.accountName" @focus="showSearchUserSelector" placeholder="请输入账户名称" />
         </el-form-item>
         <el-form-item label="开户行">
           <el-input v-model="search.bankName" placeholder="开户行" style="width: 180px; margin-right: 10px;" />
@@ -16,13 +13,13 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="el-icon-search" @click="fetchList">搜索</el-button>
+          <el-button type="info" icon="el-icon-refresh" @click="resetSearch">重置</el-button>
           <el-button type="success" icon="el-icon-plus" style="margin-left: 10px;" @click="handleAdd">新增银行信息</el-button>
         </el-form-item>
       </el-form>
 
       <el-table :data="list" style="width: 100%; margin-top: 20px;" border>
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="accountId" label="账户ID" width="120" />
+        <el-table-column prop="accountName" label="账户名称" width="120" />
         <el-table-column prop="bankName" label="开户行" width="150" />
         <el-table-column prop="cardNumber" label="银行卡号" width="180" />
         <el-table-column prop="bankCode" label="联行号" width="120" />
@@ -33,11 +30,10 @@
           </template>
         </el-table-column>
         <el-table-column label="创建时间" prop="createTime" width="160" align="center" />
-        <el-table-column label="操作" fixed="right" width="200">
+        <el-table-column label="操作" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button size="mini" type="warning" @click="handleSetDefault(scope.row)" 
-                      :disabled="scope.row.isDefault === '1'">设为默认</el-button>
+            <el-button v-if="scope.row.isDefault === YES_OR_NO.NO" size="mini" type="warning" @click="handleSetDefault(scope.row)">设为默认</el-button>
             <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
@@ -46,12 +42,12 @@
         <el-pagination background layout="total, prev, pager, next, jumper" :total="total" :page-size="pageSize"
           :current-page.sync="page" @current-change="fetchList" />
       </div>
-    </el-card>
+
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" width="500px" :visible.sync="dialogVisible">
       <el-form :model="form" :rules="rules" ref="form" label-width="100px">
-        <el-form-item label="账户ID" prop="accountId">
-          <el-input v-model="form.accountId" placeholder="请输入账户ID" readonly>
+        <el-form-item label="账户" prop="accountId">
+          <el-input v-model="form.accountName" placeholder="请输入账户名称" readonly>
             <el-button slot="append" icon="el-icon-search" @click="showUserSelector"></el-button>
           </el-input>
         </el-form-item>
@@ -66,8 +62,8 @@
         </el-form-item>
         <el-form-item label="是否默认" prop="isDefault">
           <el-select v-model="form.isDefault" placeholder="请选择是否默认">
-            <el-option label="是" value="1" />
-            <el-option label="否" value="0" />
+            <el-option label="是" :value=YES_OR_NO.YES />
+            <el-option label="否" :value=YES_OR_NO.NO />
           </el-select>
         </el-form-item>
       </el-form>
@@ -85,6 +81,13 @@
       @confirm="handleUserConfirm"
       @close="userSelectorVisible = false"
     />
+    <UserSelector
+      :visible.sync="searchUserSelectorVisible"
+      title="选择用户"
+      :multiple="false"
+      @confirm="handleSearchUserConfirm"
+      @close="searchUserSelectorVisible = false"
+    />
   </div>
 </template>
 
@@ -97,7 +100,7 @@ import {
   setDefaultBankInfo
 } from '@/api/bankInfo'
 import UserSelector from '@/components/UserSelector'
-
+import { YES_OR_NO } from '@/constants/common'
 export default {
   name: 'BankInfoList',
   components: {
@@ -105,6 +108,7 @@ export default {
   },
   data() {
     return {
+      YES_OR_NO,
       list: [],
       total: 0,
       page: 1,
@@ -118,13 +122,14 @@ export default {
       dialogVisible: false,
       dialogTitle: '',
       userSelectorVisible: false,
+      searchUserSelectorVisible: false,
       form: {
         id: undefined,
         accountId: '',
         bankName: '',
         cardNumber: '',
         bankCode: '',
-        isDefault: '0'
+        isDefault: YES_OR_NO.NO
       },
       rules: {
         accountId: [{ required: true, message: '请输入账户ID', trigger: 'blur' }],
@@ -159,7 +164,7 @@ export default {
         bankName: '',
         cardNumber: '',
         bankCode: '',
-        isDefault: '0'
+        isDefault: YES_OR_NO.NO
       }
       this.dialogVisible = true
     },
@@ -180,6 +185,24 @@ export default {
         })
       })
     },
+    // 重置搜索
+    resetSearch() {
+      this.search = {
+        accountId: '',
+        accountName: '',
+        bankName: '',
+        cardNumber: ''
+      }
+      this.fetchList()
+    },
+    handleSearchUserConfirm(users) {
+      if (users && users.length > 0) {
+        const selectedUser = users[0]
+        this.search.accountId = selectedUser.id
+        this.search.accountName = selectedUser.nickname
+      }
+      this.searchUserSelectorVisible = false
+    },
     handleDelete(row) {
       this.$confirm('确定要删除该银行信息吗?', '提示', {
         confirmButtonText: '确定',
@@ -196,13 +219,15 @@ export default {
     showUserSelector() {
       this.userSelectorVisible = true
     },
-    
+    showSearchUserSelector(){
+      this.searchUserSelectorVisible = true
+    },
     // 处理用户选择确认
     handleUserConfirm(users) {
       if (users && users.length > 0) {
         const selectedUser = users[0]
         this.form.accountId = selectedUser.id
-        this.search.accountId = selectedUser.id
+        this.form.accountName = selectedUser.nickname
       }
       this.userSelectorVisible = false
     },

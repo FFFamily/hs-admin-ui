@@ -12,7 +12,7 @@ export function getBankInfoList(params) {
 // 获取单个银行信息
 export function getBankInfo(id) {
   return request({
-    url: `/account/bank-card/${id}`,
+    url: `/account/bank-card/get/${id}`,
     method: 'get'
   })
 }
@@ -29,7 +29,7 @@ export function createBankInfo(data) {
 // 更新银行信息
 export function updateBankInfo(data) {
   return request({
-    url: '/account/bank-card',
+    url: '/account/bank-card/update',
     method: 'put',
     data
   })
@@ -38,7 +38,7 @@ export function updateBankInfo(data) {
 // 删除银行信息
 export function deleteBankInfo(id) {
   return request({
-    url: `/account/bank-card/${id}`,
+    url: `/account/bank-card/delete/${id}`,
     method: 'delete'
   })
 }
@@ -46,7 +46,7 @@ export function deleteBankInfo(id) {
 // 设置默认银行信息
 export function setDefaultBankInfo(id) {
   return request({
-    url: `/account/bank-card/${id}/default`,
+    url: `/account/bank-card/set-default/${id}`,
     method: 'put'
   })
 }

@@ -14,11 +14,6 @@
       <el-table :data="list" style="width: 100%; margin-top: 20px;" border>
         <el-table-column prop="username" label="账号" width="200" />
         <el-table-column prop="nickname" label="账号名称" width="200" />
-        <!-- <el-table-column prop="type" label="账号类型" width="100">
-          <template slot-scope="scope">
-            <span>{{ getType(scope.row.type) }}</span>
-          </template>
-</el-table-column> -->
         <el-table-column prop="accountTypeId" label="账号类型" width="200">
           <template slot-scope="scope">
             <span>{{ getAccountType(scope.row.accountTypeId) }}</span>
@@ -26,10 +21,11 @@
         </el-table-column>
         <el-table-column label="纳税人识别号" prop="taxNumber" width="180" align="center" />
         <el-table-column prop="password" label="密码" width="200" />
-
-        <!-- <el-table-column prop="phone" label="手机号" width="150" /> -->
-
-        <el-table-column label="身份" prop="useType" width="100" align="center" />
+        <el-table-column label="身份" prop="useType" width="100" align="center" >
+          <template slot-scope="scope">
+            <span>{{ getUseType(scope.row.useType) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="注册时间" prop="createTime" width="160" align="center" />
         <el-table-column label="评级" prop="score" width="60" align="center" />
         <el-table-column label="评级系数" prop="scoreFactor" width="60" align="center" />
@@ -42,7 +38,7 @@
         <el-table-column label="操作" fixed="right" width="145">
           <template slot-scope="scope">
             <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+            <!-- <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button> -->
           </template>
         </el-table-column>
       </el-table>
@@ -54,12 +50,6 @@
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" width="500px" :visible.sync="dialogVisible">
       <el-form :model="form" :rules="rules" ref="form" label-width="100px">
-        <!-- <el-form-item label="账号类型" prop="type">
-          <el-select v-model="form.type" placeholder="请选择用户类型" @change="handleTypeChange">
-            <el-option label="个人" value="person" />
-            <el-option label="企业" value="company" />
-          </el-select>
-        </el-form-item> -->
         <el-form-item label="账号类型" prop="accountTypeId">
           <el-select v-model="form.accountTypeId" placeholder="请选择账号类型"
             :disabled="form.id !== undefined && form.id !== null" @change="handleAccountTypeChange">
@@ -285,6 +275,9 @@ export default {
     },
     getAccountType(id) {
       return this.accountTypes.find(item => item.id === id)?.typeName
+    },
+    getUseType(id) {
+      return this.useTypeList.find(item => item.key === id)?.value
     }
   }
 }
