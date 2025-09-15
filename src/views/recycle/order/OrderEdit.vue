@@ -101,6 +101,14 @@
       </el-row>
       <el-row :gutter="20">
         <el-col :span="12">
+          <el-form-item label="上传时间" prop="uploadTime">
+            <el-date-picker v-model="detailData.uploadTime" type="datetime" placeholder="请选择上传时间" style="width: 100%;"
+              format="yyyy-MM-dd HH:mm:ss" value-format="yyyy-MM-dd HH:mm:ss" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="20">
+        <el-col :span="12">
           <el-form-item label="经办人" prop="processor">
             <el-input v-model="detailData.processor" :readonly="true" placeholder="请选择经办人"
               @click.native="openAgentSelector">
@@ -554,6 +562,7 @@ export default {
         status: ORDER_STATUS_OPTIONS[0].value, // 默认执行中
         startTime: '',
         endTime: '',
+        uploadTime: '',
         identifyCode: '',
         processor: '',
         processorPhone: '',

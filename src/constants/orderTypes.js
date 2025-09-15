@@ -21,13 +21,15 @@ export const ORDER_TYPE_OPTIONS = [
 // 订单状态枚举
 export const ORDER_STATUS = {
   PROCESSING: 'processing',
-  COMPLETED: 'completed'
+  COMPLETED: 'completed',
+  UPLOADED: 'uploaded'
 }
 
 // 订单状态选项
 export const ORDER_STATUS_OPTIONS = [
   { label: '执行中', value: ORDER_STATUS.PROCESSING },
-  { label: '已结算', value: ORDER_STATUS.COMPLETED }
+  { label: '已结算', value: ORDER_STATUS.COMPLETED },
+  { label: '已上传', value: ORDER_STATUS.UPLOADED }
 ]
 
 // 流转方向枚举
@@ -71,7 +73,8 @@ export const ORDER_TYPE_TAG_TYPE = (type) => {
 export function getOrderStatusTagType(status) {
   const tagTypeMap = {
     [ORDER_STATUS.PROCESSING]: 'warning',
-    [ORDER_STATUS.COMPLETED]: 'success'
+    [ORDER_STATUS.COMPLETED]: 'success',
+    [ORDER_STATUS.UPLOADED]: 'info'
   }
   return tagTypeMap[status] || 'info'
 }
@@ -93,7 +96,8 @@ export function getOrderTypeText(type) {
 export function getOrderStatusText(status) {
   const textMap = {
     [ORDER_STATUS.PROCESSING]: '执行中',
-    [ORDER_STATUS.COMPLETED]: '已结算'
+    [ORDER_STATUS.COMPLETED]: '已结算',
+    [ORDER_STATUS.UPLOADED]: '已上传'
   }
   return textMap[status] || '未知状态'
 } 

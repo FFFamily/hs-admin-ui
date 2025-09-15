@@ -148,6 +148,7 @@ export default {
       } else {
         this.$emit('input', emitValue)
       }
+      console.log('emitValue', emitValue)
       this.$emit('success', emitValue)
       this.$message.success('上传成功')
     },

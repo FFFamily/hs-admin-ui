@@ -90,6 +90,11 @@
           {{ formatDateTime(scope.row.endTime) }}
         </template>
       </el-table-column>
+      <el-table-column label="上传时间" prop="uploadTime" width="180" align="center" sortable="custom">
+        <template slot-scope="scope">
+          {{ formatDateTime(scope.row.uploadTime) }}
+        </template>
+      </el-table-column>
       <el-table-column label="订单应走金额" prop="contractPrice" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="订单实走金额" prop="totalAmount" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="订单应开发票" prop="orderAmount" width="120" align="center" show-overflow-tooltip />
@@ -562,7 +567,8 @@ export default {
     getOrderStatusText(status) {
       const textMap = {
         'processing': '执行中',
-        'completed': '已结算'
+        'completed': '已结算',
+        'uploaded': '已上传'
       }
       return textMap[status] || '未知状态'
     },
@@ -571,7 +577,8 @@ export default {
     getOrderStatusTagType(status) {
       const tagTypeMap = {
         'processing': 'warning',
-        'completed': 'success'
+        'completed': 'success',
+        'uploaded': 'info'
       }
       return tagTypeMap[status] || 'info'
     },

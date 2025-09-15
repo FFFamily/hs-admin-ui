@@ -29,7 +29,7 @@ export function createBusinessScope(data) {
 // 更新经营范围
 export function updateBusinessScope(id, data) {
   return request({
-    url: `/recycle/business-scope/${id}`,
+    url: `/recycle/business-scope/update`,
     method: 'put',
     data
   })

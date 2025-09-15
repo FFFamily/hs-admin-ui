@@ -128,9 +128,6 @@ export default {
         credit_code: '',
         address: '',
         contact_phone: '',
-        payAccount1: '',
-        payAccount2: '',
-        payAccount3: '',
         nickname: '',
         status: 1
       },
