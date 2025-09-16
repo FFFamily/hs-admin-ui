@@ -177,44 +177,6 @@
 
       <el-tabs v-model="identifyCodeActiveTab" type="card">
         <el-tab-pane label="进项" name="new">
-          <!-- 订单table -->
-          <el-table :data="orderList" border fit style="width: 100%; margin-bottom: 20px;" v-loading="orderLoading">
-            <el-table-column prop="orderNo" label="关联订单编号" width="180" align="center" />
-            <el-table-column prop="orderType" label="订单类型" width="120" align="center">
-              <template slot-scope="scope">
-                  {{ getOrderTypeText(scope.row.orderType) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="orderAmount" label="订单金额" width="140" align="center">
-              <template slot-scope="scope">
-                <span class="amount-text">¥{{ formatAmount(scope.row.orderAmount) }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="startTime" label="起始时间" width="160" align="center">
-              <template slot-scope="scope">
-                {{ formatDateTime(scope.row.startTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="endTime" label="结束时间" width="160" align="center">
-              <template slot-scope="scope">
-                {{ formatDateTime(scope.row.endTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" label="状态" width="100" align="center">
-              <template slot-scope="scope">
-                <el-tag :type="getOrderStatusTagType(scope.row.status)">
-                  {{ getOrderStatusText(scope.row.status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="200" align="center">
-              <template slot-scope="scope">
-                <el-button type="text" size="small" @click="viewOrderDetail(scope.row)">查看</el-button>
-                <el-button type="text" size="small" @click="syncOrderItems(scope.row)">同步订单明细</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
           <!-- 进项订单明细组件 -->
           <purchase-item :dialog-mode="dialogMode" :order-data="detailData" :items="detailData.items" :items-loading="itemsLoading"
             @selection-change="handleSelectionChange" @recalc-order-amount="recalcOrderAmount" @add-item="addOrderItem"
@@ -251,6 +213,7 @@
     <!-- 银行信息选择弹窗组件 -->
     <bank-info-selector :visible.sync="bankInfoSelectorVisible" title="选择走款账号" :multiple="false"
       @confirm="handleBankInfoSelected" />
+    
   </el-dialog>
 </template>
 
@@ -666,54 +629,6 @@ export default {
       this.$emit('view-order-detail', order)
     },
 
-    // 同步订单货物明细
-    async syncOrderItems(order) {
-      this.orderDetailLoading = true
-      try {
-        // 模拟同步货物明细数据
-        this.orderDetailList = [
-          {
-            goodNo: 'GOOD001',
-            goodType: '电子产品',
-            goodName: '笔记本电脑',
-            goodModel: 'ThinkPad X1',
-            goodCount: 10,
-            goodPrice: 8500.00,
-            goodTotalPrice: 85000.00,
-            goodWeight: '2.5kg',
-            goodRemark: '高配置版本'
-          },
-          {
-            goodNo: 'GOOD002',
-            goodType: '办公用品',
-            goodName: '办公桌椅',
-            goodModel: '标准款',
-            goodCount: 20,
-            goodPrice: 800.00,
-            goodTotalPrice: 16000.00,
-            goodWeight: '15kg',
-            goodRemark: '人体工学设计'
-          },
-          {
-            goodNo: 'GOOD003',
-            goodType: '网络设备',
-            goodName: '路由器',
-            goodModel: 'TP-Link AC1200',
-            goodCount: 5,
-            goodPrice: 200.00,
-            goodTotalPrice: 1000.00,
-            goodWeight: '0.5kg',
-            goodRemark: '双频千兆'
-          }
-        ]
-        this.$message.success('同步货物明细成功')
-      } catch (e) {
-        this.$message.error('同步货物明细失败')
-        this.orderDetailList = []
-      } finally {
-        this.orderDetailLoading = false
-      }
-    },
 
     // 处理表格选择变化
     handleSelectionChange(selection) {

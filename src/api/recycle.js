@@ -63,4 +63,21 @@ export function getSettlementData(orderId) {
     url: `/recycle/order/settlement/data/${orderId}`,
     method: 'get'
   })
+}
+
+// 同步订单
+export function syncOrder(orderId) {
+  return request({
+    url: `/recycle/order/sync/${orderId}`,
+    method: 'post'
+  })
+}
+
+// 批量同步订单
+export function batchSyncOrders(orderIds) {
+  return request({
+    url: `/recycle/order/batch/sync`,
+    method: 'post',
+    data: { orderIds }
+  })
 } 

@@ -6,6 +6,7 @@
       <el-form-item>
         <el-button type="primary" @click="clearAllPrices">货物单价清零</el-button>
         <el-button type="primary" @click="addOrderItem">新增行</el-button>
+        <el-button type="success" icon="el-icon-refresh" @click="openOrderListDialog">同步订单明细</el-button>
         <el-button type="danger" @click="deleteSelectedItems" :disabled="selectedItems.length === 0">删除行</el-button>
       </el-form-item>
     </el-form>
@@ -87,17 +88,25 @@
     <!-- 经营范围选择器 -->
     <BusinessScopeSelector :visible.sync="businessScopeSelectorVisible" title="选择经营范围" :multiple="false"
       :only-show-enabled="true" @confirm="handleBusinessScopeConfirm" @close="handleBusinessScopeClose" />
+    
+    <!-- 订单列表弹窗组件 -->
+    <order-list-dialog 
+      :visible.sync="orderListVisible" 
+      @sync-items="handleSyncOrderItems"
+    />
   </div>
 </template>
 
 <script>
 import { parseTime } from '@/utils'
 import BusinessScopeSelector from '@/components/BusinessScopeSelector'
+import OrderListDialog from '../OrderListDialog.vue'
 
 export default {
   name: 'PurchaseItem',
   components: {
-    BusinessScopeSelector
+    BusinessScopeSelector,
+    OrderListDialog
   },
   props: {
     dialogMode: {
@@ -121,7 +130,8 @@ export default {
     return {
       selectedItems: [],
       businessScopeSelectorVisible: false,
-      currentRowIndex: -1 // 当前操作的行索引
+      currentRowIndex: -1, // 当前操作的行索引
+      orderListVisible: false // 订单列表弹窗
     }
   },
   methods: {
@@ -324,6 +334,69 @@ export default {
     formatAmount(amount) {
       const num = Number(amount) || 0
       return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+    },
+
+    // 打开订单列表弹窗
+    openOrderListDialog() {
+      this.orderListVisible = true
+    },
+
+    // 处理同步订单明细
+    handleSyncOrderItems(syncData) {
+      const { sourceOrderId, sourceOrderNo, sourceOrderName, items } = syncData
+      
+      // 检查当前订单是否已有明细
+      if (this.items && this.items.length > 0) {
+        this.$confirm(
+          `当前订单已存在 ${this.items.length} 条明细，是否要覆盖？`,
+          '确认覆盖',
+          {
+            confirmButtonText: '覆盖',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }
+        ).then(() => {
+          this.syncItemsToOrder(items, sourceOrderNo, sourceOrderName)
+        }).catch(() => {
+          // 用户取消
+        })
+      } else {
+        this.syncItemsToOrder(items, sourceOrderNo, sourceOrderName)
+      }
+    },
+
+    // 同步明细到当前订单
+    syncItemsToOrder(sourceItems, sourceOrderNo, sourceOrderName) {
+      try {
+        // 将源订单明细转换为当前订单格式
+        const newItems = sourceItems.map(item => ({
+          recycleOrderId: this.orderData.id,
+          goodNo: item.goodNo || '',
+          goodType: item.goodType || '',
+          goodName: item.goodName || '',
+          goodModel: item.goodModel || '',
+          goodCount: item.goodCount || 0,
+          goodPrice: item.goodPrice || 0,
+          goodTotalPrice: this.calcTotal(item.goodCount || 0, item.goodPrice || 0),
+          goodWeight: item.goodWeight || '',
+          goodRemark: item.goodRemark || '',
+          goodRating: item.goodRating || '',
+          goodRatingPrice: item.goodRatingPrice || '',
+          otherRatingPrice: item.otherRatingPrice || '',
+          orderAmount: item.orderAmount || 0
+        }))
+
+        // 清空现有明细并添加新明细
+        this.items.splice(0, this.items.length, ...newItems)
+
+        // 触发重新计算订单金额
+        this.$emit('recalc-order-amount')
+
+        this.$message.success(`已从订单 ${sourceOrderNo} 同步 ${newItems.length} 条明细`)
+      } catch (error) {
+        this.$message.error('同步订单明细失败')
+        console.error('同步失败:', error)
+      }
     }
   }
 }

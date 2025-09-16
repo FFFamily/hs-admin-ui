@@ -155,6 +155,7 @@
     <!-- 合作方选择弹窗组件 -->
     <user-selector :visible.sync="partnerSelectorVisible" title="选择合作方" :multiple="false"
       @confirm="handlePartnerSelected" />
+
   </div>
 </template>
 
