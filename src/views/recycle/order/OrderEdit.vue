@@ -93,6 +93,12 @@
             </el-select>
           </el-form-item>
         </el-col>
+        <el-col :span="12">
+          <el-form-item label="结算时间" prop="settlementTime">
+            <el-date-picker v-model="detailData.settlementTime" type="datetime" placeholder="请选择结算时间" style="width: 100%;"
+              format="yyyy-MM-dd HH:mm:ss" value-format="yyyy-MM-dd HH:mm:ss" :disabled="dialogMode === 'add'" />
+          </el-form-item>
+        </el-col>
       </el-row>
       <el-row :gutter="20">
         <el-col :span="12">
@@ -178,6 +184,66 @@
         </el-col>
       </el-row>
 
+      <!-- PDF文件信息 -->
+      <el-divider content-position="left">PDF文件信息</el-divider>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="结算文件" prop="settlementPdfUrl">
+            <div class="file-info-container">
+              <div v-if="detailData.settlementPdfUrl" class="file-info">
+                <i class="el-icon-document" style="color: #67c23a; margin-right: 8px;"></i>
+                <span class="file-name">结算单已上传</span>
+                <el-button type="primary" size="mini" icon="el-icon-download" @click="downloadFile(detailData.settlementPdfUrl, '结算单')">
+                  下载
+                </el-button>
+              </div>
+              <div v-else class="no-file">
+                <i class="el-icon-warning" style="color: #e6a23c; margin-right: 8px;"></i>
+                <span>未上传结算文件</span>
+              </div>
+            </div>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="申请文件" prop="applicationPdfUrl">
+            <div class="file-info-container">
+              <div v-if="detailData.applicationPdfUrl" class="file-info">
+                <i class="el-icon-document" style="color: #67c23a; margin-right: 8px;"></i>
+                <span class="file-name">申请单已上传</span>
+                <el-button type="primary" size="mini" icon="el-icon-download" @click="downloadFile(detailData.applicationPdfUrl, '申请单')">
+                  下载
+                </el-button>
+                <el-button type="danger" size="mini" icon="el-icon-delete" @click="removeApplicationFile">
+                  删除
+                </el-button>
+              </div>
+              <div v-else class="no-file">
+                <i class="el-icon-warning" style="color: #e6a23c; margin-right: 8px;"></i>
+                <span>未上传申请文件</span>
+              </div>
+              <!-- 申请文件上传区域 -->
+              <div class="upload-area">
+                <el-upload
+                  ref="applicationUpload"
+                  :action="uploadUrl"
+                  :headers="uploadHeaders"
+                  :before-upload="beforeApplicationUpload"
+                  :on-success="handleApplicationUploadSuccess"
+                  :on-error="handleApplicationUploadError"
+                  :show-file-list="false"
+                  accept=".pdf"
+                  :disabled="applicationUploading"
+                >
+                  <el-button type="success" size="mini" icon="el-icon-upload" :loading="applicationUploading">
+                    {{ applicationUploading ? '上传中...' : '上传申请文件' }}
+                  </el-button>
+                </el-upload>
+              </div>
+            </div>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
       <!-- 订单节点信息 -->
       <el-divider content-position="left">订单识别码</el-divider>
       <el-form-item label="订单识别码" prop="identifyCode">
@@ -206,6 +272,15 @@
       <el-button type="primary" @click="handleSubmit" :loading="submitLoading">
         {{ dialogMode === 'add' ? '新增' : '保存' }}
       </el-button>
+      <!-- PDF生成按钮 - 只在编辑模式下显示 -->
+      <template v-if="dialogMode === 'edit' && detailData && detailData.id">
+        <el-button type="success" icon="el-icon-document" @click="handleApplicationPDF">
+          申请单
+        </el-button>
+        <el-button type="warning" icon="el-icon-document" @click="handleSettlementPDF">
+          结算单
+        </el-button>
+      </template>
     </div>
 
     <!-- 合同选择弹窗组件 -->
@@ -345,7 +420,13 @@ export default {
       // 销项明细加载状态
       salesItemsLoading: false,
       // 选中的销项明细项
-      selectedSalesItems: []
+      selectedSalesItems: [],
+      // 申请文件上传相关
+      applicationUploading: false,
+      uploadUrl: process.env.VUE_APP_BASE_URL + '/system/file/upload',
+      uploadHeaders: {
+        'Token-Key': this.$store.getters.token || ''
+      }
     }
   },
   computed: {
@@ -537,6 +618,7 @@ export default {
         startTime: '',
         endTime: '',
         uploadTime: '',
+        settlementTime: '', // 结算时间
         identifyCode: '',
         processor: '',
         processorPhone: '',
@@ -553,6 +635,8 @@ export default {
         warehouseAddress: '',
         deliveryAddress: '',
         paymentAccount: '',
+        settlementPdfUrl: '', // 结算文件URL
+        applicationPdfUrl: '', // 申请文件URL
         items: []
       }
     },
@@ -742,6 +826,163 @@ export default {
           purchaseOrderNo: ''
         }
       ]
+    },
+
+    // 生成申请单PDF
+    handleApplicationPDF() {
+      if (!this.detailData || !this.detailData.id) {
+        this.$message.error('订单数据不完整')
+        return
+      }
+      // 跳转到申请单页面
+      this.$router.push({
+        name: 'ApplicationPDF',
+        params: { orderId: this.detailData.id }
+      })
+    },
+
+    // 生成结算单PDF
+    handleSettlementPDF() {
+      if (!this.detailData || !this.detailData.id) {
+        this.$message.error('订单数据不完整')
+        return
+      }
+      // 跳转到结算单页面
+      this.$router.push({
+        name: 'SettlementPDF',
+        params: { orderId: this.detailData.id }
+      })
+    },
+
+    // 下载文件
+    async downloadFile(fileUrl, fileName) {
+      if (!fileUrl) {
+        this.$message.warning('文件不存在')
+        return
+      }
+      
+      try {
+        // 确保URL是完整的
+        let fullUrl = fileUrl
+        if (!fileUrl.startsWith('http')) {
+          // 如果是相对路径，拼接完整URL
+          const path = fileUrl.startsWith('/') ? fileUrl : '/' + fileUrl
+          fullUrl = process.env.VUE_APP_BASE_URL + path
+        }
+        
+        console.log('下载文件，完整URL:', fullUrl)
+        
+        // 获取token
+        const token = this.$store.getters.token
+        if (!token) {
+          this.$message.error('请先登录')
+          return
+        }
+        
+        // 使用fetch下载文件，携带token
+        const response = await fetch(fullUrl, {
+          method: 'GET',
+          headers: {
+            'Token-Key': token,
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
+        // 获取文件blob
+        const blob = await response.blob()
+        
+        // 创建下载链接
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${fileName}_${this.detailData.no || this.detailData.id}_${new Date().getTime()}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        // 清理URL对象
+        window.URL.revokeObjectURL(url)
+        
+        this.$message.success('文件下载已开始')
+      } catch (error) {
+        console.error('下载失败:', error)
+        this.$message.error('文件下载失败：' + (error.message || '未知错误'))
+      }
+    },
+
+    // 申请文件上传前验证
+    beforeApplicationUpload(file) {
+      const isPDF = file.type === 'application/pdf'
+      const isLt10M = file.size / 1024 / 1024 < 10
+
+      if (!isPDF) {
+        this.$message.error('只能上传PDF格式的文件!')
+        return false
+      }
+      if (!isLt10M) {
+        this.$message.error('上传文件大小不能超过 10MB!')
+        return false
+      }
+      
+      this.applicationUploading = true
+      return true
+    },
+
+    // 申请文件上传成功
+    handleApplicationUploadSuccess(response) {
+      console.log('申请文件上传响应:', response)
+      
+      if (response && response.code === 200 && response.data) {
+        const fileUrl = response.data.fileUrl || response.data.url
+        console.log('后端返回的申请文件URL:', fileUrl)
+        
+        if (fileUrl) {
+          // 确保返回完整的URL
+          let fullUrl = fileUrl
+          
+          // 如果返回的是相对路径，需要拼接完整URL
+          if (!fileUrl.startsWith('http')) {
+            const path = fileUrl.startsWith('/') ? fileUrl : '/' + fileUrl
+            fullUrl = process.env.VUE_APP_BASE_URL + path
+            console.log('拼接后的完整URL:', fullUrl)
+          }
+          
+          this.detailData.applicationPdfUrl = fullUrl
+          console.log('申请文件上传成功，存储的URL:', this.detailData.applicationPdfUrl)
+          this.$message.success('申请文件上传成功')
+        } else {
+          this.$message.error('申请文件上传失败：返回数据缺少文件地址')
+        }
+      } else {
+        this.$message.error('申请文件上传失败：' + (response.message || '未知错误'))
+      }
+      
+      this.applicationUploading = false
+    },
+
+    // 申请文件上传失败
+    handleApplicationUploadError(error) {
+      console.error('申请文件上传失败:', error)
+      this.$message.error('申请文件上传失败，请重试')
+      this.applicationUploading = false
+    },
+
+    // 删除申请文件
+    removeApplicationFile() {
+      this.$confirm('确定要删除申请文件吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.detailData.applicationPdfUrl = ''
+        this.$message.success('申请文件已删除')
+      }).catch(() => {
+        // 用户取消删除
+      })
     }
   }
 }
@@ -799,6 +1040,53 @@ export default {
         background-color: #66b1ff;
         border-color: #66b1ff;
       }
+    }
+  }
+}
+
+// PDF文件信息样式
+.file-info-container {
+  .file-info {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #f0f9ff;
+    border: 1px solid #b3d8ff;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    
+    .file-name {
+      flex: 1;
+      color: #67c23a;
+      font-weight: 500;
+    }
+    
+    .el-button {
+      margin-left: 8px;
+    }
+  }
+  
+  .no-file {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #fdf6ec;
+    border: 1px solid #f5dab1;
+    border-radius: 4px;
+    color: #e6a23c;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  
+  .upload-area {
+    text-align: center;
+    
+    .el-upload {
+      display: inline-block;
+    }
+    
+    .el-button {
+      width: 100%;
     }
   }
 }

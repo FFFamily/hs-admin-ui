@@ -142,6 +142,13 @@ export const constantRoutes = [
         component: () => import('@/views/recycle/order/SettlementPDF.vue'),
         meta: { title: '结算单预览', icon: 'document' },
         hidden: true
+      },
+      {
+        path: 'application/:orderId',
+        name: 'ApplicationPDF',
+        component: () => import('@/views/recycle/order/ApplicationPDF.vue'),
+        meta: { title: '业务申请单预览', icon: 'document' },
+        hidden: true
       }
     ]
   },

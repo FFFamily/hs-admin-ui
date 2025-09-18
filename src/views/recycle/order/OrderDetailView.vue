@@ -212,6 +212,12 @@
     <!-- 底部按钮 -->
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleClose">关闭</el-button>
+      <el-button type="primary" icon="el-icon-document" @click="handleApplicationPDF">
+        申请单
+      </el-button>
+      <el-button type="success" icon="el-icon-document" @click="handleSettlementPDF">
+        结算单
+      </el-button>
     </div>
   </el-dialog>
 </template>
@@ -342,6 +348,31 @@ export default {
       return tagTypeMap[status] || 'info'
     },
 
+    // 生成申请单PDF
+    handleApplicationPDF() {
+      if (!this.orderData || !this.orderData.id) {
+        this.$message.error('订单数据不完整')
+        return
+      }
+      // 跳转到申请单页面
+      this.$router.push({
+        name: 'ApplicationPDF',
+        params: { orderId: this.orderData.id }
+      })
+    },
+
+    // 生成结算单PDF
+    handleSettlementPDF() {
+      if (!this.orderData || !this.orderData.id) {
+        this.$message.error('订单数据不完整')
+        return
+      }
+      // 跳转到结算单页面
+      this.$router.push({
+        name: 'SettlementPDF',
+        params: { orderId: this.orderData.id }
+      })
+    }
 
   }
 }

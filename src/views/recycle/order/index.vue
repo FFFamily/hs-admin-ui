@@ -100,25 +100,19 @@
       <el-table-column label="订单应开发票" prop="orderAmount" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="订单实开发票" prop="orderAmount" width="120" align="center" show-overflow-tooltip />
 
-      <el-table-column label="操作" width="590" align="center" fixed="right">
+      <el-table-column label="操作" width="400" align="center" fixed="right">
         <template slot-scope="scope">
-          <el-button size="mini" type="primary" icon="el-icon-sell" @click="handleCreateOrder(scope.row)">
+          <el-button size="mini" type="primary"  @click="handleCreateOrder(scope.row)">
             创建订单
           </el-button>
-          <el-button size="mini" type="success" icon="el-icon-sell" @click="handleSettle(scope.row)">
+          <el-button size="mini" type="success" @click="handleSettle(scope.row)">
             结算
           </el-button>
-          <el-button size="mini" type="warning" icon="el-icon-edit" @click="handleEdit(scope.row)">
+          <el-button size="mini" type="warning"  @click="handleEdit(scope.row)">
             编辑
           </el-button>
-          <el-button size="mini" type="danger" icon="el-icon-delete" @click="handleDelete(scope.row)">
+          <el-button size="mini" type="danger"  @click="handleDelete(scope.row)">
             删除
-          </el-button>
-          <el-button size="mini" type="primary" icon="el-icon-sell" @click="handleSettle(scope.row)">
-            申请单
-          </el-button>
-          <el-button size="mini" type="primary" icon="el-icon-sell" @click="handleSettlementPDF(scope.row)">
-            结算单
           </el-button>
         </template>
       </el-table-column>
@@ -156,11 +150,64 @@
     <user-selector :visible.sync="partnerSelectorVisible" title="选择合作方" :multiple="false"
       @confirm="handlePartnerSelected" />
 
+
+    <!-- 结算弹窗 -->
+    <el-dialog title="订单结算" :visible.sync="settlementDialogVisible" width="600px" :close-on-click-modal="false">
+      <el-form :model="settlementForm" label-width="120px">
+        <el-form-item label="订单编号">
+          <el-input :value="currentSettleOrder ? currentSettleOrder.no : ''" disabled />
+        </el-form-item>
+        <el-form-item label="订单类型">
+          <el-input :value="currentSettleOrder ? getOrderTypeText(currentSettleOrder.type) : ''" disabled />
+        </el-form-item>
+        <el-form-item label="订单金额">
+          <el-input :value="currentSettleOrder ? '¥' + formatAmount(currentSettleOrder.totalAmount) : ''" disabled />
+        </el-form-item>
+        <el-form-item label="上传PDF" required>
+          <el-upload
+            class="pdf-uploader"
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            :show-file-list="false"
+            :on-success="handlePDFUpload"
+            :on-error="handlePDFUploadError"
+            :before-upload="beforePDFUpload"
+            accept=".pdf">
+            <el-button size="small" type="primary" icon="el-icon-upload">
+              {{ settlementForm.settlementPdfUrl ? '重新上传PDF' : '选择PDF文件' }}
+            </el-button>
+            <div slot="tip" class="el-upload__tip">
+              只能上传PDF文件，且不超过10MB
+            </div>
+          </el-upload>
+          <div v-if="settlementForm.settlementPdfUrl" class="upload-success">
+            <i class="el-icon-success"></i>
+            <span>PDF文件已上传</span>
+          </div>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input
+            v-model="settlementForm.remark"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入结算备注（可选）"
+            maxlength="200"
+            show-word-limit />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="handleSettlementCancel">取消</el-button>
+        <el-button type="primary" @click="handleSettlementSubmit" :loading="settlementLoading">
+          确认结算
+        </el-button>
+      </div>
+    </el-dialog>
+
   </div>
 </template>
 
 <script>
-import { getRecyclePage, deleteRecycle, assignRecycle, approveRecycle } from '@/api/recycle'
+import { getRecyclePage, deleteRecycle, assignRecycle, approveRecycle, settlementOrder } from '@/api/recycle'
 import { getUserPage } from '@/api/user'
 import { parseTime } from '@/utils'
 import UserSelector from '@/components/UserSelector'
@@ -222,6 +269,20 @@ export default {
       batchFundflowVisible: false,
       // 批量开票弹窗
       batchInvoiceVisible: false,
+      // 结算弹窗
+      settlementDialogVisible: false,
+      currentSettleOrder: null,
+      settlementForm: {
+        orderId: null,
+        settlementPdfUrl: '',
+        remark: ''
+      },
+      settlementLoading: false,
+      // 文件上传相关
+      uploadUrl: process.env.VUE_APP_BASE_URL + '/system/file/upload',
+      uploadHeaders: {
+        'Token-Key': this.$store.getters.token || ''
+      },
       // 枚举选项
       orderTypeOptions: ORDER_TYPE_OPTIONS,
       orderStatusOptions: ORDER_STATUS_OPTIONS,
@@ -230,6 +291,18 @@ export default {
   },
   created() {
     this.fetchData()
+  },
+  watch: {
+    'settlementForm.settlementPdfUrl': {
+      handler(newVal, oldVal) {
+        console.log('settlementPdfUrl发生变化:', {
+          old: oldVal,
+          new: newVal,
+          timestamp: new Date().toISOString()
+        })
+      },
+      deep: true
+    }
   },
   methods: {
     // 打开合作方选择器
@@ -265,14 +338,9 @@ export default {
     },
     // 结算
     handleSettle(row) {
-      // 提示是否结算
-      this.$confirm('是否结算该订单？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        console.log(row)
-      })
+      // 打开PDF上传对话框
+      this.currentSettleOrder = row
+      this.settlementDialogVisible = true
     },
 
     // 生成结算单PDF
@@ -282,6 +350,138 @@ export default {
         name: 'SettlementPDF',
         params: { orderId: row.id }
       })
+    },
+
+
+    // 处理PDF文件上传
+    handlePDFUpload(response) {
+      console.log('上传响应:', response)
+      
+      if (response && response.code === 200 && response.data) {
+        // 根据其他组件的逻辑，后端返回的可能是 fileUrl 或 url
+        const fileUrl = response.data.fileUrl || response.data.url
+        console.log('后端返回的文件URL:', fileUrl)
+        console.log('BASE_URL:', process.env.VUE_APP_BASE_URL)
+        
+        if (fileUrl) {
+          // 确保返回完整的URL
+          let fullUrl = fileUrl
+          
+          // 如果返回的是相对路径，需要拼接完整URL
+          if (!fileUrl.startsWith('http')) {
+            // 确保路径以 / 开头
+            const path = fileUrl.startsWith('/') ? fileUrl : '/' + fileUrl
+            fullUrl = process.env.VUE_APP_BASE_URL + path
+            console.log('拼接后的完整URL:', fullUrl)
+          } else {
+            console.log('URL已经是完整的:', fullUrl)
+          }
+          
+          this.settlementForm.settlementPdfUrl = fullUrl
+          console.log('PDF文件上传成功，存储的URL:', this.settlementForm.settlementPdfUrl)
+          console.log('settlementForm对象:', JSON.stringify(this.settlementForm, null, 2))
+          this.$message.success('PDF文件上传成功')
+        } else {
+          this.$message.error('PDF文件上传失败：返回数据缺少文件地址')
+        }
+      } else {
+        this.$message.error('PDF文件上传失败：' + (response.message || '未知错误'))
+      }
+    },
+
+    // 处理PDF上传失败
+    handlePDFUploadError(error) {
+      console.error('PDF上传失败:', error)
+      this.$message.error('PDF文件上传失败，请重试')
+    },
+
+    // 提交结算
+    async handleSettlementSubmit() {
+      console.log('=== 开始提交结算 ===')
+      console.log('当前settlementForm:', JSON.stringify(this.settlementForm, null, 2))
+      console.log('当前currentSettleOrder:', this.currentSettleOrder)
+      
+      if (!this.settlementForm.settlementPdfUrl) {
+        this.$message.error('请先上传订单PDF文件')
+        return
+      }
+
+      this.settlementLoading = true
+      try {
+        // 确保PDF URL是完整的
+        let fullPdfUrl = this.settlementForm.settlementPdfUrl
+        console.log('从settlementForm获取的URL:', fullPdfUrl)
+        console.log('URL类型:', typeof fullPdfUrl)
+        console.log('URL是否以http开头:', fullPdfUrl.startsWith('http'))
+        
+        // 如果URL不是完整的，需要拼接
+        if (!fullPdfUrl.startsWith('http')) {
+          const path = fullPdfUrl.startsWith('/') ? fullPdfUrl : '/' + fullPdfUrl
+          fullPdfUrl = process.env.VUE_APP_BASE_URL + path
+          console.log('拼接后的完整URL:', fullPdfUrl)
+        } else {
+          console.log('URL已经是完整的，无需拼接')
+        }
+        
+        console.log('最终PDF URL:', fullPdfUrl)
+        console.log('BASE_URL:', process.env.VUE_APP_BASE_URL)
+        
+        // 调用结算接口
+        const params = {
+          orderId: this.currentSettleOrder.id,
+          settlementPdfUrl: fullPdfUrl,
+          remark: this.settlementForm.remark
+        }
+
+        console.log('结算参数:', JSON.stringify(params, null, 2))
+        const response = await settlementOrder(params)
+        
+        if (response.code === 200) {
+          this.$message.success('结算成功')
+          this.settlementDialogVisible = false
+          this.resetSettlementForm()
+          this.fetchData() // 刷新列表
+        } else {
+          this.$message.error(response.data.message || '结算失败')
+        }
+      } catch (error) {
+        console.error('结算失败:', error)
+        this.$message.error('结算失败，请重试')
+      } finally {
+        this.settlementLoading = false
+      }
+    },
+
+    // 取消结算
+    handleSettlementCancel() {
+      this.settlementDialogVisible = false
+      this.resetSettlementForm()
+    },
+
+    // 重置结算表单
+    resetSettlementForm() {
+      this.settlementForm = {
+        orderId: null,
+        settlementPdfUrl: '',
+        remark: ''
+      }
+      this.currentSettleOrder = null
+    },
+
+    // PDF上传前验证
+    beforePDFUpload(file) {
+      const isPDF = file.type === 'application/pdf'
+      const isLt10M = file.size / 1024 / 1024 < 10
+
+      if (!isPDF) {
+        this.$message.error('只能上传PDF格式的文件!')
+        return false
+      }
+      if (!isLt10M) {
+        this.$message.error('上传文件大小不能超过 10MB!')
+        return false
+      }
+      return true
     },
 
     // 搜索
@@ -666,5 +866,38 @@ export default {
       text-align: right;
     }
   }
+}
+
+// 结算弹窗样式
+.pdf-uploader {
+  .el-upload {
+    border: 1px dashed #d9d9d9;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    width: 100%;
+    
+    &:hover {
+      border-color: #409eff;
+    }
+  }
+  
+  .upload-success {
+    margin-top: 10px;
+    color: #67c23a;
+    font-size: 14px;
+    
+    i {
+      margin-right: 5px;
+    }
+  }
+}
+
+.el-upload__tip {
+  color: #909399;
+  font-size: 12px;
+  margin-top: 7px;
 }
 </style> 

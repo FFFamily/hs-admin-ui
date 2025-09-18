@@ -80,4 +80,13 @@ export function batchSyncOrders(orderIds) {
     method: 'post',
     data: { orderIds }
   })
+}
+
+// 订单结算
+export function settlementOrder(data) {
+  return request({
+    url: '/recycle/order/settlement',
+    method: 'post',
+    params: data
+  })
 } 
