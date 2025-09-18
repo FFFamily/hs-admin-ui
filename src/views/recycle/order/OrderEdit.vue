@@ -53,7 +53,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="订单类型" prop="type">
-            <el-select v-model="detailData.type" placeholder="请选择订单类型" style="width: 100%;">
+            <el-select v-model="detailData.type" placeholder="请选择订单类型" style="width: 100%;" :disabled="dialogMode === 'edit'">
               <el-option 
                 v-for="option in orderTypeOptions" 
                 :key="option.value" 
@@ -73,8 +73,17 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
+          <el-form-item label="货物总金额" prop="goodsTotalAmount">
+            <el-input v-model="detailData.goodsTotalAmount" disabled placeholder="货物总金额由系统自动计算">
+              <template slot="prepend">¥</template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="20">
+        <el-col :span="12">
           <el-form-item label="状态" prop="status">
-            <el-select v-model="detailData.status"  placeholder="请选择状态" style="width: 100%;">
+            <el-select v-model="detailData.status"  placeholder="请选择状态" style="width: 100%;" :disabled="dialogMode === 'edit'">
               <el-option 
                 v-for="option in orderStatusOptions" 
                 :key="option.value" 
@@ -122,7 +131,7 @@
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row :gutter="20">
+      <el-row :gutter="20" v-if="detailData.type === 'storage'">
         <el-col :span="12">
           <el-form-item label="仓库地址" prop="warehouseAddress">
             <!--可手填可下拉选择地址-->
@@ -131,16 +140,6 @@
             </el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="交付地点" prop="deliveryAddress">
-            <!--可手填可下拉选择地址-->
-            <el-input v-model="detailData.deliveryAddress" placeholder="请输入交付地点或点击选择">
-              <el-button slot="append"  icon="el-icon-location" @click="openDeliverySelector">选择地址</el-button>
-            </el-input>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="流转方向">
             <el-select v-model="detailData.flowDirection" placeholder="请选择流转方向" style="width: 100%;">
@@ -151,6 +150,16 @@
                 :value="option.value" 
               />
             </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="交付地点" prop="deliveryAddress">
+            <!--可手填可下拉选择地址-->
+            <el-input v-model="detailData.deliveryAddress" placeholder="请输入交付地点或点击选择">
+              <el-button slot="append"  icon="el-icon-location" @click="openDeliverySelector">选择地址</el-button>
+            </el-input>
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -461,6 +470,8 @@ export default {
       if (!Array.isArray(this.detailData.items)) return
       const sum = this.detailData.items.reduce((acc, it) => acc + (Number(it.goodTotalPrice) || 0), 0)
       this.detailData.totalAmount = Number(sum.toFixed(2))
+      // 同步货物总价到货物总金额字段
+      this.detailData.goodsTotalAmount = Number(sum.toFixed(2))
     },
 
     // 打开仓库地址选择器
@@ -530,6 +541,7 @@ export default {
         processor: '',
         processorPhone: '',
         totalAmount: 0,
+        goodsTotalAmount: 0, // 货物总金额
         orderNodeTime: '',
         orderNodeImg: '',
         orderNodePickupLocation: '',
