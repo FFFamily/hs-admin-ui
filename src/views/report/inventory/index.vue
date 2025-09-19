@@ -21,6 +21,11 @@
           <span class="amount-text">¥{{ formatAmount(scope.row.totalAmount) }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="操作" width="120" align="center" fixed="right">
+        <template slot-scope="scope">
+          <el-button type="primary" size="mini" @click="handleViewDetail(scope.row)">查看明细</el-button>
+        </template>
+      </el-table-column>
     </el-table>
 
     <!-- 分页组件 -->
@@ -34,12 +39,75 @@
       @current-change="handleCurrentChange" 
       class="pagination" 
     />
+
+    <!-- 明细弹窗 -->
+    <el-dialog
+      title="库存明细"
+      :visible.sync="detailDialogVisible"
+      width="80%"
+      :close-on-click-modal="false"
+    >
+      <div class="detail-header">
+        <h3>{{ currentGood.goodName }} - 库存明细</h3>
+        <p class="good-info">
+          <span>商品编号：{{ currentGood.goodNo }}</span>
+          <span>商品类型：{{ currentGood.goodType }}</span>
+          <span>商品型号：{{ currentGood.goodModel }}</span>
+        </p>
+      </div>
+
+      <el-table 
+        v-loading="detailLoading" 
+        :data="detailList" 
+        border 
+        fit 
+        highlight-current-row
+        max-height="400"
+      >
+        <el-table-column label="货物编号" prop="goodNo" width="120" align="center" show-overflow-tooltip />
+        <el-table-column label="货物名称" prop="goodName" width="150" align="center" show-overflow-tooltip />
+        <el-table-column label="货物类型" prop="goodType" width="120" align="center" show-overflow-tooltip />
+        <el-table-column label="货物型号" prop="goodModel" width="120" align="center" show-overflow-tooltip />
+        <el-table-column label="货物数量" prop="goodCount" width="100" align="center">
+          <template slot-scope="scope">
+            <span class="quantity-text">{{ scope.row.goodCount }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="货物总价" prop="goodTotalPrice" width="120" align="center">
+          <template slot-scope="scope">
+            <span class="amount-text">¥{{ formatAmount(scope.row.goodTotalPrice) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="回收订单编号" prop="recycleOrderNo" width="150" align="center" show-overflow-tooltip />
+        <el-table-column label="回收订单流向" prop="recycleOrderFlowDirection" width="120" align="center">
+          <template slot-scope="scope">
+            <el-tag v-if="scope.row.recycleOrderFlowDirection" size="small" :type="getFlowDirectionTagType(scope.row.recycleOrderFlowDirection)">
+              {{ getFlowDirectionText(scope.row.recycleOrderFlowDirection) }}
+            </el-tag>
+            <span v-else>--</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="回收订单类型" prop="recycleOrderType" width="120" align="center">
+          <template slot-scope="scope">
+            <el-tag v-if="scope.row.recycleOrderType" size="small" :type="getOrderTypeTagType(scope.row.recycleOrderType)">
+              {{ getOrderTypeText(scope.row.recycleOrderType) }}
+            </el-tag>
+            <span v-else>--</span>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="detailDialogVisible = false">关闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { getInventoryReportList, exportInventoryReport } from '@/api/inventory'
+import { getInventoryReportList, exportInventoryReport, getInventoryDetailList } from '@/api/inventory'
 import { parseTime } from '@/utils'
+import { getFlowDirectionText as getFlowDirectionTextUtil, getOrderTypeText as getOrderTypeTextUtil, ORDER_TYPE_TAG_TYPE } from '@/constants/orderTypes'
 
 export default {
   name: 'InventoryReport',
@@ -51,7 +119,12 @@ export default {
         current: 1,
         size: 10,
         total: 0
-      }
+      },
+      // 明细相关数据
+      detailDialogVisible: false,
+      detailLoading: false,
+      detailList: [],
+      currentGood: {}
     }
   },
   created() {
@@ -144,6 +217,57 @@ export default {
     // 格式化日期时间
     formatDateTime(time) {
       return time ? parseTime(time) : '--'
+    },
+
+    // 查看明细
+    handleViewDetail(row) {
+      this.currentGood = row
+      this.detailDialogVisible = true
+      this.fetchDetailData(row.goodNo)
+    },
+
+    // 获取明细数据
+    fetchDetailData(goodNo) {
+      this.detailLoading = true
+
+      getInventoryDetailList(goodNo).then(response => {
+        if (response.code === 200) {
+          this.detailList = response.data || []
+        } else {
+          this.$message.error(response.msg || '获取明细数据失败')
+          this.detailList = []
+        }
+        this.detailLoading = false
+      }).catch(error => {
+        console.error('获取库存明细失败:', error)
+        this.$message.error('获取明细数据失败')
+        this.detailList = []
+        this.detailLoading = false
+      })
+    },
+
+    // 获取流转方向标签类型
+    getFlowDirectionTagType(direction) {
+      const tagTypeMap = {
+        'IN': 'success',  // 入库 - 绿色
+        'OUT': 'warning'  // 出库 - 橙色
+      }
+      return tagTypeMap[direction] || 'info'
+    },
+
+    // 获取订单类型标签类型
+    getOrderTypeTagType(type) {
+      return ORDER_TYPE_TAG_TYPE(type)
+    },
+
+    // 获取流转方向显示文本
+    getFlowDirectionText(direction) {
+      return getFlowDirectionTextUtil(direction)
+    },
+
+    // 获取订单类型显示文本
+    getOrderTypeText(type) {
+      return getOrderTypeTextUtil(type)
     }
   }
 }
@@ -194,5 +318,34 @@ export default {
   .el-pagination__total {
     font-weight: 600;
   }
+}
+
+// 明细弹窗样式
+.detail-header {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+
+  h3 {
+    margin: 0 0 10px 0;
+    color: #303133;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .good-info {
+    margin: 0;
+    color: #606266;
+    font-size: 14px;
+
+    span {
+      margin-right: 20px;
+    }
+  }
+}
+
+.dialog-footer {
+  text-align: right;
 }
 </style>

@@ -18,3 +18,11 @@ export function exportInventoryReport(params) {
     responseType: 'blob'
   })
 }
+
+// 获取库存明细列表
+export function getInventoryDetailList(goodNo) {
+  return request({
+    url: `/inventory/report/detail/${goodNo}`,
+    method: 'get'
+  })
+}
