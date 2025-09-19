@@ -22,17 +22,10 @@
     </el-form>
 
     <!-- 经办人表格 -->
-    <el-table
-      v-loading="listLoading"
-      :data="list"
-      border
-      fit
-      highlight-current-row
-      style="margin-top: 20px;"
-    >
-    <el-table-column label="编号" prop="no" width="120" />
+    <el-table v-loading="listLoading" :data="list" border fit highlight-current-row style="margin-top: 20px;">
+      <el-table-column label="编号" prop="no" width="120" />
       <el-table-column label="账号名称" prop="accountName" width="150" />
-      
+
       <el-table-column label="经办人姓名" prop="name" width="120" />
       <el-table-column label="手机号" prop="phone" width="150" />
       <el-table-column label="身份证号" prop="idCard" width="200" />
@@ -46,29 +39,19 @@
     </el-table>
 
     <!-- 分页 -->
-    <el-pagination
-      :current-page="pagination.page"
-      :page-sizes="[10, 20, 50, 100]"
-      :page-size="pagination.size"
-      :total="pagination.total"
-      layout="total, sizes, prev, pager, next, jumper"
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      style="margin-top: 20px; text-align: right;"
-    />
+    <el-pagination :current-page="pagination.page" :page-sizes="[10, 20, 50, 100]" :page-size="pagination.size"
+      :total="pagination.total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+      @current-change="handleCurrentChange" style="margin-top: 20px; text-align: right;" />
 
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="700px">
       <el-form :model="form" :rules="rules" ref="form" label-width="100px">
         <el-form-item label="账号名称" prop="accountName">
           <div style="display: flex; align-items: center;">
-            <el-input 
-              v-model="form.accountName" 
-              placeholder="请选择用户账号" 
-              readonly
-              style="flex: 1; margin-right: 10px;"
-            />
-            <el-button type="primary" @click="showUserSelector">选择用户</el-button>
+            <el-input v-model="form.accountName" placeholder="请选择用户账号" readonly style="flex: 1; margin-right: 10px;">
+              <el-button type="primary" slot="append" @click="showUserSelector">选择用户</el-button>
+            </el-input>
+
           </div>
           <div v-if="selectedUser" style="margin-top: 8px; color: #666; font-size: 12px;">
             已选择：{{ selectedUser.nickname }} ({{ selectedUser.username }})
@@ -87,12 +70,7 @@
           <el-input v-model="form.idCard" placeholder="请输入身份证号" />
         </el-form-item>
         <el-form-item label="住址" prop="address">
-          <el-input 
-            v-model="form.address" 
-            type="textarea" 
-            :rows="3"
-            placeholder="请输入详细住址" 
-          />
+          <el-input v-model="form.address" type="textarea" :rows="3" placeholder="请输入详细住址" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -102,13 +80,8 @@
     </el-dialog>
 
     <!-- 用户选择器 -->
-    <UserSelector
-      :visible.sync="userSelectorVisible"
-      title="选择用户账号"
-      :multiple="false"
-      @confirm="handleUserConfirm"
-      @close="handleUserSelectorClose"
-    />
+    <UserSelector :visible.sync="userSelectorVisible" title="选择用户账号" :multiple="false" @confirm="handleUserConfirm"
+      @close="handleUserSelectorClose" />
   </div>
 </template>
 
@@ -243,7 +216,7 @@ export default {
             this.$message.error('删除失败')
           })
         })
-        .catch(() => {})
+        .catch(() => { })
     },
     handleSave() {
       this.$refs.form.validate((valid) => {
@@ -302,4 +275,4 @@ export default {
 .demo-form-inline .el-form-item {
   margin-right: 20px;
 }
-</style> 
+</style>

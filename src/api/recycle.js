@@ -1,10 +1,10 @@
 import request from '@/utils/request'
 
-export function getRecyclePage(params) {
+export function getRecyclePage(data) {
   return request({
     url: '/recycle/order/page',
-    method: 'get',
-    params
+    method: 'post',
+    data
   })
 }
 
@@ -88,5 +88,14 @@ export function settlementOrder(data) {
     url: '/recycle/order/settlement',
     method: 'post',
     params: data
+  })
+}
+
+// 批量开票
+export function batchCreateInvoice(data) {
+  return request({
+    url: '/recycle/invoice/batch-create',
+    method: 'post',
+    data
   })
 } 

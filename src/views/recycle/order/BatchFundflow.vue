@@ -115,7 +115,7 @@
 
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleCancel">取消</el-button>
-      <el-button type="primary" @click="handleSave" :loading="saveLoading" :disabled="hasNoFundPoolContract">保存</el-button>
+      <el-button type="primary" @click="handleSave" :loading="saveLoading">保存</el-button>
     </div>
   </el-dialog>
 </template>
@@ -168,9 +168,7 @@ export default {
     }
   },
   computed: {
-    hasNoFundPoolContract() {
-      return this.fundflowList.some(row => typeof row.contractFundPoolBalance === 'string');
-    }
+    // 移除资金池验证逻辑
   },
   methods: {
     // 初始化数据
@@ -341,16 +339,7 @@ export default {
         return
       }
 
-      // 验证合同是否都有资金池
-      const noFundPoolRows = this.fundflowList.filter(row => {
-        return typeof row.contractFundPoolBalance === 'string'
-      })
-
-      if (noFundPoolRows.length > 0) {
-        const orderNos = noFundPoolRows.map(row => row.orderNo).join('、')
-        this.$message.error(`以下订单对应的合同尚未创建资金池，无法进行走款操作：${orderNos}`)
-        return
-      }
+      // 移除资金池验证逻辑，现在没有绑定资金池也能进行走款
 
       // 验证金额逻辑
       const invalidAmountRows = this.fundflowList.filter(row => {

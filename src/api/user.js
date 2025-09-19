@@ -84,10 +84,13 @@ export function getUserPage(params) {
 }
 
 // 根据用户类型生成对应的用户账号
-export function generateAccountUsername(accountType){
+export function generateAccountUsername(id,accountType){
   return request({
     url: '/wx/user/generateAccountUsername/' + accountType,
-    method: 'get'
+    method: 'get',
+    params: {
+      accountId: id
+    }
   })
 }
 // 获取后台配置的所有的身份列表

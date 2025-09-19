@@ -26,19 +26,7 @@
         <el-input v-model="searchForm.identifyCode" placeholder="请输入订单识别码" />
       </el-form-item>
       <el-form-item label="合作方">
-        <el-input v-model="searchForm.partner" readonly @focus="openPartnerSelector" placeholder="请选择合作方" />
-      </el-form-item>
-      <el-form-item label="走款状态">
-        <el-select v-model="searchForm.fundflowStatus" placeholder="请选择走款状态">
-          <el-option label="未走款" value="0" />
-          <el-option label="已走款" value="1" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="发票状态">
-        <el-select v-model="searchForm.invoiceStatus" placeholder="请选择发票状态">
-          <el-option label="未开票" value="0" />
-          <el-option label="已开票" value="1" />
-        </el-select>
+        <el-input v-model="searchForm.contractPartnerName" readonly @focus="openPartnerSelector" placeholder="请选择合作方" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
@@ -72,8 +60,17 @@
       </el-table-column>
       <el-table-column label="甲方" prop="partyAName" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="乙方" prop="partyBName" width="120" align="center" show-overflow-tooltip />
+      <el-table-column label="合作方" prop="contractPartnerName" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="经办人" prop="processor" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="订单识别码" prop="identifyCode" width="120" align="center" show-overflow-tooltip />
+      <el-table-column label="流转方向" prop="flowDirection" width="100" align="center" v-if="isStorageOrder">
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.flowDirection" size="medium">
+            {{ getFlowDirectionText(scope.row.flowDirection) }}
+          </el-tag>
+          <span v-else>--</span>
+        </template>
+      </el-table-column>
       <el-table-column label="订单总金额" prop="totalAmount" width="120" align="center">
         <template slot-scope="scope">
           <span v-if="scope.row.totalAmount">¥{{ scope.row.totalAmount }}</span>
@@ -221,7 +218,8 @@ import {
   ORDER_TYPE_TAG_TYPE,
   getOrderStatusTagType,
   getOrderTypeText,
-  getOrderStatusText
+  getOrderStatusText,
+  getFlowDirectionText
 } from '@/constants/orderTypes'
 
 export default {
@@ -235,9 +233,8 @@ export default {
         type: '',
         status: '',
         identifyCode: '',
-        partner: '',
-        fundflowStatus: '',
-        invoiceStatus: ''
+        contractPartner: '',
+        contractPartnerName: ''
       },
       pagination: {
         page: 1,
@@ -286,7 +283,8 @@ export default {
       // 枚举选项
       orderTypeOptions: ORDER_TYPE_OPTIONS,
       orderStatusOptions: ORDER_STATUS_OPTIONS,
-      getOrderTypeTagType: ORDER_TYPE_TAG_TYPE
+      getOrderTypeTagType: ORDER_TYPE_TAG_TYPE,
+      getFlowDirectionText
     }
   },
   created() {
@@ -305,29 +303,32 @@ export default {
     }
   },
   methods: {
+    // 检查是否有仓储订单
+    isStorageOrder() {
+      return this.list.some(order => order.type === 'storage')
+    },
     // 打开合作方选择器
     openPartnerSelector() {
       this.partnerSelectorVisible = true
     },
     // 合作方选择回填
     handlePartnerSelected(selected) {
-      this.searchForm.partner = selected[0].nickname
+      this.searchForm.contractPartner = selected[0].id
+      this.searchForm.contractPartnerName = selected[0].nickname
     },
     // 获取数据
     fetchData() {
       this.listLoading = true
-      const params = {
+      const data = {
         identifyCode: this.searchForm.identifyCode || undefined,
         type: this.searchForm.type || undefined,
         status: this.searchForm.status || undefined,
-        partner: this.searchForm.partner || undefined,
-        fundflowStatus: this.searchForm.fundflowStatus || undefined,
-        invoiceStatus: this.searchForm.invoiceStatus || undefined,
+        contractPartner: this.searchForm.contractPartner || undefined,
         page: this.pagination.page,
         size: this.pagination.size
       }
 
-      getRecyclePage(params).then(response => {
+      getRecyclePage(data).then(response => {
         this.list = response.data.records || []
         this.pagination.total = response.data.total || 0
         this.listLoading = false
@@ -496,9 +497,8 @@ export default {
         type: '',
         status: '',
         identifyCode: '',
-        partner: '',
-        fundflowStatus: '',
-        invoiceStatus: ''
+        contractPartner: '',
+        contractPartnerName: ''
       }
       this.pagination.page = 1
       this.fetchData()

@@ -319,7 +319,8 @@ import {
   CONTRACT_PARTNER_OPTIONS,
   getOrderStatusTagType,
   getOrderTypeText,
-  getOrderStatusText
+  getOrderStatusText,
+  getFlowDirectionText
 } from '@/constants/orderTypes'
 
 
@@ -369,6 +370,7 @@ export default {
       getOrderTypeText,
       getOrderStatusText,
       getOrderStatusTagType,
+      getFlowDirectionText,
       // 表单验证规则
       formRules: {
         type: [

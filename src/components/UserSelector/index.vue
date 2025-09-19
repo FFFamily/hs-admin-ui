@@ -80,7 +80,7 @@
       <div class="pagination-container" v-if="showPagination">
         <el-pagination
           background
-          layout="total, prev, pager, next, jumper"
+          layout="total, prev, pager, next"
           :total="total"
           :page-size="pageSize"
           :current-page.sync="currentPage"
@@ -243,6 +243,9 @@ export default {
 
     // 搜索处理
     handleSearch() {
+      // 搜索时重置页码到第一页
+      this.currentPage = 1
+      
       getUserPage({
         ...this.searchParams,
         pageNum: this.currentPage,

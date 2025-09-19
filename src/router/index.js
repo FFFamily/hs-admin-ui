@@ -173,9 +173,17 @@ export const constantRoutes = [
   {
     path: '/report',
     component: Layout,
-    redirect: '/report/fundflow',
+    redirect: '/report/inventory',
     name: 'Report',
     meta: { title: '报表管理', icon: 'table' },
+    children: [
+      {
+        path: 'inventory',
+        name: 'InventoryReport',
+        component: () => import('@/views/report/inventory/index.vue'),
+        meta: { title: '库存报表', icon: 'el-icon-box' }
+      }
+    ]
   },
   // 模板管理
   {

@@ -34,8 +34,8 @@ export const ORDER_STATUS_OPTIONS = [
 
 // 流转方向枚举
 export const FLOW_DIRECTION = {
-  IN: '入库',
-  OUT: '出库'
+  IN: 'IN',
+  OUT: 'OUT'
 }
 
 // 流转方向选项
@@ -100,4 +100,13 @@ export function getOrderStatusText(status) {
     [ORDER_STATUS.UPLOADED]: '已上传'
   }
   return textMap[status] || '未知状态'
+}
+
+// 获取流转方向显示文本
+export function getFlowDirectionText(direction) {
+  const textMap = {
+    [FLOW_DIRECTION.IN]: '入库',
+    [FLOW_DIRECTION.OUT]: '出库'
+  }
+  return textMap[direction] || '未知'
 } 

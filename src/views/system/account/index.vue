@@ -52,7 +52,7 @@
       <el-form :model="form" :rules="rules" ref="form" label-width="100px">
         <el-form-item label="账号类型" prop="accountTypeId">
           <el-select v-model="form.accountTypeId" placeholder="请选择账号类型"
-            :disabled="form.id !== undefined && form.id !== null" @change="handleAccountTypeChange">
+             @change="handleAccountTypeChange">
             <el-option v-for="accountType in accountTypes" :key="accountType.id" :label="accountType.typeName"
               :value="accountType.id" />
           </el-select>
@@ -162,6 +162,7 @@ export default {
       getUserPage({
         pageNum: this.page,
         pageSize: this.pageSize,
+        isFilterPass: false,
         ...this.search
       }).then(res => {
         this.list = res.data.records
@@ -256,7 +257,7 @@ export default {
     },
     // 切换用户类型时
     handleAccountTypeChange() {
-      generateAccountUsername(this.form.accountTypeId).then(res => {
+      generateAccountUsername(this.form.id,this.form.accountTypeId).then(res => {
         this.form.username = res.data
       })
     },

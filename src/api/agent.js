@@ -38,7 +38,7 @@ export function addAgent(data) {
 // 更新经办人
 export function updateAgent(id, data) {
   return request({
-    url: `/processor/${id}`,
+    url: `/processor/update`,
     method: 'put',
     data
   })
