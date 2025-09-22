@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- 搜索区域 -->
-    <el-card class="search-card">
+
       <el-form :model="searchForm" :inline="true" class="search-form">
         <el-form-item label="账号名称">
           <el-input v-model="searchForm.accountName" placeholder="请输入用户名称" clearable style="width: 200px;" />
@@ -13,23 +13,30 @@
           <el-button type="primary" @click="handleSearch">搜索</el-button>
           <el-button @click="handleReset">重置</el-button>
           <el-button type="primary" @click="handleAdd">新增地址</el-button>
-          <el-button type="success" @click="showAddressSelector">地址选择器</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
+
     <!-- 数据表格 -->
-    <el-card>
+
       <el-table v-loading="loading" :data="tableData" border style="width: 100%"
         @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
         <el-table-column label="用户名称" prop="accountName" width="120" />
         <el-table-column label="分类" prop="category" width="100" />
         <el-table-column label="地址" prop="realAddress" min-width="200" show-overflow-tooltip />
+        <el-table-column label="是否默认" prop="isDefault" width="100" align="center">
+          <template slot-scope="scope">
+            <el-tag :type="scope.row.isDefault === '1' ? 'success' : 'info'" size="mini">
+              {{ scope.row.isDefault === '1' ? '是' : '否' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="备注" prop="remark" width="150" show-overflow-tooltip />
         <el-table-column label="创建时间" prop="createTime" width="180" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button size="mini" type="success" @click="handleSetDefault(scope.row)" :disabled="scope.row.isDefault === '1'">设为默认</el-button>
             <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
@@ -39,7 +46,7 @@
       <el-pagination :current-page="pagination.page" :page-sizes="[10, 20, 50, 100]" :page-size="pagination.size"
         :total="pagination.total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
         @current-change="handleCurrentChange" style="margin-top: 20px; text-align: right;" />
-    </el-card>
+    
 
     <!-- 新增/编辑对话框 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px" :before-close="handleDialogClose">
@@ -54,8 +61,26 @@
         <el-form-item label="分类" prop="category">
           <el-input v-model="form.category" placeholder="请输入分类" />
         </el-form-item>
-        <el-form-item label="地址" prop="realAddress">
-          <el-input v-model="form.realAddress" type="textarea" :rows="3" placeholder="请输入详细地址" />
+        <el-form-item label="省份" prop="province">
+          <el-select v-model="form.province" placeholder="请选择省份" style="width: 100%;" @change="handleProvinceChange">
+            <el-option v-for="province in provinceList" :key="province.code" :label="province.name" :value="province.name" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="城市" prop="city">
+          <el-select v-model="form.city" placeholder="请选择城市" style="width: 100%;" @change="handleCityChange" :disabled="!form.province">
+            <el-option v-for="city in cityList" :key="city.code" :label="city.name" :value="city.name" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="区县" prop="district">
+          <el-select v-model="form.district" placeholder="请选择区县" style="width: 100%;" @change="handleDistrictChange" :disabled="!form.city">
+            <el-option v-for="district in districtList" :key="district.code" :label="district.name" :value="district.name" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="详细地址" prop="detailAddress">
+          <el-input v-model="form.detailAddress" type="textarea" :rows="3" placeholder="请输入详细地址" @input="handleDetailAddressChange" />
+        </el-form-item>
+        <el-form-item label="完整地址" prop="realAddress">
+          <el-input v-model="form.realAddress" type="textarea" :rows="2" placeholder="系统自动生成" readonly />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="请输入备注信息" />
@@ -76,7 +101,8 @@
 </template>
 
 <script>
-import { getAddressPage, createAddress, updateAddress, deleteAddress } from '@/api/address'
+import { getAddressPage, createAddress, updateAddress, deleteAddress, setDefaultAddress } from '@/api/address'
+import { getTopLevelCities, getChildrenCities } from '@/api/city'
 import UserSelector from '@/components/UserSelector'
 import AddressSelector from '@/components/AddressSelector'
 
@@ -119,9 +145,18 @@ export default {
         accountId: '',
         accountName: '',
         category: '',
+        province: '',
+        city: '',
+        district: '',
+        detailAddress: '',
         realAddress: '',
         remark: ''
       },
+
+      // 省市区数据
+      provinceList: [],
+      cityList: [],
+      districtList: [],
 
       // 表单验证规则
       rules: {
@@ -131,9 +166,18 @@ export default {
         category: [
           { required: true, message: '请选择分类', trigger: 'change' }
         ],
-        realAddress: [
-          { required: true, message: '请输入地址', trigger: 'blur' },
-          { min: 5, message: '地址长度不能少于5个字符', trigger: 'blur' }
+        province: [
+          { required: true, message: '请选择省份', trigger: 'change' }
+        ],
+        city: [
+          { required: true, message: '请选择城市', trigger: 'change' }
+        ],
+        district: [
+          { required: true, message: '请选择区县', trigger: 'change' }
+        ],
+        detailAddress: [
+          { required: true, message: '请输入详细地址', trigger: 'blur' },
+          { min: 5, message: '详细地址长度不能少于5个字符', trigger: 'blur' }
         ]
       }
     }
@@ -145,6 +189,7 @@ export default {
   },
   created() {
     this.fetchData()
+    this.loadProvinceList()
   },
   methods: {
     // 获取数据
@@ -208,9 +253,16 @@ export default {
         accountId: '',
         accountName: '',
         category: '',
+        province: '',
+        city: '',
+        district: '',
+        detailAddress: '',
         realAddress: '',
         remark: ''
       }
+      // 重置省市区数据
+      this.cityList = []
+      this.districtList = []
       this.dialogVisible = true
     },
 
@@ -222,8 +274,26 @@ export default {
         accountId: row.accountId,
         accountName: row.accountName,
         category: row.category,
+        province: row.province || '',
+        city: row.city || '',
+        district: row.district || '',
+        detailAddress: row.detailAddress || '',
         realAddress: row.realAddress,
         remark: row.remark || ''
+      }
+      // 如果有省市区信息，需要加载对应的城市和区县数据
+      if (row.province) {
+        // 需要根据省份名称找到对应的code来加载城市数据
+        const province = this.provinceList.find(p => p.name === row.province)
+        if (province) {
+          this.loadCityList(province.code)
+          if (row.city) {
+            const city = this.cityList.find(c => c.name === row.city)
+            if (city) {
+              this.loadDistrictList(city.code)
+            }
+          }
+        }
       }
       this.dialogVisible = true
     },
@@ -238,6 +308,22 @@ export default {
         deleteAddress(row.id).then(() => {
           this.$message.success('删除成功')
           this.fetchData()
+        })
+      })
+    },
+
+    // 设为默认地址
+    handleSetDefault(row) {
+      this.$confirm('确定要将此地址设为默认地址吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        setDefaultAddress(row.id).then(() => {
+          this.$message.success('设置默认地址成功')
+          this.fetchData()
+        }).catch(() => {
+          this.$message.error('设置默认地址失败')
         })
       })
     },
@@ -327,6 +413,109 @@ export default {
         '其他地址': 'info'
       }
       return typeMap[category] || 'info'
+    },
+
+    // 加载省份列表
+    async loadProvinceList() {
+      try {
+        const response = await getTopLevelCities()
+        this.provinceList = response.data || []
+      } catch (error) {
+        console.error('加载省份列表失败:', error)
+        this.$message.error('加载省份列表失败')
+      }
+    },
+
+    // 省份变化处理
+    async handleProvinceChange(provinceName) {
+      // 清空城市和区县选择
+      this.form.city = ''
+      this.form.district = ''
+      this.cityList = []
+      this.districtList = []
+      
+      // 加载城市列表
+      if (provinceName) {
+        const province = this.provinceList.find(p => p.name === provinceName)
+        if (province) {
+          await this.loadCityList(province.code)
+        }
+      }
+      
+      // 更新完整地址
+      this.updateFullAddress()
+    },
+
+    // 加载城市列表
+    async loadCityList(provinceCode) {
+      try {
+        const response = await getChildrenCities(provinceCode)
+        this.cityList = response.data || []
+      } catch (error) {
+        console.error('加载城市列表失败:', error)
+        this.$message.error('加载城市列表失败')
+      }
+    },
+
+    // 城市变化处理
+    async handleCityChange(cityName) {
+      // 清空区县选择
+      this.form.district = ''
+      this.districtList = []
+      
+      // 加载区县列表
+      if (cityName) {
+        const city = this.cityList.find(c => c.name === cityName)
+        if (city) {
+          await this.loadDistrictList(city.code)
+        }
+      }
+      
+      // 更新完整地址
+      this.updateFullAddress()
+    },
+
+    // 加载区县列表
+    async loadDistrictList(cityCode) {
+      try {
+        const response = await getChildrenCities(cityCode)
+        this.districtList = response.data || []
+      } catch (error) {
+        console.error('加载区县列表失败:', error)
+        this.$message.error('加载区县列表失败')
+      }
+    },
+
+    // 区县变化处理
+    handleDistrictChange(districtName) {
+      // 更新完整地址
+      this.updateFullAddress()
+    },
+
+    // 详细地址变化处理
+    handleDetailAddressChange() {
+      // 更新完整地址
+      this.updateFullAddress()
+    },
+
+    // 更新完整地址
+    updateFullAddress() {
+      const addressParts = []
+      
+      if (this.form.province) {
+        addressParts.push(this.form.province)
+      }
+      if (this.form.city) {
+        addressParts.push(this.form.city)
+      }
+      if (this.form.district) {
+        addressParts.push(this.form.district)
+      }
+      if (this.form.detailAddress) {
+        addressParts.push(this.form.detailAddress)
+      }
+      
+      this.form.realAddress = addressParts.join('')
     }
   }
 }

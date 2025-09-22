@@ -1,52 +1,62 @@
 import request from '@/utils/request'
 
-// 获取发票抬头列表
-export function getInvoiceTitlePage(params) {
+// 获取发票列表
+export function getInvoicePage(params) {
   return request({
-    url: '/invoice-head/page',
+    url: '/recycle/invoice/page',
     method: 'get',
-    params
+    data: params
   })
 }
 
-// 创建发票抬头
-export function createInvoiceTitle(data) {
+// 获取发票详情
+export function getInvoiceDetail(id) {
   return request({
-    url: '/invoice-head',
+    url: `/recycle/invoice/get/${id}`,
+    method: 'get'
+  })
+}
+
+// 创建发票
+export function createInvoice(data) {
+  return request({
+    url: '/recycle/invoice/create',
     method: 'post',
     data
   })
 }
 
-// 更新发票抬头
-export function updateInvoiceTitle(data) {
+// 更新发票
+export function updateInvoice(data) {
   return request({
-    url: `/invoice-head`,
+    url: '/recycle/invoice/update',
     method: 'put',
     data
   })
 }
 
-// 删除发票抬头
-export function deleteInvoiceTitle(id) {
+// 删除发票
+export function deleteInvoice(id) {
   return request({
-    url: `/invoice-head/${id}`,
+    url: `/recycle/invoice/delete/${id}`,
     method: 'delete'
   })
 }
 
-// 获取发票抬头详情
-export function getInvoiceTitleDetail(id) {
+// 确认发票
+export function confirmInvoice(data) {
   return request({
-    url: `/invoice-head/${id}`,
-    method: 'get'
+    url: '/recycle/invoice/confirm',
+    method: 'post',
+    data
   })
 }
 
-// 设置默认发票抬头
-export function setDefaultInvoiceTitle(id) {
+// 批量创建发票
+export function batchCreateInvoice(data) {
   return request({
-    url: `/invoice-head/${id}/default`,
-    method: 'put'
+    url: '/recycle/invoice/batch-create',
+    method: 'post',
+    data
   })
-} 
+}

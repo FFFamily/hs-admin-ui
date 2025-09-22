@@ -50,4 +50,12 @@ export function getAddressDetail(id) {
     url: `/address/detail/${id}`,
     method: 'get'
   })
+}
+
+// 设为默认地址
+export function setDefaultAddress(addressId) {
+  return request({
+    url: `/address/set-default/${addressId}`,
+    method: 'put'
+  })
 } 

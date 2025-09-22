@@ -34,7 +34,7 @@
             <el-button v-if="scope.row.status === 'use'" size="mini" type="warning" @click="handleDisable(scope.row)">
               停用
             </el-button>
-            <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+            <!-- <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button> -->
           </template>
         </el-table-column>
       </el-table>

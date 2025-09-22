@@ -5,55 +5,56 @@
     :width="width"
     :before-close="handleClose"
     append-to-body
-    class="bank-info-selector-dialog"
+    class="admin-user-selector-dialog"
   >
-    <div class="bank-info-selector">
+    <div class="admin-user-selector">
       <!-- 搜索区域 -->
       <el-form :inline="true" :model="searchForm" ref="searchFormRef">
-        <el-form-item label="账户ID" prop="accountId" v-if="!filterAccountId">
+        <el-form-item label="登录账号" prop="username">
           <el-input
-            v-model="searchParams.accountId"
-            placeholder="请输入账户ID"
+            v-model="searchKeyword"
+            placeholder="请输入登录账号搜索"
             class="search-input"
             clearable
+            @input="handleSearch"
           >
             <i slot="prefix" class="el-input__icon el-icon-search"></i>
           </el-input>
         </el-form-item>
-        <el-form-item label="开户行" prop="bankName">
+        <el-form-item label="用户昵称" prop="nickname">
           <el-input
-            v-model="searchParams.bankName"
-            placeholder="请输入开户行名称"
+            v-model="searchKeyword"
+            placeholder="请输入用户昵称搜索"
             class="search-input"
             clearable
+            @input="handleSearch"
           >
             <i slot="prefix" class="el-input__icon el-icon-search"></i>
           </el-input>
         </el-form-item>
-        <el-form-item label="银行卡号" prop="cardNumber">
+        <el-form-item label="手机号" prop="phone">
           <el-input
-            v-model="searchParams.cardNumber"
-            placeholder="请输入银行卡号"
+            v-model="searchKeyword"
+            placeholder="请输入手机号搜索"
             class="search-input"
             clearable
+            @input="handleSearch"
           >
             <i slot="prefix" class="el-input__icon el-icon-search"></i>
           </el-input>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
         </el-form-item>
       </el-form>
 
-      <!-- 银行信息列表 -->
+      <!-- 后台用户列表 -->
       <el-table
-        :data="filteredBankInfoList"
+        :data="filteredAdminUserList"
         style="width: 100%"
         highlight-current-row
         border
         @selection-change="handleSelectionChange"
         @row-click="handleRowClick"
         :row-class-name="getRowClassName"
+        v-loading="loading"
       >
         <!-- 多选列 -->
         <el-table-column
@@ -63,30 +64,33 @@
           :selectable="isSelectable"
         />
         
-        <!-- 账户ID列 -->
-        <el-table-column prop="accountId" label="账户ID" min-width="120" />
+        <!-- 登录账号列 -->
+        <el-table-column prop="username" label="登录账号" min-width="120" />
         
-        <!-- 开户行列 -->
-        <el-table-column prop="bankName" label="开户行" min-width="150" />
+        <!-- 用户昵称列 -->
+        <el-table-column prop="nickname" label="用户昵称" min-width="120" />
         
-        <!-- 银行卡号列 -->
-        <el-table-column prop="cardNumber" label="银行卡号" min-width="180" />
+        <!-- 手机号列 -->
+        <el-table-column prop="phone" label="手机号" min-width="120" />
         
-        <!-- 联行号列 -->
-        <el-table-column prop="bankCode" label="联行号" width="120" />
-        
-        <!-- 是否默认列 -->
-        <el-table-column label="是否默认" width="100" align="center">
+        <!-- 状态列 -->
+        <el-table-column prop="status" label="状态" min-width="100">
           <template slot-scope="scope">
-            <el-tag v-if="scope.row.isDefault === '1'" type="success" size="mini">是</el-tag>
-            <el-tag v-else type="info" size="mini">否</el-tag>
+            <el-tag :type="scope.row.status === 'use' ? 'success' : 'danger'">
+              {{ scope.row.status === 'use' ? '使用中' : '已关闭' }}
+            </el-tag>
           </template>
         </el-table-column>
         
-        <!-- 创建时间列 -->
-        <el-table-column prop="createTime" label="创建时间" width="160" align="center" />
+        <!-- 头像列 -->
+        <el-table-column label="头像" width="80">
+          <template slot-scope="scope">
+            <el-avatar v-if="scope.row.avatar" :src="scope.row.avatar" size="small" />
+            <el-avatar v-else icon="el-icon-user" size="small" />
+          </template>
+        </el-table-column>
       </el-table>
-      
+
       <!-- 分页 -->
       <div class="pagination-container" v-if="showPagination">
         <el-pagination
@@ -99,21 +103,21 @@
         />
       </div>
 
-      <!-- 已选择银行信息展示 -->
-      <div class="selected-bank-infos" v-if="multiple && selectedBankInfos.length > 0">
+      <!-- 已选择后台用户展示 -->
+      <div class="selected-admin-users" v-if="multiple && selectedAdminUsers.length > 0">
         <div class="selected-title">
-          <span>已选择银行信息 ({{ selectedBankInfos.length }})：</span>
+          <span>已选择后台用户 ({{ selectedAdminUsers.length }})：</span>
           <el-button type="text" @click="clearSelection">清空选择</el-button>
         </div>
         <div class="selected-tags">
           <el-tag
-            v-for="bankInfo in selectedBankInfos"
-            :key="bankInfo.id"
+            v-for="adminUser in selectedAdminUsers"
+            :key="adminUser.id"
             closable
-            @close="removeBankInfo(bankInfo)"
+            @close="removeAdminUser(adminUser)"
             style="margin-right: 8px; margin-bottom: 8px;"
           >
-            {{ bankInfo.bankName }} - {{ bankInfo.cardNumber }}
+            {{ adminUser.nickname }} - {{ adminUser.username }}
           </el-tag>
         </div>
       </div>
@@ -129,10 +133,10 @@
 </template>
 
 <script>
-import { getBankInfoList } from '@/api/bankInfo'
+import { getAdminUserPage } from '@/api/adminUser'
 
 export default {
-  name: 'BankInfoSelector',
+  name: 'AdminUserSelector',
   props: {
     // 弹框是否可见
     visible: {
@@ -142,12 +146,12 @@ export default {
     // 弹框标题
     title: {
       type: String,
-      default: '选择银行信息'
+      default: '选择后台用户'
     },
     // 弹框宽度
     width: {
       type: String,
-      default: '1000px'
+      default: '900px'
     },
     // 是否多选
     multiple: {
@@ -164,37 +168,23 @@ export default {
       type: Number,
       default: 10
     },
-    // 默认选中的银行信息ID数组
+    // 默认选中的后台用户ID数组
     defaultSelected: {
       type: Array,
       default: () => []
     },
-    // 禁用的银行信息ID数组
-    disabledBankInfos: {
+    // 禁用的后台用户ID数组
+    disabledAdminUsers: {
       type: Array,
       default: () => []
-    },
-    // 过滤的账户ID，如果传入则只显示该账户的银行信息
-    filterAccountId: {
-      type: [String, Number],
-      default: ''
-    },
-    // 外部过滤条件
-    filters: {
-      type: Object,
-      default: () => ({})
     }
   },
   data() {
     return {
-      bankInfoList: [],
-      filteredBankInfoList: [],
-      selectedBankInfos: [],
-      searchParams: {
-        accountId: '',
-        bankName: '',
-        cardNumber: ''
-      },
+      adminUserList: [],
+      filteredAdminUserList: [],
+      selectedAdminUsers: [],
+      searchKeyword: '',
       currentPage: 1,
       total: 0,
       searchForm: {},
@@ -204,14 +194,14 @@ export default {
   computed: {
     canConfirm() {
       if (this.multiple) {
-        return this.selectedBankInfos.length > 0
+        return this.selectedAdminUsers.length > 0
       } else {
-        return this.selectedBankInfos.length === 1
+        return this.selectedAdminUsers.length === 1
       }
     },
     confirmText() {
       if (this.multiple) {
-        return `确定选择 (${this.selectedBankInfos.length})`
+        return `确定选择 (${this.selectedAdminUsers.length})`
       } else {
         return '确定选择'
       }
@@ -225,7 +215,7 @@ export default {
     },
     defaultSelected: {
       handler(newVal) {
-        this.selectedBankInfos = [...newVal]
+        this.selectedAdminUsers = [...newVal]
       },
       immediate: true
     }
@@ -233,41 +223,29 @@ export default {
   methods: {
     // 初始化数据
     async initData() {
-      this.searchParams = {
-        accountId: this.filterAccountId || '',
-        bankName: '',
-        cardNumber: '',
-        ...this.filters // 合并外部过滤条件
-      }
+      this.searchKeyword = ''
       this.currentPage = 1
-      await this.fetchBankInfoList()
+      await this.fetchAdminUserList()
     },
 
-    // 获取银行信息列表
-    async fetchBankInfoList() {
+    // 获取后台用户列表
+    async fetchAdminUserList() {
       this.loading = true
       try {
         const params = {
           pageNum: this.currentPage,
-          pageSize: this.pageSize,
-          ...this.searchParams, // 包含搜索参数和过滤条件
-          ...this.filters // 合并外部过滤条件
+          pageSize: this.pageSize
         }
         
-        // 如果传入了filterAccountId，则自动添加到搜索参数中
-        if (this.filterAccountId) {
-          params.accountId = this.filterAccountId
-        }
-        
-        const response = await getBankInfoList(params)
+        const response = await getAdminUserPage(params)
         if (response && response.data) {
-          this.bankInfoList = response.data.records || []
+          this.adminUserList = response.data.records || response.data || []
           this.total = response.data.total || 0
         }
-        this.filteredBankInfoList = [...this.bankInfoList]
+        this.filteredAdminUserList = [...this.adminUserList]
       } catch (error) {
-        console.error('获取银行信息列表失败:', error)
-        this.$message.error('获取银行信息列表失败')
+        console.error('获取后台用户列表失败:', error)
+        this.$message.error('获取后台用户列表失败')
       } finally {
         this.loading = false
       }
@@ -275,39 +253,28 @@ export default {
 
     // 搜索处理
     handleSearch() {
-      const searchParams = {
-        ...this.searchParams,
-        pageNum: this.currentPage,
-        pageSize: this.pageSize,
-        ...this.filters // 合并外部过滤条件
+      if (!this.searchKeyword.trim()) {
+        this.filteredAdminUserList = [...this.adminUserList]
+        return
       }
       
-      // 如果传入了filterAccountId，则自动添加到搜索参数中
-      if (this.filterAccountId) {
-        searchParams.accountId = this.filterAccountId
-      }
-      
-      getBankInfoList(searchParams).then(res => {
-        if (res && res.data) {
-          this.bankInfoList = res.data.records || []
-          this.total = res.data.total || 0
-        }
-        this.filteredBankInfoList = [...this.bankInfoList]
-      }).catch(err => {
-        console.error('搜索银行信息失败:', err)
-        this.$message.error('搜索银行信息失败')
-      })
+      const keyword = this.searchKeyword.toLowerCase()
+      this.filteredAdminUserList = this.adminUserList.filter(adminUser => 
+        (adminUser.username && adminUser.username.toLowerCase().includes(keyword)) ||
+        (adminUser.nickname && adminUser.nickname.toLowerCase().includes(keyword)) ||
+        (adminUser.phone && adminUser.phone.includes(keyword))
+      )
     },
 
     // 分页处理
     handlePageChange(page) {
       this.currentPage = page
-      this.fetchBankInfoList()
+      this.fetchAdminUserList()
     },
 
     // 选择变化处理
     handleSelectionChange(selection) {
-      this.selectedBankInfos = selection
+      this.selectedAdminUsers = selection
     },
 
     // 行点击处理（单选模式）
@@ -315,44 +282,44 @@ export default {
       if (this.multiple) return
       
       // 单选模式，直接选择该行
-      this.selectedBankInfos = [row]
+      this.selectedAdminUsers = [row]
     },
 
     // 获取行样式类名
     getRowClassName({ row }) {
-      if (this.selectedBankInfos.some(bankInfo => bankInfo.id === row.id)) {
+      if (this.selectedAdminUsers.some(adminUser => adminUser.id === row.id)) {
         return 'selected-row'
       }
       return ''
     },
 
-    // 判断银行信息是否可选
+    // 判断后台用户是否可选
     isSelectable(row) {
-      return !this.disabledBankInfos.includes(row.id)
+      return !this.disabledAdminUsers.includes(row.id)
     },
 
-    // 移除已选择的银行信息
-    removeBankInfo(bankInfo) {
-      const index = this.selectedBankInfos.findIndex(b => b.id === bankInfo.id)
+    // 移除已选择的后台用户
+    removeAdminUser(adminUser) {
+      const index = this.selectedAdminUsers.findIndex(a => a.id === adminUser.id)
       if (index > -1) {
-        this.selectedBankInfos.splice(index, 1)
+        this.selectedAdminUsers.splice(index, 1)
       }
     },
 
     // 清空选择
     clearSelection() {
-      this.selectedBankInfos = []
+      this.selectedAdminUsers = []
     },
 
     // 确认选择
     handleConfirm() {
-      if (this.selectedBankInfos.length === 0) {
-        this.$message.warning('请至少选择一个银行信息')
+      if (this.selectedAdminUsers.length === 0) {
+        this.$message.warning('请至少选择一个后台用户')
         return
       }
 
-      // 向父组件传递选中的银行信息
-      this.$emit('confirm', this.selectedBankInfos)
+      // 向父组件传递选中的后台用户
+      this.$emit('confirm', this.selectedAdminUsers)
       this.handleClose()
     },
 
@@ -366,20 +333,20 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.bank-info-selector-dialog {
-  // 确保银行信息选择器弹窗在最顶层
+.admin-user-selector-dialog {
+  // 确保后台用户选择器弹窗在最顶层
   z-index: 3000 !important;
   
-  .bank-info-selector {
+  .admin-user-selector {
     .search-container {
       margin-bottom: 20px;
       
       .search-input {
-        width: 200px;
+        width: 300px;
       }
     }
 
-    .bank-info-list-container {
+    .user-list-container {
       max-height: 400px;
       overflow-y: auto;
       
@@ -409,7 +376,7 @@ export default {
       text-align: right;
     }
 
-    .selected-bank-infos {
+    .selected-admin-users {
       margin-top: 20px;
       padding: 15px;
       background-color: #f8f9fa;
@@ -451,4 +418,4 @@ export default {
     background-color: #e6f7ff !important;
   }
 }
-</style> 
+</style>

@@ -35,7 +35,7 @@
           新增订单
         </el-button>
         <el-button type="primary" icon="el-icon-plus" @click="handleBatchFundflow">批量走款</el-button>
-        <el-button type="primary" icon="el-icon-plus" @click="handleBatchInvoice">批量开票</el-button>
+        <!-- <el-button type="primary" icon="el-icon-plus" @click="handleBatchInvoice">批量开票</el-button> -->
       </el-form-item>
     </el-form>
 
