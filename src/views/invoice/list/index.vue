@@ -631,6 +631,7 @@ export default {
         orderId: order.id || '',
         orderNo: order.no || '',
         orderType: order.type || '',
+        orderPartner: order.contractPartner || '',
         orderPartnerName: order.contractPartnerName || '',
         orderTotalAmount: Number(order.totalAmount) || 0,
         orderActualInvoice: 0,
@@ -837,6 +838,7 @@ export default {
           details: this.form.details.map(detail => ({
             orderId: detail.orderId,
             orderType: detail.orderType,
+            orderPartner: detail.orderPartner,
             orderPartnerName: detail.orderPartnerName,
             orderTotalAmount: detail.orderTotalAmount,
             orderActualInvoice: detail.orderActualInvoice,

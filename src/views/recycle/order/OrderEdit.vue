@@ -250,7 +250,7 @@
         <el-input v-model="detailData.identifyCode" placeholder="请输入订单识别码" />
       </el-form-item>
 
-      <!-- <el-tabs v-model="identifyCodeActiveTab" type="card">
+      <el-tabs v-model="identifyCodeActiveTab" type="card">
         <el-tab-pane label="进项" name="new">
 
           <purchase-item :dialog-mode="dialogMode" :order-data="detailData" :items="detailData.items" :items-loading="itemsLoading"
@@ -264,7 +264,7 @@
             @sales-selection-change="handleSalesSelectionChange" @clear-sales-items="clearSalesItems"
             @sync-from-purchase="syncFromPurchaseItems" />
         </el-tab-pane>
-      </el-tabs> -->
+      </el-tabs>
     </el-form>
 
     <div slot="footer" class="dialog-footer">
