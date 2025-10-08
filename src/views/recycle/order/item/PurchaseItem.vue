@@ -53,11 +53,7 @@
             @change="onItemFieldChange(scope.row)" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
-      <el-table-column prop="goodTotalPrice" fixed="right" label="货物总价" width="160" align="center">
-        <template slot-scope="scope">
-          <span class="amount-text">¥{{ formatAmount(scope.row.goodTotalPrice) }}</span>
-        </template>
-      </el-table-column>
+   
       <el-table-column prop="goodRemark" label="货物备注" min-width="180">
         <template slot-scope="scope">
           <el-input v-model="scope.row.goodRemark" placeholder="请输入备注" :disabled="!scope.row.goodNo" />
@@ -78,9 +74,14 @@
           <el-input v-model="scope.row.otherRatingPrice" placeholder="请输入其他调价" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
-      <el-table-column label="订单金额" width="210" align="center">
+      <!-- <el-table-column label="订单金额" width="210" align="center">
         <template slot-scope="scope">
           <el-input-number v-model="scope.row.orderAmount" placeholder="订单金额" :disabled="!scope.row.goodNo" />
+        </template>
+      </el-table-column> -->
+         <el-table-column prop="goodTotalPrice" label="货物总价" width="160" align="center">
+        <template slot-scope="scope">
+          <span class="amount-text">¥{{ formatAmount(scope.row.goodTotalPrice) }}</span>
         </template>
       </el-table-column>
     </el-table>

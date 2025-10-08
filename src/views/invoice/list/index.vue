@@ -616,14 +616,12 @@ export default {
       // 清空之前选择的银行信息
       this.selectedBankInfo = null
       this.form.invoiceBank = ''
-      
+
       // 自动添加订单明细
       this.addOrderDetail(order)
-      
-      this.$message.success('订单选择成功')
     },
     handleOrderCancel() {
-      this.$message.info('已取消选择订单')
+      this.orderSelectorVisible = false
     },
     // 添加订单明细
     addOrderDetail(order) {
