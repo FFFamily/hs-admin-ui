@@ -1,7 +1,7 @@
 <template>
   <div class="purchase-item">
     <!-- 订单明细 -->
-    <el-divider content-position="left">订单明细</el-divider>
+    <el-divider content-position="left">进项订单明细</el-divider>
     <el-form>
       <el-form-item>
         <el-button type="primary" @click="clearAllPrices">货物单价清零</el-button>
