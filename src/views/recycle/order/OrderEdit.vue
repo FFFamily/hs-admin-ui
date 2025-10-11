@@ -249,6 +249,16 @@
       <el-form-item label="订单识别码" prop="identifyCode">
         <el-input v-model="detailData.identifyCode" placeholder="请输入订单识别码" />
       </el-form-item>
+      
+      <!-- 上级识别码 -->
+      <el-form-item label="上级识别码" prop="superiorIdentifyCodes">
+        <el-button type="primary" @click="addSuperiorIdentifyCode">添加上级识别码</el-button>
+        <div style="margin-top: 10px;" v-for="(code, index) in detailData.superiorIdentifyCodes" :key="index" class="superior-code-item">
+          <el-input v-model="detailData.superiorIdentifyCodes[index]" placeholder="请输入上级识别码" style="width: 80%; display: inline-block;" />
+          <el-button style="margin-left: 5px;" type="danger" icon="el-icon-minus" circle size="small" @click="removeSuperiorIdentifyCode(index)" />
+        </div>
+
+      </el-form-item>
 
       <el-tabs v-model="identifyCodeActiveTab" type="card">
         <el-tab-pane label="进项" name="new">
@@ -348,7 +358,9 @@ export default {
   },
   data() {
     return {
-      detailData: {},
+      detailData: {
+        superiorIdentifyCodes:[]
+      },
       submitLoading: false,
       // 合同选择弹窗
       contractSelectorVisible: false,
@@ -467,6 +479,10 @@ export default {
           // 确保items数组存在
           if (!this.detailData.items) {
             this.detailData.items = []
+          }
+          // 确保上级识别码数组存在
+          if (!this.detailData.superiorIdentifyCodes) {
+            this.detailData.superiorIdentifyCodes = []
           }
         } catch (error) {
           this.$message.error('获取订单详情失败')
@@ -622,6 +638,7 @@ export default {
         uploadTime: '',
         settlementTime: '', // 结算时间
         identifyCode: '',
+        superiorIdentifyCodes: [], // 上级识别码数组
         processor: '',
         processorPhone: '',
         totalAmount: 0,
@@ -641,6 +658,26 @@ export default {
         applicationPdfUrl: '', // 申请文件URL
         items: []
       }
+    },
+    
+    // 添加上级识别码
+    addSuperiorIdentifyCode() {
+      if (!this.detailData.superiorIdentifyCodes) {
+        // 使用Vue.set确保响应式更新
+        this.$set(this.detailData, 'superiorIdentifyCodes', [])
+      }
+      // 确保使用push方法添加新元素以保持响应式
+      this.detailData.superiorIdentifyCodes.push('')
+      // 强制更新视图，确保新添加的文本框立即显示
+      this.$forceUpdate()
+    },
+    
+    // 移除上级识别码
+    removeSuperiorIdentifyCode(index) {
+      if (this.detailData.superiorIdentifyCodes && index >= 0 && index < this.detailData.superiorIdentifyCodes.length) {
+          this.detailData.superiorIdentifyCodes.splice(index, 1)
+      }
+      this.$forceUpdate()
     },
 
     // 提交表单
@@ -689,35 +726,7 @@ export default {
     // 初始化订单列表数据
     initOrderList() {
       // 模拟订单数据，实际项目中应该从API获取
-      this.orderList = [
-        {
-          id: 1,
-          orderNo: 'ORD20231201001',
-          orderType: ORDER_TYPE_OPTIONS[0].value, // purchase
-          orderAmount: 150000.00,
-          startTime: '2023-12-01 09:00:00',
-          endTime: '2023-12-31 18:00:00',
-          status: ORDER_STATUS_OPTIONS[0].value // processing
-        },
-        {
-          id: 2,
-          orderNo: 'ORD20231202001',
-          orderType: ORDER_TYPE_OPTIONS[1].value, // sales
-          orderAmount: 89000.50,
-          startTime: '2023-12-02 10:00:00',
-          endTime: '2023-12-15 17:00:00',
-          status: ORDER_STATUS_OPTIONS[1].value // completed
-        },
-        {
-          id: 3,
-          orderNo: 'ORD20231203001',
-          orderType: ORDER_TYPE_OPTIONS[0].value, // purchase
-          orderAmount: 234500.00,
-          startTime: '2023-12-03 08:30:00',
-          endTime: '2024-01-15 16:00:00',
-          status: ORDER_STATUS_OPTIONS[0].value // processing
-        }
-      ]
+      this.orderList = []
     },
 
     // 查看订单详情
@@ -779,54 +788,7 @@ export default {
     initSalesData() {
       // 模拟销项数据，实际项目中应该从API获取
       this.salesItems = [
-        {
-          goodNo: 'SALES001',
-          goodType: '电子产品',
-          goodName: '笔记本电脑',
-          goodModel: 'ThinkPad X1',
-          goodCount: 5,
-          goodWeight: '2.5kg',
-          goodRemark: '高配置版本',
-          salesIdentifyCode: '',
-          purchaseIdentifyCode: '',
-          purchaseOrderNo: ''
-        },
-        {
-          goodNo: 'SALES002',
-          goodType: '办公用品',
-          goodName: '办公桌椅',
-          goodModel: '标准款',
-          goodCount: 10,
-          goodWeight: '15kg',
-          goodRemark: '人体工学设计',
-          salesIdentifyCode: '',
-          purchaseIdentifyCode: '',
-          purchaseOrderNo: ''
-        },
-        {
-          goodNo: 'SALES003',
-          goodType: '网络设备',
-          goodName: '路由器',
-          goodModel: 'TP-Link AC1200',
-          goodCount: 8,
-          goodWeight: '0.5kg',
-          goodRemark: '双频千兆',
-          salesIdentifyCode: '',
-          purchaseIdentifyCode: '',
-          purchaseOrderNo: ''
-        },
-        {
-          goodNo: 'SALES004',
-          goodType: '办公设备',
-          goodName: '打印机',
-          goodModel: 'HP LaserJet Pro',
-          goodCount: 3,
-          goodWeight: '8.2kg',
-          goodRemark: '激光打印',
-          salesIdentifyCode: '',
-          purchaseIdentifyCode: '',
-          purchaseOrderNo: ''
-        }
+        
       ]
     },
 

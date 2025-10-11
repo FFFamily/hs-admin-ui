@@ -8,6 +8,7 @@
       <el-form-item>
         <el-button type="primary" @click="assignOrderIdentifyCode">分配订单识别号</el-button>
         <el-button type="success" @click="syncFromPurchaseItems">从进项同步</el-button>
+        <el-button type="primary" @click="addSalesItem">新增行</el-button>
         <el-button type="danger" @click="clearSalesItems">清空</el-button>
       </el-form-item>
     </el-form>
@@ -18,11 +19,13 @@
       <el-table-column prop="goodNo" label="货物编号" width="180" align="center">
         <template slot-scope="scope">
           <div class="good-no-container">
-            <el-input v-model="scope.row.goodNo" placeholder="请输入货物编号" :disabled="!scope.row.goodNo" readonly />
-            <el-button type="primary" size="mini" icon="el-icon-search" @click="openBusinessScopeSelector(scope.$index)"
-              style="margin-left: 5px;">
-              搜索
-            </el-button>
+            <el-input v-model="scope.row.goodNo" placeholder="请输入货物编号" :disabled="!scope.row.goodNo" readonly>
+              <el-button type="primary" slot="append" size="mini" icon="el-icon-search"
+                @click="openBusinessScopeSelector(scope.$index)">
+                搜索
+              </el-button>
+            </el-input>
+
           </div>
         </template>
       </el-table-column>
@@ -55,21 +58,6 @@
       <el-table-column prop="goodWeight" label="货物重量" width="120" align="center">
         <template slot-scope="scope">
           <el-input v-model="scope.row.goodWeight" placeholder="请输入货物重量" :disabled="!scope.row.goodNo" />
-        </template>
-      </el-table-column>
-      <el-table-column prop="salesIdentifyCode" label="销项订单识别码" width="160" align="center">
-        <template slot-scope="scope">
-          <el-input v-model="scope.row.salesIdentifyCode" placeholder="请输入销项订单识别码" :disabled="!scope.row.goodNo" />
-        </template>
-      </el-table-column>
-      <el-table-column prop="purchaseIdentifyCode" label="进项订单识别码" width="160" align="center">
-        <template slot-scope="scope">
-          <el-input v-model="scope.row.purchaseIdentifyCode" placeholder="请输入进项订单识别码" :disabled="!scope.row.goodNo" />
-        </template>
-      </el-table-column>
-      <el-table-column prop="purchaseOrderNo" label="进项订单编号" width="180" align="center">
-        <template slot-scope="scope">
-          <el-input v-model="scope.row.purchaseOrderNo" placeholder="请输入进项订单编号" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
     </el-table>
@@ -118,6 +106,10 @@ export default {
     }
   },
   methods: {
+    // 新增行
+    addSalesItem() {
+      this.salesItems.push({})
+    },
     // 处理销项表格选择变化
     handleSalesSelectionChange(selection) {
       this.selectedSalesItems = selection
