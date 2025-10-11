@@ -6,7 +6,7 @@
     <el-divider content-position="left">销项订单明细</el-divider>
     <el-form>
       <el-form-item>
-        <el-button type="primary" @click="assignOrderIdentifyCode">分配订单识别号</el-button>
+        <!-- 移除关联源识别码按钮，不再需要 -->
         <el-button type="success" @click="syncFromPurchaseItems">从进项同步</el-button>
         <el-button type="primary" @click="addSalesItem">新增行</el-button>
         <el-button type="danger" @click="clearSalesItems">清空</el-button>
@@ -60,6 +60,7 @@
           <el-input v-model="scope.row.goodWeight" placeholder="请输入货物重量" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
+      <!-- 移除源识别码和销项识别码列，使用订单主识别码 -->
     </el-table>
 
     <!-- 经营范围选择器 -->
@@ -108,8 +109,18 @@ export default {
   methods: {
     // 新增行
     addSalesItem() {
-      this.salesItems.push({})
+      this.salesItems.push({
+        goodNo: '',
+        goodType: '',
+        goodName: '',
+        goodModel: '',
+        goodCount: 0,
+        goodWeight: '',
+        goodRemark: ''
+      })
     },
+
+    // 移除源识别码选择方法，不再需要
     // 处理销项表格选择变化
     handleSalesSelectionChange(selection) {
       this.selectedSalesItems = selection
@@ -146,36 +157,7 @@ export default {
       this.currentRowIndex = -1
     },
 
-    // 分配订单识别号
-    assignOrderIdentifyCode() {
-      if (!this.salesItems || this.salesItems.length === 0) {
-        this.$message.warning('没有可分配识别号的销项明细')
-        return
-      }
-
-      this.$confirm('确定要为所有销项明细分配订单识别号吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        const timestamp = Date.now()
-        this.salesItems.forEach((item, index) => {
-          // 生成唯一的销项订单识别码
-          item.salesIdentifyCode = `SALES_${timestamp}_${index + 1}`
-          // 从进项明细中获取对应的识别码和订单编号
-          const purchaseItem = this.purchaseItems.find(pItem =>
-            pItem.goodNo === item.goodNo || pItem.goodName === item.goodName
-          )
-          if (purchaseItem) {
-            item.purchaseIdentifyCode = purchaseItem.identifyCode || this.orderData.identifyCode
-            item.purchaseOrderNo = purchaseItem.orderNo || this.orderData.no
-          }
-        })
-        this.$message.success('订单识别号分配成功')
-      }).catch(() => {
-        // 用户取消操作
-      })
-    },
+    // 移除关联源识别码方法，不再需要
 
     // 清空销项明细
     clearSalesItems() {
@@ -216,10 +198,7 @@ export default {
           goodModel: item.goodModel,
           goodCount: item.goodCount,
           goodWeight: item.goodWeight,
-          goodRemark: item.goodRemark,
-          salesIdentifyCode: '',
-          purchaseIdentifyCode: this.orderData.identifyCode || '',
-          purchaseOrderNo: this.orderData.no || ''
+          goodRemark: item.goodRemark
         }))
         this.$emit('sync-from-purchase', newSalesItems)
         this.$message.success('从进项明细同步成功')
@@ -300,6 +279,11 @@ export default {
   .good-no-container {
     display: flex;
     align-items: center;
+  }
+
+  .text-muted {
+    color: #909399;
+    font-size: 12px;
   }
 }
 </style>

@@ -74,6 +74,7 @@
           <el-input v-model="scope.row.otherRatingPrice" placeholder="请输入其他调价" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
+      <!-- 移除货物识别码列，使用订单主识别码 -->
       <!-- <el-table-column label="订单金额" width="210" align="center">
         <template slot-scope="scope">
           <el-input-number v-model="scope.row.orderAmount" placeholder="订单金额" :disabled="!scope.row.goodNo" />
@@ -365,6 +366,8 @@ export default {
         this.syncItemsToOrder(items, sourceOrderNo, sourceOrderName)
       }
     },
+
+    // 移除自动生成货物识别码的方法
 
     // 同步明细到当前订单
     syncItemsToOrder(sourceItems, sourceOrderNo, sourceOrderName) {

@@ -244,31 +244,25 @@
         </el-col>
       </el-row>
 
-      <!-- 订单节点信息 -->
-      <el-divider content-position="left">订单识别码</el-divider>
-      <el-form-item label="订单识别码" prop="identifyCode">
-        <el-input v-model="detailData.identifyCode" placeholder="请输入订单识别码" />
-      </el-form-item>
+      <!-- 货物追溯管理 -->
+      <el-divider content-position="left">货物追溯管理</el-divider>
+      <traceability-manager 
+        v-model="detailData.traceabilityData"
+        :order-type="detailData.type"
+        :can-edit-identify-code="true"
+        @change="handleTraceabilityChange"
+      />
+
+      <!-- 订单明细 - 用户手动选择进项或销项 -->
+      <el-divider content-position="left">订单明细</el-divider>
       
-      <!-- 上级识别码 -->
-      <el-form-item label="上级识别码" prop="superiorIdentifyCodes">
-        <el-button type="primary" @click="addSuperiorIdentifyCode">添加上级识别码</el-button>
-        <div style="margin-top: 10px;" v-for="(code, index) in detailData.superiorIdentifyCodes" :key="index" class="superior-code-item">
-          <el-input v-model="detailData.superiorIdentifyCodes[index]" placeholder="请输入上级识别码" style="width: 80%; display: inline-block;" />
-          <el-button style="margin-left: 5px;" type="danger" icon="el-icon-minus" circle size="small" @click="removeSuperiorIdentifyCode(index)" />
-        </div>
-
-      </el-form-item>
-
-      <el-tabs v-model="identifyCodeActiveTab" type="card">
-        <el-tab-pane label="进项" name="new">
-
+      <el-tabs v-model="activeTab" type="card">
+        <el-tab-pane label="进项" name="purchase">
           <purchase-item :dialog-mode="dialogMode" :order-data="detailData" :items="detailData.items" :items-loading="itemsLoading"
             @selection-change="handleSelectionChange" @recalc-order-amount="recalcOrderAmount" @add-item="addOrderItem"
             @delete-items="deleteSelectedItems" />
         </el-tab-pane>
-        <el-tab-pane label="销项" name="existing">
-
+        <el-tab-pane label="销项" name="sales">
           <sales-item :dialog-mode="dialogMode" :sales-items="salesItems" :sales-items-loading="salesItemsLoading"
             :purchase-items="detailData.items" :order-data="detailData"
             @sales-selection-change="handleSalesSelectionChange" @clear-sales-items="clearSalesItems"
@@ -319,6 +313,7 @@ import ContractSelector from '@/components/ContractSelector'
 import AgentSelector from '@/components/AgentSelector'
 import AddressSelector from '@/components/AddressSelector'
 import BankInfoSelector from '@/components/BankInfoSelector'
+import TraceabilityManager from '@/components/TraceabilityManager'
 import { getContractItems } from '@/api/recycleContract'
 import PurchaseItem from './item/PurchaseItem.vue'
 import SalesItem from './item/SalesItem.vue'
@@ -336,7 +331,7 @@ import {
 
 export default {
   name: 'OrderEdit',
-  components: { ContractSelector, AgentSelector, AddressSelector, BankInfoSelector, ImageUploader, PurchaseItem, SalesItem },
+  components: { ContractSelector, AgentSelector, AddressSelector, BankInfoSelector, ImageUploader, PurchaseItem, SalesItem, TraceabilityManager },
   props: {
     visible: {
       type: Boolean,
@@ -359,7 +354,11 @@ export default {
   data() {
     return {
       detailData: {
-        superiorIdentifyCodes:[]
+        traceabilityData: {
+          currentIdentifyCode: '',
+          currentFlowStep: '',
+          sourceCodes: []
+        }
       },
       submitLoading: false,
       // 合同选择弹窗
@@ -425,8 +424,8 @@ export default {
       // 新增订单明细列表
       orderDetailList: [],
       orderDetailLoading: false,
-      // 订单识别码tab激活状态
-      identifyCodeActiveTab: 'new',
+      // 标签页激活状态
+      activeTab: 'purchase',
       // 选中的订单明细项
       selectedItems: [],
       // 销项订单明细
@@ -470,7 +469,7 @@ export default {
         this.detailData = this.getDefaultFormData()
         // 如果传入了订单识别码，则设置到表单中
         if (this.identifyCode) {
-          this.detailData.identifyCode = this.identifyCode
+          this.detailData.traceabilityData.currentIdentifyCode = this.identifyCode
         }
       } else if (this.orderId) {
         try {
@@ -480,9 +479,13 @@ export default {
           if (!this.detailData.items) {
             this.detailData.items = []
           }
-          // 确保上级识别码数组存在
-          if (!this.detailData.superiorIdentifyCodes) {
-            this.detailData.superiorIdentifyCodes = []
+          // 确保追溯数据存在
+          if (!this.detailData.traceabilityData) {
+            this.detailData.traceabilityData = {
+              currentIdentifyCode: '',
+              currentFlowStep: '',
+              sourceCodes: []
+            }
           }
         } catch (error) {
           this.$message.error('获取订单详情失败')
@@ -637,8 +640,11 @@ export default {
         endTime: '',
         uploadTime: '',
         settlementTime: '', // 结算时间
-        identifyCode: '',
-        superiorIdentifyCodes: [], // 上级识别码数组
+        traceabilityData: {
+          currentIdentifyCode: '',
+          currentFlowStep: '',
+          sourceCodes: []
+        },
         processor: '',
         processorPhone: '',
         totalAmount: 0,
@@ -660,24 +666,21 @@ export default {
       }
     },
     
-    // 添加上级识别码
-    addSuperiorIdentifyCode() {
-      if (!this.detailData.superiorIdentifyCodes) {
-        // 使用Vue.set确保响应式更新
-        this.$set(this.detailData, 'superiorIdentifyCodes', [])
+    // 处理追溯数据变更
+    handleTraceabilityChange(traceabilityData) {
+      this.detailData.traceabilityData = traceabilityData
+      
+      // 根据订单类型自动设置流转步骤
+      if (!traceabilityData.currentFlowStep && this.detailData.type) {
+        const stepMapping = {
+          'purchase': 'purchase',
+          'transport': 'transport', 
+          'process': 'process',
+          'storage': 'storage',
+          'sales': 'sales'
+        }
+        this.detailData.traceabilityData.currentFlowStep = stepMapping[this.detailData.type] || ''
       }
-      // 确保使用push方法添加新元素以保持响应式
-      this.detailData.superiorIdentifyCodes.push('')
-      // 强制更新视图，确保新添加的文本框立即显示
-      this.$forceUpdate()
-    },
-    
-    // 移除上级识别码
-    removeSuperiorIdentifyCode(index) {
-      if (this.detailData.superiorIdentifyCodes && index >= 0 && index < this.detailData.superiorIdentifyCodes.length) {
-          this.detailData.superiorIdentifyCodes.splice(index, 1)
-      }
-      this.$forceUpdate()
     },
 
     // 提交表单
@@ -718,10 +721,7 @@ export default {
       return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
     },
 
-    // 打开新增订单详情
-    openIdentifyCodeSelector() {
-      this.identifyCodeActiveTab = 'new'
-    },
+    // 移除标签页相关方法，不再需要
 
     // 初始化订单列表数据
     initOrderList() {
