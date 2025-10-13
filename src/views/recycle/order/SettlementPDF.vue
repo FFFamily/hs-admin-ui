@@ -10,9 +10,6 @@
         <el-button type="primary" icon="el-icon-download" @click="generatePDF" :loading="generating">
           生成PDF
         </el-button>
-        <el-button type="success" icon="el-icon-view" @click="previewPDF">
-          预览PDF
-        </el-button>
         <el-button type="warning" icon="el-icon-printer" @click="printPDF">
           打印
         </el-button>
@@ -35,22 +32,22 @@
           <div class="contract-parties">
             <div class="party-item">
               <span class="label">甲方：</span>
-              <span class="value">{{ orderData.partyA || '回收管理有限公司' }}</span>
+              <span class="value">{{ orderData.partyAName  }}</span>
             </div>
             <div class="party-item">
               <span class="label">乙方：</span>
-              <span class="value">{{ orderData.partyB || '合作方' + (orderData.id || '') }}</span>
+              <span class="value">{{ orderData.partyBName  }}</span>
             </div>
             <div class="party-item">
               <span class="label">合同编号：</span>
-              <span class="value">{{ orderData.contractNo || 'CT' + (orderData.id || '') }}</span>
+              <span class="value">{{ orderData.contractNo }}</span>
             </div>
           </div>
         </div>
 
         <!-- 结算说明 -->
         <div class="settlement-description">
-          <p>现就该合同下编号为 <strong>{{ orderData.no || 'RO' + (orderData.id || '') }}</strong> 的订单出具以下业务结算单</p>
+          <p>现就该合同下编号为 <strong>{{ orderData.no  }}</strong> 的订单出具以下业务结算单</p>
         </div>
 
         <!-- 订单详细信息 -->
@@ -342,6 +339,7 @@ export default {
 
     // 获取项目类型显示文本
     getItemTypeText(type) {
+      console.log(type)
       const typeMap = {
         'goods': '货物',
         'transport': '运输',

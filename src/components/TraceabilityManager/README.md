@@ -83,11 +83,12 @@ GET /api/traceability/chain/{identifyCode}
 ```javascript
 POST /api/traceability/save
 {
-  "currentIdentifyCode": "PUR20241011ABC123",
-  "currentFlowStep": "purchase",
-  "sourceCodes": [
+  "identifyCode": "PUR20241011ABC123",       // 订单识别码（订单顶层字段）
+  "type": "purchase",                        // 订单类型决定流转步骤
+  "sourceCodes": [                           // 源识别码数组
     {
       "identifyCode": "STO20241010DEF456",
+      "flowStep": "storage",
       "changeReason": "reprocess"
     }
   ]
@@ -103,20 +104,20 @@ GET /api/inventory/identify-codes
 
 ### 追溯数据结构
 ```javascript
-{
-  currentIdentifyCode: String,    // 当前识别码
-  currentFlowStep: String,        // 当前流转步骤
-  sourceCodes: [                  // 源识别码数组
-    {
-      identifyCode: String,       // 源识别码
-      flowStep: String,           // 源流转步骤
-      goodName: String,           // 货物名称
-      goodCount: Number,          // 货物数量
-      goodWeight: String,         // 货物重量
-      changeReason: String        // 变更原因
-    }
-  ]
-}
+// 订单识别码（订单顶层字段）
+identifyCode: String              // 订单识别码，来自订单的 identifyCode 字段
+
+// 源识别码数组（组件 v-model 绑定）
+sourceCodes: [                    // 源识别码数组
+  {
+    identifyCode: String,         // 源识别码
+    flowStep: String,             // 源流转步骤
+    goodName: String,             // 货物名称
+    goodCount: Number,            // 货物数量
+    goodWeight: String,           // 货物重量
+    changeReason: String          // 变更原因
+  }
+]
 ```
 
 ### 追溯链数据结构
@@ -154,10 +155,12 @@ GET /api/inventory/identify-codes
 ```vue
 <template>
   <traceability-manager 
-    v-model="orderData.traceabilityData"
+    :identify-code.sync="orderData.identifyCode"
+    v-model="orderData.sourceCodes"
     :order-type="orderData.type"
     :can-edit-identify-code="dialogMode === 'add'"
-    @change="handleTraceabilityChange"
+    @identify-code-change="handleIdentifyCodeChange"
+    @change="handleSourceCodesChange"
   />
 </template>
 
@@ -170,33 +173,57 @@ export default {
   },
   data() {
     return {
+      dialogMode: 'add',
       orderData: {
-        traceabilityData: {
-          currentIdentifyCode: '',
-          currentFlowStep: '',
-          sourceCodes: []
-        }
+        identifyCode: '',          // 订单识别码（订单顶层字段）
+        type: 'purchase',          // 订单类型
+        sourceCodes: []            // 源识别码数组
       }
     }
   },
   methods: {
-    handleTraceabilityChange(data) {
-      // 处理追溯数据变更
-      console.log('追溯数据变更:', data)
+    handleIdentifyCodeChange(identifyCode) {
+      // 处理订单识别码变更
+      console.log('订单识别码变更:', identifyCode)
+      this.orderData.identifyCode = identifyCode
+    },
+    handleSourceCodesChange(sourceCodes) {
+      // 处理源识别码列表变更
+      console.log('源识别码变更:', sourceCodes)
+      this.orderData.sourceCodes = sourceCodes
     }
   }
 }
 </script>
 ```
 
+### Props 说明
+
+| 参数 | 说明 | 类型 | 默认值 |
+|------|------|------|--------|
+| identifyCode | 订单识别码（支持 .sync 修饰符） | String | '' |
+| value | 源识别码数组（v-model 绑定） | Array | [] |
+| orderType | 订单类型 | String | '' |
+| canEditIdentifyCode | 是否可编辑识别码 | Boolean | true |
+
+### Events 说明
+
+| 事件名 | 说明 | 回调参数 |
+|--------|------|----------|
+| update:identifyCode | 识别码更新事件（用于 .sync） | (identifyCode: String) |
+| identify-code-change | 识别码变更事件 | (identifyCode: String) |
+| input | 源识别码数组更新事件（v-model） | (sourceCodes: Array) |
+| change | 源识别码数组变更事件 | (sourceCodes: Array) |
+
 ## 注意事项
 
 1. **识别码唯一性**: 每个识别码在系统中必须唯一，请确保手动输入时不重复
 2. **识别码规范**: 建议按照公司规范格式输入识别码，便于管理和查询
-3. **流转步骤顺序**: 虽然支持灵活的流转，但建议按照业务逻辑顺序进行
+3. **订单类型关联**: 订单的流转步骤由订单类型（orderType）决定，无需单独维护
 4. **数据完整性**: 确保每次变更都记录完整的源识别码和变更原因
 5. **手动输入验证**: 建议在输入识别码时进行格式和重复性验证
 6. **性能考虑**: 对于大量数据的追溯查询，建议使用分页和索引优化
+7. **数据结构变更**: 识别码现在是订单的顶层字段，组件通过 .sync 修饰符同步更新
 
 ## 扩展功能
 

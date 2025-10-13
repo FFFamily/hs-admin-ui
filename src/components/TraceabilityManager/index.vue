@@ -16,10 +16,10 @@
         show-icon
         style="margin-bottom: 15px;"
       >
-        <div slot="description">
-          <p>• 每个订单只有一个主识别码，订单中的所有货物都使用此识别码</p>
-          <p>• 用户可以手动选择使用进项或销项明细，根据实际业务需要决定</p>
-          <p>• 源识别码用于追溯货物的来源和流转历程</p>
+        <div>
+          <p style="margin: 5px 0;">每个订单只有一个主识别码，订单中的所有货物都使用此识别码</p>
+          <p style="margin: 5px 0;">用户可以手动选择使用进项或销项明细，根据实际业务需要决定</p>
+          <p style="margin: 5px 0;">源识别码用于追溯货物的来源和流转历程</p>
         </div>
       </el-alert>
       
@@ -29,28 +29,13 @@
           <el-col :span="12">
             <el-form-item label="订单识别码" required>
               <el-input 
-                v-model="currentIdentifyCode" 
+                v-model="localIdentifyCode" 
                 placeholder="请手动输入订单识别码"
+                :disabled="!canEditIdentifyCode"
               />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="流转步骤">
-              <el-select 
-                v-model="currentFlowStep" 
-                placeholder="请选择当前流转步骤"
-                @change="onFlowStepChange"
-                style="width: 100%"
-              >
-                <el-option 
-                  v-for="option in flowStepOptions" 
-                  :key="option.value" 
-                  :label="option.label" 
-                  :value="option.value" 
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
+          
         </el-row>
       </el-form>
 
@@ -64,7 +49,6 @@
           type="warning" 
           size="small" 
           @click="showSourceCodeSelector"
-          v-if="currentFlowStep !== 'purchase'"
         >
           从库存选择
         </el-button>
@@ -77,7 +61,7 @@
         style="margin-top: 10px;"
         v-if="sourceCodes.length > 0"
       >
-        <el-table-column prop="identifyCode" label="源识别码" width="180">
+        <el-table-column prop="identifyCode" label="源识别码" width="380">
           <template slot-scope="scope">
             <el-input 
               v-model="scope.row.identifyCode" 
@@ -86,22 +70,11 @@
             />
           </template>
         </el-table-column>
-        <el-table-column prop="flowStep" label="来源步骤" width="120">
+        <el-table-column prop="flowStep" label="来源订单类型" width="120">
           <template slot-scope="scope">
             <el-tag size="small" :type="getFlowStepTagType(scope.row.flowStep)">
               {{ getFlowStepText(scope.row.flowStep) }}
             </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="goodsInfo" label="货物信息" min-width="200">
-          <template slot-scope="scope">
-            <div class="goods-info">
-              <div>{{ scope.row.goodName || '--' }}</div>
-              <div class="goods-detail">
-                数量: {{ scope.row.goodCount || 0 }} | 
-                重量: {{ scope.row.goodWeight || '--' }}
-              </div>
-            </div>
           </template>
         </el-table-column>
         <el-table-column prop="changeReason" label="变更原因" width="150">
@@ -120,7 +93,7 @@
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center">
+        <el-table-column label="操作" align="center">
           <template slot-scope="scope">
             <el-button 
               type="danger" 
@@ -142,7 +115,7 @@
       append-to-body
     >
       <traceability-chain 
-        :identify-code="currentIdentifyCode"
+        :identify-code="localIdentifyCode"
         v-if="traceabilityDialogVisible"
       />
     </el-dialog>
@@ -152,6 +125,7 @@
       title="选择库存识别码" 
       :visible.sync="sourceCodeSelectorVisible" 
       width="70%"
+      append-to-body
       :close-on-click-modal="false"
     >
       <inventory-identify-code-selector 
@@ -165,7 +139,6 @@
 
 <script>
 import { 
-  FLOW_STEP_OPTIONS, 
   IDENTIFY_CODE_CHANGE_REASON_OPTIONS,
   getFlowStepText,
   getChangeReasonText
@@ -180,13 +153,15 @@ export default {
     InventoryIdentifyCodeSelector
   },
   props: {
+    // 订单识别码（来自订单的 identifyCode 字段）
+    identifyCode: {
+      type: String,
+      default: ''
+    },
+    // 源识别码列表
     value: {
-      type: Object,
-      default: () => ({
-        currentIdentifyCode: '',
-        currentFlowStep: '',
-        sourceCodes: []
-      })
+      type: Array,
+      default: () => []
     },
     orderType: {
       type: String,
@@ -199,10 +174,8 @@ export default {
   },
   data() {
     return {
-      currentIdentifyCode: '',
-      currentFlowStep: '',
+      localIdentifyCode: '',
       sourceCodes: [],
-      flowStepOptions: FLOW_STEP_OPTIONS,
       changeReasonOptions: IDENTIFY_CODE_CHANGE_REASON_OPTIONS,
       traceabilityDialogVisible: false,
       sourceCodeSelectorVisible: false,
@@ -213,41 +186,34 @@ export default {
     // 移除自动生成相关的计算属性
   },
   watch: {
+    identifyCode: {
+      handler(newVal) {
+        if (!this.isUpdating) {
+          this.localIdentifyCode = newVal || ''
+        }
+      },
+      immediate: true
+    },
     value: {
       handler(newVal) {
-        if (newVal && !this.isUpdating) {
-          this.currentIdentifyCode = newVal.currentIdentifyCode || ''
-          this.currentFlowStep = newVal.currentFlowStep || ''
-          this.sourceCodes = newVal.sourceCodes || []
+        if (!this.isUpdating) {
+          this.sourceCodes = Array.isArray(newVal) ? newVal : []
         }
       },
       immediate: true,
       deep: true
     },
-    currentIdentifyCode() {
-      this.emitChange()
-    },
-    currentFlowStep() {
-      this.emitChange()
+    localIdentifyCode() {
+      this.emitIdentifyCodeChange()
     },
     sourceCodes: {
       handler() {
-        this.emitChange()
+        this.emitSourceCodesChange()
       },
       deep: true
     }
   },
   methods: {
-    // 移除自动生成识别码的方法
-
-    // 流转步骤变更
-    onFlowStepChange(step) {
-      // 如果是采购步骤，清空源识别码
-      if (step === 'purchase') {
-        this.sourceCodes = []
-      }
-    },
-
     // 添加源识别码
     addSourceCode() {
       this.sourceCodes.push({
@@ -287,7 +253,7 @@ export default {
 
     // 显示追溯链弹窗
     showTraceabilityDialog() {
-      if (!this.currentIdentifyCode) {
+      if (!this.localIdentifyCode) {
         this.$message.warning('请先输入识别码')
         return
       }
@@ -312,16 +278,21 @@ export default {
     // 获取变更原因文本
     getChangeReasonText,
 
-    // 发送变更事件
-    emitChange() {
+    // 发送识别码变更事件
+    emitIdentifyCodeChange() {
       this.isUpdating = true
-      const value = {
-        currentIdentifyCode: this.currentIdentifyCode,
-        currentFlowStep: this.currentFlowStep,
-        sourceCodes: this.sourceCodes
-      }
-      this.$emit('input', value)
-      this.$emit('change', value)
+      this.$emit('update:identifyCode', this.localIdentifyCode)
+      this.$emit('identify-code-change', this.localIdentifyCode)
+      this.$nextTick(() => {
+        this.isUpdating = false
+      })
+    },
+
+    // 发送源识别码列表变更事件
+    emitSourceCodesChange() {
+      this.isUpdating = true
+      this.$emit('input', this.sourceCodes)
+      this.$emit('change', this.sourceCodes)
       this.$nextTick(() => {
         this.isUpdating = false
       })

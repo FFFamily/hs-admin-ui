@@ -1,5 +1,5 @@
 <template>
-  <el-dialog :title="getDialogTitle()" :visible.sync="visible" width="80%" :close-on-click-modal="false" top="5vh">
+  <el-dialog :title="getDialogTitle()" :visible.sync="visible" width="90%" :close-on-click-modal="false" top="5vh">
     <el-form ref="detailForm" :model="detailData" :rules="formRules" label-width="120px" class="detail-form">
       <!-- 合同相关信息 -->
       <el-divider content-position="left">合同相关信息</el-divider>
@@ -247,10 +247,10 @@
       <!-- 货物追溯管理 -->
       <el-divider content-position="left">货物追溯管理</el-divider>
       <traceability-manager 
-        v-model="detailData.traceabilityData"
+        :identify-code.sync="detailData.identifyCode"
+        v-model="detailData.sourceCodes"
         :order-type="detailData.type"
         :can-edit-identify-code="true"
-        @change="handleTraceabilityChange"
       />
 
       <!-- 订单明细 - 用户手动选择进项或销项 -->
@@ -258,13 +258,13 @@
       
       <el-tabs v-model="activeTab" type="card">
         <el-tab-pane label="进项" name="purchase">
-          <purchase-item :dialog-mode="dialogMode" :order-data="detailData" :items="detailData.items" :items-loading="itemsLoading"
+          <purchase-item :dialog-mode="dialogMode" :order-data="detailData" :items="inItems" :items-loading="itemsLoading"
             @selection-change="handleSelectionChange" @recalc-order-amount="recalcOrderAmount" @add-item="addOrderItem"
             @delete-items="deleteSelectedItems" />
         </el-tab-pane>
         <el-tab-pane label="销项" name="sales">
-          <sales-item :dialog-mode="dialogMode" :sales-items="salesItems" :sales-items-loading="salesItemsLoading"
-            :purchase-items="detailData.items" :order-data="detailData"
+          <sales-item :dialog-mode="dialogMode" :sales-items="outItems" :sales-items-loading="salesItemsLoading"
+            :purchase-items="inItems" :order-data="detailData"
             @sales-selection-change="handleSalesSelectionChange" @clear-sales-items="clearSalesItems"
             @sync-from-purchase="syncFromPurchaseItems" />
         </el-tab-pane>
@@ -354,11 +354,8 @@ export default {
   data() {
     return {
       detailData: {
-        traceabilityData: {
-          currentIdentifyCode: '',
-          currentFlowStep: '',
-          sourceCodes: []
-        }
+        identifyCode: '',
+        sourceCodes: []
       },
       submitLoading: false,
       // 合同选择弹窗
@@ -367,6 +364,10 @@ export default {
       agentSelectorVisible: false,
       // 明细加载
       itemsLoading: false,
+      // 进项明细数据
+      inItems: [],
+      // 销项明细数据
+      outItems: [],
       // 仓库地址选择弹窗
       warehouseSelectorVisible: false,
       // 交付地址选择弹窗
@@ -428,8 +429,6 @@ export default {
       activeTab: 'purchase',
       // 选中的订单明细项
       selectedItems: [],
-      // 销项订单明细
-      salesItems: [],
       // 销项明细加载状态
       salesItemsLoading: false,
       // 选中的销项明细项
@@ -469,23 +468,27 @@ export default {
         this.detailData = this.getDefaultFormData()
         // 如果传入了订单识别码，则设置到表单中
         if (this.identifyCode) {
-          this.detailData.traceabilityData.currentIdentifyCode = this.identifyCode
+          this.detailData.identifyCode = this.identifyCode
         }
+        // 新增模式下清空进项和销项数据
+        this.inItems = []
+        this.outItems = []
       } else if (this.orderId) {
         try {
           const response = await getRecycleDetail(this.orderId)
           this.detailData = response.data
-          // 确保items数组存在
-          if (!this.detailData.items) {
-            this.detailData.items = []
-          }
+          
+          // 后端返回统一的 items 数组，前端根据 direction 分离
+          const items = response.data.items || []
+          this.inItems = items.filter(item => item.direction === 'in')
+          this.outItems = items.filter(item => item.direction === 'out')
+          
           // 确保追溯数据存在
-          if (!this.detailData.traceabilityData) {
-            this.detailData.traceabilityData = {
-              currentIdentifyCode: '',
-              currentFlowStep: '',
-              sourceCodes: []
-            }
+          if (!this.detailData.identifyCode) {
+            this.detailData.identifyCode = ''
+          }
+          if (!this.detailData.sourceCodes) {
+            this.detailData.sourceCodes = []
           }
         } catch (error) {
           this.$message.error('获取订单详情失败')
@@ -494,8 +497,10 @@ export default {
       }
       // 初始化订单列表数据
       this.initOrderList()
-      // 初始化销项数据
-      this.initSalesData()
+      // 初始化销项数据（如果没有从后端加载）
+      if (!this.outItems || this.outItems.length === 0) {
+        this.initSalesData()
+      }
     },
 
     // 打开经办人选择器
@@ -544,22 +549,26 @@ export default {
       try {
         const resp = await getContractItems(contractId)
         const list = resp && resp.data ? (resp.data.records || resp.data || []) : []
-        this.detailData.items = (list || []).map(item => ({
+        this.inItems = (list || []).map(item => ({
           goodNo: item.goodNo,
           goodType: item.goodType,
           goodName: item.goodName,
           goodModel: item.goodModel,
-          goodCount: item.goodCount,
+          goodCount: item.goodCount || 0,
           contractPrice: item.goodPrice || item.contractPrice || 0,
           goodPrice: item.goodPrice || 0,
-          goodTotalPrice: this.calcTotal(item.goodCount, (item.goodPrice || 0)),
-          goodWeight: item.goodWeight || '',
-          goodRemark: item.goodRemark
+          goodWeight: item.goodWeight || 0,
+          goodRating: item.goodRating || 0,
+          goodRatingPrice: item.goodRatingPrice || 0,
+          otherRatingPrice: item.otherRatingPrice || 0,
+          goodTotalPrice: this.calcTotal(item),
+          goodRemark: item.goodRemark || '',
+          direction: 'in'
         }))
         this.recalcOrderAmount()
       } catch (e) {
         this.$message.error('获取合同明细失败')
-        this.detailData.items = []
+        this.inItems = []
       } finally {
         this.itemsLoading = false
       }
@@ -569,8 +578,8 @@ export default {
 
     // 重新计算订单总金额
     recalcOrderAmount() {
-      if (!Array.isArray(this.detailData.items)) return
-      const sum = this.detailData.items.reduce((acc, it) => acc + (Number(it.goodTotalPrice) || 0), 0)
+      if (!Array.isArray(this.inItems)) return
+      const sum = this.inItems.reduce((acc, it) => acc + (Number(it.goodTotalPrice) || 0), 0)
       this.detailData.totalAmount = Number(sum.toFixed(2))
       // 同步货物总价到货物总金额字段
       this.detailData.goodsTotalAmount = Number(sum.toFixed(2))
@@ -640,11 +649,8 @@ export default {
         endTime: '',
         uploadTime: '',
         settlementTime: '', // 结算时间
-        traceabilityData: {
-          currentIdentifyCode: '',
-          currentFlowStep: '',
-          sourceCodes: []
-        },
+        identifyCode: '',
+        sourceCodes: [],
         processor: '',
         processorPhone: '',
         totalAmount: 0,
@@ -661,25 +667,7 @@ export default {
         deliveryAddress: '',
         paymentAccount: '',
         settlementPdfUrl: '', // 结算文件URL
-        applicationPdfUrl: '', // 申请文件URL
-        items: []
-      }
-    },
-    
-    // 处理追溯数据变更
-    handleTraceabilityChange(traceabilityData) {
-      this.detailData.traceabilityData = traceabilityData
-      
-      // 根据订单类型自动设置流转步骤
-      if (!traceabilityData.currentFlowStep && this.detailData.type) {
-        const stepMapping = {
-          'purchase': 'purchase',
-          'transport': 'transport', 
-          'process': 'process',
-          'storage': 'storage',
-          'sales': 'sales'
-        }
-        this.detailData.traceabilityData.currentFlowStep = stepMapping[this.detailData.type] || ''
+        applicationPdfUrl: '' // 申请文件URL
       }
     },
 
@@ -689,7 +677,24 @@ export default {
         if (valid) {
           this.submitLoading = true
           const api = this.dialogMode === 'add' ? createRecycle : updateRecycle
+          
+          // 构建提交参数
           const params = this.dialogMode === 'add' ? this.detailData : { ...this.detailData, id: this.detailData.id }
+          
+          // 合并进项和销项到统一的 items 数组
+          // 确保每个项都有正确的 direction 标记
+          const inItemsWithDirection = (this.inItems || []).map(item => ({
+            ...item,
+            direction: 'in'
+          }))
+          
+          const outItemsWithDirection = (this.outItems || []).map(item => ({
+            ...item,
+            direction: 'out'
+          }))
+          
+          // 合并为统一的 items 数组提交给后端
+          params.items = [...inItemsWithDirection, ...outItemsWithDirection]
 
           api(params).then(() => {
             this.$message.success(this.dialogMode === 'add' ? '新增成功' : '保存成功')
@@ -721,6 +726,22 @@ export default {
       return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
     },
 
+    // 计算合计金额
+    // 计算规则：货物总价 = （货物单价 * 数量 * 重量）* (1 + 评级系数) + 其他调价
+    calcTotal(item) {
+      const price = Number(item.goodPrice) || 0  // 货物单价
+      const count = Number(item.goodCount) || 0  // 数量
+      const weight = Number(item.goodWeight) || 0  // 重量
+      const rating = Number(item.goodRating) || 0  // 评级系数
+      const otherPrice = Number(item.otherRatingPrice) || 0  // 其他调价
+      
+      // 货物总价 = (货物单价 * 数量 * 重量) * (1 + 评级系数) + 其他调价
+      const basePrice = price * count * weight
+      const totalPrice = basePrice * (1 + rating) + otherPrice
+      
+      return Number(totalPrice.toFixed(2))
+    },
+
     // 移除标签页相关方法，不再需要
 
     // 初始化订单列表数据
@@ -744,21 +765,21 @@ export default {
 
     // 新增订单明细行
     addOrderItem(newItem) {
-      // 确保items数组存在
-      if (!this.detailData.items) {
-        this.detailData.items = []
+      // 确保inItems数组存在
+      if (!this.inItems) {
+        this.inItems = []
       }
 
-      this.detailData.items.push(newItem)
+      this.inItems.push(newItem)
     },
 
     // 删除选中的订单明细行
     deleteSelectedItems(selectedItems) {
       // 从原数组中移除选中的项
       selectedItems.forEach(selectedItem => {
-        const index = this.detailData.items.findIndex(item => item === selectedItem)
+        const index = this.inItems.findIndex(item => item === selectedItem)
         if (index > -1) {
-          this.detailData.items.splice(index, 1)
+          this.inItems.splice(index, 1)
         }
       })
 
@@ -773,13 +794,13 @@ export default {
 
     // 清空销项明细
     clearSalesItems() {
-      this.salesItems = []
+      this.outItems = []
       this.selectedSalesItems = []
     },
 
     // 从进项明细同步数据到销项明细
     syncFromPurchaseItems(newSalesItems) {
-      this.salesItems = newSalesItems
+      this.outItems = newSalesItems
     },
 
 
@@ -787,9 +808,7 @@ export default {
     // 初始化销项数据
     initSalesData() {
       // 模拟销项数据，实际项目中应该从API获取
-      this.salesItems = [
-        
-      ]
+      this.outItems = []
     },
 
     // 生成申请单PDF

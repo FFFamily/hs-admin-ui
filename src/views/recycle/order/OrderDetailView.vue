@@ -165,47 +165,91 @@
         </div>
       </el-card>
 
-      <!-- 订单明细 -->
+      <!-- 订单明细 - 使用标签页展示进项和销项 -->
       <el-card class="detail-card" shadow="never">
         <div slot="header" class="card-header">
           <span>订单明细</span>
         </div>
-        <el-table :data="orderItems" border fit style="width: 100%" v-loading="itemsLoading">
-          <el-table-column prop="goodNo" label="货物编号" width="180" align="center" show-overflow-tooltip />
-          <el-table-column prop="goodType" label="货物分类" width="160" align="center" show-overflow-tooltip />
-          <el-table-column prop="goodName" label="货物名称" min-width="160" show-overflow-tooltip />
-          <el-table-column prop="goodModel" label="货物型号" width="140" align="center" show-overflow-tooltip />
-          <el-table-column prop="goodCount" label="货物数量" width="120" align="center">
-            <template slot-scope="scope">
-              {{ scope.row.goodCount || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodWeight" label="货物重量" width="120" align="center">
-            <template slot-scope="scope">
-              {{ scope.row.goodWeight || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodPrice" label="货物单价" width="120" align="center">
-            <template slot-scope="scope">
-              <span v-if="scope.row.goodPrice" class="amount-text">¥{{ formatAmount(scope.row.goodPrice) }}</span>
-              <span v-else>--</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodTotalPrice" label="货物总价" width="140" align="center">
-            <template slot-scope="scope">
-              <span v-if="scope.row.goodTotalPrice" class="amount-text">¥{{ formatAmount(scope.row.goodTotalPrice) }}</span>
-              <span v-else>--</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodRemark" label="货物备注" min-width="180" show-overflow-tooltip>
-            <template slot-scope="scope">
-              {{ scope.row.goodRemark || '--' }}
-            </template>
-          </el-table-column>
-        </el-table>
-        <div v-if="!orderItems || orderItems.length === 0" class="no-data">
-          <el-empty description="暂无订单明细数据" />
-        </div>
+        
+        <el-tabs type="card">
+          <!-- 进项明细 -->
+          <el-tab-pane label="进项明细">
+            <span slot="label">
+              <i class="el-icon-box"></i> 进项明细 
+              <el-badge v-if="inItems.length > 0" :value="inItems.length" class="item-badge" />
+            </span>
+            
+            <el-table :data="inItems" border fit style="width: 100%" v-loading="itemsLoading">
+              <el-table-column prop="goodNo" label="货物编号" width="180" align="center" show-overflow-tooltip />
+              <el-table-column prop="goodType" label="货物分类" width="160" align="center" show-overflow-tooltip />
+              <el-table-column prop="goodName" label="货物名称" min-width="160" show-overflow-tooltip />
+              <el-table-column prop="goodModel" label="货物型号" width="140" align="center" show-overflow-tooltip />
+              <el-table-column prop="goodCount" label="货物数量" width="120" align="center">
+                <template slot-scope="scope">
+                  {{ scope.row.goodCount || '--' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="goodWeight" label="货物重量" width="120" align="center">
+                <template slot-scope="scope">
+                  {{ scope.row.goodWeight || '--' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="goodPrice" label="货物单价" width="120" align="center">
+                <template slot-scope="scope">
+                  <span v-if="scope.row.goodPrice" class="amount-text">¥{{ formatAmount(scope.row.goodPrice) }}</span>
+                  <span v-else>--</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="goodTotalPrice" label="货物总价" width="140" align="center">
+                <template slot-scope="scope">
+                  <span v-if="scope.row.goodTotalPrice" class="amount-text">¥{{ formatAmount(scope.row.goodTotalPrice) }}</span>
+                  <span v-else>--</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="goodRemark" label="货物备注" min-width="180" show-overflow-tooltip>
+                <template slot-scope="scope">
+                  {{ scope.row.goodRemark || '--' }}
+                </template>
+              </el-table-column>
+            </el-table>
+            <div v-if="!inItems || inItems.length === 0" class="no-data">
+              <el-empty description="暂无进项明细数据" />
+            </div>
+          </el-tab-pane>
+          
+          <!-- 销项明细 -->
+          <el-tab-pane label="销项明细">
+            <span slot="label">
+              <i class="el-icon-sold-out"></i> 销项明细 
+              <el-badge v-if="outItems.length > 0" :value="outItems.length" class="item-badge" />
+            </span>
+            
+            <el-table :data="outItems" border fit style="width: 100%" v-loading="itemsLoading">
+              <el-table-column prop="goodNo" label="货物编号" width="180" align="center" show-overflow-tooltip />
+              <el-table-column prop="goodType" label="货物分类" width="160" align="center" show-overflow-tooltip />
+              <el-table-column prop="goodName" label="货物名称" min-width="160" show-overflow-tooltip />
+              <el-table-column prop="goodModel" label="货物型号" width="140" align="center" show-overflow-tooltip />
+              <el-table-column prop="goodCount" label="货物数量" width="120" align="center">
+                <template slot-scope="scope">
+                  {{ scope.row.goodCount || '--' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="goodWeight" label="货物重量" width="120" align="center">
+                <template slot-scope="scope">
+                  {{ scope.row.goodWeight || '--' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="goodRemark" label="货物备注" min-width="180" show-overflow-tooltip>
+                <template slot-scope="scope">
+                  {{ scope.row.goodRemark || '--' }}
+                </template>
+              </el-table-column>
+            </el-table>
+            <div v-if="!outItems || outItems.length === 0" class="no-data">
+              <el-empty description="暂无销项明细数据" />
+            </div>
+          </el-tab-pane>
+        </el-tabs>
       </el-card>
     </div>
 
@@ -253,7 +297,8 @@ export default {
   data() {
     return {
       getOrderTypeTagType: ORDER_TYPE_TAG_TYPE,
-      orderItems: [],
+      inItems: [],  // 进项明细
+      outItems: [],  // 销项明细
       itemsLoading: false
     }
   },
@@ -266,9 +311,13 @@ export default {
     orderData: {
       handler(newVal) {
         if (newVal && newVal.items) {
-          this.orderItems = newVal.items || []
+          // 后端返回统一的 items 数组，前端根据 direction 分离
+          const items = newVal.items || []
+          this.inItems = items.filter(item => item.direction === 'in')
+          this.outItems = items.filter(item => item.direction === 'out')
         } else {
-          this.orderItems = []
+          this.inItems = []
+          this.outItems = []
         }
       },
       immediate: true,
@@ -285,8 +334,11 @@ export default {
           const orderData = response.data
           // 更新订单数据
           this.$emit('update:orderData', orderData)
-          // 设置订单明细
-          this.orderItems = orderData.items || []
+          
+          // 后端返回统一的 items 数组，前端根据 direction 分离
+          const items = orderData.items || []
+          this.inItems = items.filter(item => item.direction === 'in')
+          this.outItems = items.filter(item => item.direction === 'out')
         } catch (error) {
           this.$message.error('获取订单详情失败')
           console.error('获取订单详情失败:', error)
@@ -294,7 +346,10 @@ export default {
           this.itemsLoading = false
         }
       } else if (this.orderData && this.orderData.items) {
-        this.orderItems = this.orderData.items || []
+        // 后端返回统一的 items 数组，前端根据 direction 分离
+        const items = this.orderData.items || []
+        this.inItems = items.filter(item => item.direction === 'in')
+        this.outItems = items.filter(item => item.direction === 'out')
       }
     },
 
@@ -424,6 +479,16 @@ export default {
   .no-data {
     text-align: center;
     padding: 40px 0;
+  }
+
+  // 标签页徽章样式
+  .item-badge {
+    margin-left: 8px;
+    
+    ::v-deep .el-badge__content {
+      background-color: #409eff;
+      border: none;
+    }
   }
 }
 </style>

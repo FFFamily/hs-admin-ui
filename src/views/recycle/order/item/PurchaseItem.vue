@@ -16,9 +16,9 @@
       <el-table-column prop="goodNo" label="货物编号" fixed="left" width="180" align="center">
         <template slot-scope="scope">
           <el-input v-model="scope.row.goodNo" placeholder="选择货物" :disabled="!scope.row.goodNo" readonly>
-              <el-button slot="append" icon="el-icon-search" @click="openBusinessScopeSelector(scope.$index)">
-              </el-button>
-            </el-input>
+            <el-button slot="append" icon="el-icon-search" @click="openBusinessScopeSelector(scope.$index)">
+            </el-button>
+          </el-input>
         </template>
       </el-table-column>
       <el-table-column prop="goodType" label="货物分类" width="160" align="center">
@@ -36,42 +36,43 @@
           <el-input v-model="scope.row.goodModel" placeholder="请输入货物型号" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
-      <el-table-column prop="goodCount" label="货物数量" width="210" align="center">
+      <el-table-column prop="goodCount" label="货物数量" width="155" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.goodCount" :min="1" :precision="0"
-            @change="onItemFieldChange(scope.row)" :disabled="!scope.row.goodNo" />
+          <el-input-number v-model="scope.row.goodCount" style="width:130px;" :min="1" :precision="0" @change="onItemFieldChange(scope.row)"
+            :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
-      <el-table-column prop="goodWeight" label="货物重量" width="120" align="center">
+      <el-table-column prop="goodWeight" label="货物重量(kg)" width="160" align="center">
         <template slot-scope="scope">
-          <el-input v-model="scope.row.goodWeight" placeholder="请输入货物重量" :disabled="!scope.row.goodNo" />
+          <el-input-number v-model="scope.row.goodWeight" :min="0" :precision="2" controls-position="right"
+            @change="onItemFieldChange(scope.row)" placeholder="请输入货物重量" :disabled="!scope.row.goodNo"
+            style="width: 130px;" />
         </template>
       </el-table-column>
       <el-table-column prop="goodPrice" label="货物单价" width="210" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.goodPrice" :min="0" :precision="2" 
-            @change="onItemFieldChange(scope.row)" :disabled="!scope.row.goodNo" />
+          <el-input-number v-model="scope.row.goodPrice" :min="0" :precision="2" @change="onItemFieldChange(scope.row)"
+            :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
-   
+
       <el-table-column prop="goodRemark" label="货物备注" min-width="180">
         <template slot-scope="scope">
           <el-input v-model="scope.row.goodRemark" placeholder="请输入备注" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
-      <el-table-column label="评级系数" width="200" align="center">
+      <el-table-column label="评级系数" width="160" align="center">
         <template slot-scope="scope">
-          <el-input v-model="scope.row.goodRating" placeholder="请输入评级系数" :disabled="!scope.row.goodNo" />
+          <el-input-number v-model="scope.row.goodRating" :precision="4" controls-position="right"
+            @change="onItemFieldChange(scope.row)" placeholder="评级系数" :disabled="!scope.row.goodNo"
+            style="width: 130px;" />
         </template>
       </el-table-column>
-      <el-table-column label="评级调价" width="200" align="center">
+      <el-table-column label="其他调价" width="160" align="center">
         <template slot-scope="scope">
-          <el-input v-model="scope.row.goodRatingPrice" placeholder="请输入评级调价" :disabled="!scope.row.goodNo" />
-        </template>
-      </el-table-column>
-      <el-table-column label="其他调价" width="200" align="center">
-        <template slot-scope="scope">
-          <el-input v-model="scope.row.otherRatingPrice" placeholder="请输入其他调价" :disabled="!scope.row.goodNo" />
+          <el-input-number v-model="scope.row.otherRatingPrice" :precision="2" controls-position="right"
+            @change="onItemFieldChange(scope.row)" placeholder="其他调价" :disabled="!scope.row.goodNo"
+            style="width: 130px;" />
         </template>
       </el-table-column>
       <!-- 移除货物识别码列，使用订单主识别码 -->
@@ -80,7 +81,7 @@
           <el-input-number v-model="scope.row.orderAmount" placeholder="订单金额" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column> -->
-         <el-table-column prop="goodTotalPrice" label="货物总价" width="160" align="center">
+      <el-table-column prop="goodTotalPrice" label="货物总价" width="160" align="center">
         <template slot-scope="scope">
           <span class="amount-text">¥{{ formatAmount(scope.row.goodTotalPrice) }}</span>
         </template>
@@ -90,12 +91,9 @@
     <!-- 经营范围选择器 -->
     <BusinessScopeSelector :visible.sync="businessScopeSelectorVisible" title="选择经营范围" :multiple="false"
       :only-show-enabled="true" @confirm="handleBusinessScopeConfirm" @close="handleBusinessScopeClose" />
-    
+
     <!-- 订单列表弹窗组件 -->
-    <order-list-dialog 
-      :visible.sync="orderListVisible" 
-      @sync-items="handleSyncOrderItems"
-    />
+    <order-list-dialog :visible.sync="orderListVisible" @sync-items="handleSyncOrderItems" />
   </div>
 </template>
 
@@ -163,7 +161,11 @@ export default {
           currentRow.goodModel = selectedItem.goodModel || ''
           currentRow.goodPrice = selectedItem.publicPrice || 0
           currentRow.goodCount = 1
-          currentRow.goodTotalPrice = this.calcTotal(currentRow.goodCount, currentRow.goodPrice)
+          currentRow.goodWeight = 0
+          currentRow.goodRating = 0
+          currentRow.otherRatingPrice = 0
+          currentRow.goodTotalPrice = this.calcTotal(currentRow)
+          currentRow.direction = 'in'  // 确保进项标记
 
           // 触发重新计算订单金额
           this.$emit('recalc-order-amount')
@@ -211,9 +213,13 @@ export default {
         goodModel: '',
         goodCount: 0,
         goodPrice: 0,
+        goodWeight: 0,
+        goodRating: 0,
+        goodRatingPrice: 0,
+        otherRatingPrice: 0,
         goodTotalPrice: 0,
-        goodWeight: '',
-        goodRemark: ''
+        goodRemark: '',
+        direction: 'in'  // 进项标记
       }
 
       this.$emit('add-item', newItem)
@@ -242,88 +248,62 @@ export default {
 
     // 编辑明细时联动总价
     onItemFieldChange(row) {
-      const count = Number(row.goodCount) || 0
-      const price = Number(row.goodPrice) || 0
-      row.goodTotalPrice = this.calcTotal(count, price)
+      row.goodTotalPrice = this.calcTotal(row)
       this.$emit('recalc-order-amount')
     },
 
     // 计算合计金额
-    calcTotal(count, price) {
-      const c = Number(count) || 0
-      const p = Number(price) || 0
-      return Number((c * p).toFixed(2))
+    // 计算规则：货物总价 = （货物单价 * 数量 * 重量）* (1 + 评级系数) + 其他调价
+    calcTotal(item) {
+      const price = Number(item.goodPrice) || 0  // 货物单价
+      const count = Number(item.goodCount) || 0  // 数量
+      const weight = Number(item.goodWeight) || 0  // 重量
+      const rating = Number(item.goodRating) || 0  // 评级系数
+      const otherPrice = Number(item.otherRatingPrice) || 0  // 其他调价
+
+      // 货物总价 = (货物单价 * 数量 * 重量) * (1 + 评级系数) + 其他调价
+      const basePrice = price * count * weight
+      const totalPrice = basePrice * (1 + rating) + otherPrice
+
+      return Number(totalPrice.toFixed(2))
     },
 
     // 获取进项表格合计行数据
     getPurchaseSummary(param) {
       const { columns, data } = param
       const sums = []
+
       columns.forEach((column, index) => {
         if (index === 0) {
+          // 第一列显示"合计"文字
           sums[index] = '合计'
           return
         }
-        if (index === 1 || index === 2 || index === 3 || index === 4 || index === 6 || index === 9 || index === 10 || index === 11 || index === 12) {
-          // 货物编号、货物分类、货物名称、货物型号、货物重量、货物备注、评级系数、评级调价、其他调价、订单金额列不计算合计
-          sums[index] = '--'
-          return
-        }
-        if (index === 5) {
-          // 货物数量列计算合计
+
+        // 根据列的 property 判断是否需要合计
+        const property = column.property
+
+        if (property === 'goodCount') {
+          // 货物数量列 - 计算合计
           const values = data.map(item => Number(item.goodCount) || 0)
-          if (!values.every(value => isNaN(value))) {
-            sums[index] = values.reduce((prev, curr) => {
-              const value = Number(curr)
-              if (!isNaN(value)) {
-                return prev + curr
-              } else {
-                return prev
-              }
-            }, 0)
-          } else {
-            sums[index] = '--'
-          }
-          return
-        }
-        if (index === 7) {
-          // 货物单价列计算合计
-          const values = data.map(item => Number(item.goodPrice) || 0)
-          if (!values.every(value => isNaN(value))) {
-            const totalPrice = values.reduce((prev, curr) => {
-              const value = Number(curr)
-              if (!isNaN(value)) {
-                return prev + curr
-              } else {
-                return prev
-              }
-            }, 0)
-            sums[index] = totalPrice > 0 ? `¥${this.formatAmount(totalPrice)}` : '--'
-          } else {
-            sums[index] = '--'
-          }
-          return
-        }
-        if (index === 8) {
-          // 货物总价列计算合计
+          const total = values.reduce((prev, curr) => prev + curr, 0)
+          sums[index] = total > 0 ? total : '--'
+        } else if (property === 'goodWeight') {
+          // 货物重量列 - 计算合计
+          const values = data.map(item => Number(item.goodWeight) || 0)
+          const totalWeight = values.reduce((prev, curr) => prev + curr, 0)
+          sums[index] = totalWeight > 0 ? `${totalWeight.toFixed(2)} kg` : '--'
+        } else if (property === 'goodTotalPrice') {
+          // 货物总价列 - 计算合计
           const values = data.map(item => Number(item.goodTotalPrice) || 0)
-          if (!values.every(value => isNaN(value))) {
-            const totalPrice = values.reduce((prev, curr) => {
-              const value = Number(curr)
-              if (!isNaN(value)) {
-                return prev + curr
-              } else {
-                return prev
-              }
-            }, 0)
-            sums[index] = totalPrice > 0 ? `¥${this.formatAmount(totalPrice)}` : '--'
-          } else {
-            sums[index] = '--'
-          }
-          return
+          const totalPrice = values.reduce((prev, curr) => prev + curr, 0)
+          sums[index] = totalPrice > 0 ? `¥${this.formatAmount(totalPrice)}` : '--'
+        } else {
+          // 其他列不显示合计
+          sums[index] = '--'
         }
-        sums[index] = '--'
       })
+
       return sums
     },
 
@@ -346,7 +326,7 @@ export default {
     // 处理同步订单明细
     handleSyncOrderItems(syncData) {
       const { sourceOrderId, sourceOrderNo, sourceOrderName, items } = syncData
-      
+
       // 检查当前订单是否已有明细
       if (this.items && this.items.length > 0) {
         this.$confirm(
@@ -381,13 +361,14 @@ export default {
           goodModel: item.goodModel || '',
           goodCount: item.goodCount || 0,
           goodPrice: item.goodPrice || 0,
-          goodTotalPrice: this.calcTotal(item.goodCount || 0, item.goodPrice || 0),
-          goodWeight: item.goodWeight || '',
+          goodWeight: item.goodWeight || 0,
+          goodRating: item.goodRating || 0,
+          goodRatingPrice: item.goodRatingPrice || 0,
+          otherRatingPrice: item.otherRatingPrice || 0,
+          goodTotalPrice: this.calcTotal(item),
           goodRemark: item.goodRemark || '',
-          goodRating: item.goodRating || '',
-          goodRatingPrice: item.goodRatingPrice || '',
-          otherRatingPrice: item.otherRatingPrice || '',
-          orderAmount: item.orderAmount || 0
+          orderAmount: item.orderAmount || 0,
+          direction: 'in'  // 确保同步的明细为进项
         }))
 
         // 清空现有明细并添加新明细
