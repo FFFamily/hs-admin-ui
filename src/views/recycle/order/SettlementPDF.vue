@@ -206,13 +206,7 @@ export default {
       orderId: null,
       orderData: {},
       orderItems: [],
-      generating: false,
-      // 调价相关数据
-      ratingLevel: 'A',
-      ratingAdjustment: 500,
-      otherAdjustment: 200,
-      // 结算相关数据
-      pendingAmount: 5210
+      generating: false
     }
   },
   computed: {
@@ -230,9 +224,63 @@ export default {
     totalAmount() {
       return this.orderItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
     },
+    // 计算合作评级调价金额：(货物单价*数量*重量)*评级系数
+    ratingAdjustment() {
+      if (!this.orderData.items || this.orderData.items.length === 0) {
+        return 0
+      }
+      
+      return this.orderData.items.reduce((sum, item) => {
+        const unitPrice = Number(item.goodPrice) || 0
+        const quantity = Number(item.goodCount) || 0
+        const weight = Number(item.goodWeight) || 0
+        const ratingCoefficient = Number(item.ratingCoefficient) || 0
+        
+        // 合作评级调价 = (货物单价 * 数量 * 重量) * 评级系数
+        const baseAmount = unitPrice * quantity * weight
+        const ratingAdjust = baseAmount * ratingCoefficient
+        
+        return sum + ratingAdjust
+      }, 0)
+    },
+    // 计算其他调价金额：直接汇总订单明细中的其他调价
+    otherAdjustment() {
+      if (!this.orderData.items || this.orderData.items.length === 0) {
+        return 0
+      }
+      
+      return this.orderData.items.reduce((sum, item) => {
+        const otherAdjust = Number(item.otherAdjustAmount) || 0
+        return sum + otherAdjust
+      }, 0)
+    },
     // 计算总调价金额
     totalAdjustment() {
       return this.ratingAdjustment + this.otherAdjustment
+    },
+    // 计算评级等级（基于平均评级系数）
+    ratingLevel() {
+      if (!this.orderData.items || this.orderData.items.length === 0) {
+        return 'A'
+      }
+      
+      // 计算平均评级系数
+      const totalRating = this.orderData.items.reduce((sum, item) => {
+        return sum + (Number(item.ratingCoefficient) || 0)
+      }, 0)
+      
+      const avgRating = totalRating / this.orderData.items.length
+      
+      // 根据评级系数范围确定等级
+      if (avgRating >= 0.1) return 'A+'
+      if (avgRating >= 0.05) return 'A'
+      if (avgRating >= 0) return 'B'
+      if (avgRating >= -0.05) return 'C'
+      return 'D'
+    },
+    // 计算待结算金额：货物总价 + 调价总价
+    pendingAmount() {
+      return this.totalAmount + this.totalAdjustment
     }
   },
   created() {
@@ -258,14 +306,19 @@ export default {
           this.loadMockOrderItems()
         } else {
           // 将API返回的items转换为PDF需要的格式
-          this.orderItems = this.orderData.items.map((item, index) => ({
-            type: 'goods',
-            name: item.goodName || '商品' + (index + 1),
-            specification: item.goodModel || '标准规格',
-            quantity: item.goodCount || 0,
-            unitPrice: item.goodPrice || 0,
-            amount: item.goodTotalPrice || 0
-          }))
+          this.orderItems = this.orderData.items.map((item, index) => {
+            const quantity = Number(item.goodCount) || 0
+            const unitPrice = Number(item.goodPrice) || 0
+            
+            return {
+              type: item.goodType || '货物', // 直接使用订单明细中的货物类型
+              name: item.goodName || '商品' + (index + 1),
+              specification: item.goodModel || '标准规格',
+              quantity: quantity,
+              unitPrice: unitPrice,
+              amount: quantity * unitPrice // 金额 = 数量 × 单价
+            }
+          })
         }
       } catch (error) {
         console.error('获取订单数据失败:', error)
@@ -292,61 +345,90 @@ export default {
         endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         warehouseAddress: '北京市朝阳区仓库地址',
         deliveryAddress: '北京市朝阳区交付地址',
-        totalAmount: 100000
+        totalAmount: 100000,
+        items: [] // 初始化items数组，将在loadMockOrderItems中填充
       }
       this.loadMockOrderItems()
     },
     
     // 加载模拟订单明细数据
     loadMockOrderItems() {
-
-      // 模拟订单明细数据
-      this.orderItems = [
+      // 模拟原始订单明细数据（用于调价计算）
+      const mockItems = [
         {
-          type: 'goods',
-          name: '废纸',
-          specification: 'A4纸',
-          quantity: 1000,
-          unitPrice: 2.5,
-          amount: 2500
+          goodName: '废纸',
+          goodModel: 'A4纸',
+          goodCount: 1000,
+          goodWeight: 1.0,
+          goodPrice: 2.5,
+          ratingCoefficient: 0.08, // 8%评级系数
+          otherAdjustAmount: 100, // 其他调价100元
+          goodTotalPrice: 2500
         },
         {
-          type: 'goods',
-          name: '废塑料',
-          specification: 'PET瓶',
-          quantity: 500,
-          unitPrice: 3.2,
-          amount: 1600
+          goodName: '废塑料',
+          goodModel: 'PET瓶',
+          goodCount: 500,
+          goodWeight: 1.2,
+          goodPrice: 3.2,
+          ratingCoefficient: 0.05, // 5%评级系数
+          otherAdjustAmount: 50, // 其他调价50元
+          goodTotalPrice: 1600
         },
         {
-          type: 'transport',
-          name: '运输服务',
-          specification: '市内运输',
-          quantity: 50,
-          unitPrice: 15,
-          amount: 750
+          goodName: '运输服务',
+          goodModel: '市内运输',
+          goodCount: 50,
+          goodWeight: 1.0,
+          goodPrice: 15,
+          ratingCoefficient: 0, // 运输服务无评级系数
+          otherAdjustAmount: 0, // 无其他调价
+          goodTotalPrice: 750
         },
         {
-          type: 'goods',
-          name: '废金属',
-          specification: '废铁',
-          quantity: 200,
-          unitPrice: 1.8,
-          amount: 360
+          goodName: '废金属',
+          goodModel: '废铁',
+          goodCount: 200,
+          goodWeight: 0.8,
+          goodPrice: 1.8,
+          ratingCoefficient: 0.1, // 10%评级系数
+          otherAdjustAmount: 30, // 其他调价30元
+          goodTotalPrice: 360
         }
       ]
+
+      // 设置原始数据用于调价计算
+      this.orderData.items = mockItems
+
+      // 转换为表格显示格式
+      this.orderItems = mockItems.map(item => {
+        const quantity = Number(item.goodCount) || 0
+        const unitPrice = Number(item.goodPrice) || 0
+        
+        return {
+          type: item.goodName.includes('运输') ? 'transport' : 'goods',
+          name: item.goodName,
+          specification: item.goodModel,
+          quantity: quantity,
+          unitPrice: unitPrice,
+          amount: quantity * unitPrice // 金额 = 数量 × 单价
+        }
+      })
     },
 
     // 获取项目类型显示文本
     getItemTypeText(type) {
-      console.log(type)
+      // 如果type是订单明细中的货物类型（如：废纸、废塑料等），直接返回
+      // 如果是系统预定义的类型，则进行映射转换
       const typeMap = {
         'goods': '货物',
         'transport': '运输',
         'service': '服务',
         'other': '其他'
       }
-      return typeMap[type] || '未知'
+      
+      // 如果在预定义映射中找到，使用映射值；否则直接返回原值（货物类型）
+      return typeMap[type] || type || '未知'
     },
 
     // 返回上一页

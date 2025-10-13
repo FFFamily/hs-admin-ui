@@ -63,14 +63,14 @@
       </el-table-column>
       <el-table-column label="评级系数" width="160" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.goodRating" :precision="4" controls-position="right"
+          <el-input-number v-model="scope.row.ratingCoefficient" :precision="4" controls-position="right"
             @change="onItemFieldChange(scope.row)" placeholder="评级系数" :disabled="!scope.row.goodNo"
             style="width: 130px;" />
         </template>
       </el-table-column>
       <el-table-column label="其他调价" width="160" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.otherRatingPrice" :precision="2" controls-position="right"
+          <el-input-number v-model="scope.row.otherAdjustAmount" :precision="2" controls-position="right"
             @change="onItemFieldChange(scope.row)" placeholder="其他调价" :disabled="!scope.row.goodNo"
             style="width: 130px;" />
         </template>
@@ -162,8 +162,8 @@ export default {
           currentRow.goodPrice = selectedItem.publicPrice || 0
           currentRow.goodCount = 1
           currentRow.goodWeight = 0
-          currentRow.goodRating = 0
-          currentRow.otherRatingPrice = 0
+          currentRow.ratingCoefficient = 0
+          currentRow.otherAdjustAmount = 0
           currentRow.goodTotalPrice = this.calcTotal(currentRow)
           currentRow.direction = 'in'  // 确保进项标记
 
@@ -214,9 +214,9 @@ export default {
         goodCount: 0,
         goodPrice: 0,
         goodWeight: 0,
-        goodRating: 0,
+        ratingCoefficient: 0,
         goodRatingPrice: 0,
-        otherRatingPrice: 0,
+        otherAdjustAmount: 0,
         goodTotalPrice: 0,
         goodRemark: '',
         direction: 'in'  // 进项标记
@@ -258,8 +258,8 @@ export default {
       const price = Number(item.goodPrice) || 0  // 货物单价
       const count = Number(item.goodCount) || 0  // 数量
       const weight = Number(item.goodWeight) || 0  // 重量
-      const rating = Number(item.goodRating) || 0  // 评级系数
-      const otherPrice = Number(item.otherRatingPrice) || 0  // 其他调价
+      const rating = Number(item.ratingCoefficient) || 0  // 评级系数
+      const otherPrice = Number(item.otherAdjustAmount) || 0  // 其他调价
 
       // 货物总价 = (货物单价 * 数量 * 重量) * (1 + 评级系数) + 其他调价
       const basePrice = price * count * weight
@@ -362,9 +362,9 @@ export default {
           goodCount: item.goodCount || 0,
           goodPrice: item.goodPrice || 0,
           goodWeight: item.goodWeight || 0,
-          goodRating: item.goodRating || 0,
+          ratingCoefficient: item.ratingCoefficient || 0,
           goodRatingPrice: item.goodRatingPrice || 0,
-          otherRatingPrice: item.otherRatingPrice || 0,
+          otherAdjustAmount: item.otherAdjustAmount || 0,
           goodTotalPrice: this.calcTotal(item),
           goodRemark: item.goodRemark || '',
           orderAmount: item.orderAmount || 0,

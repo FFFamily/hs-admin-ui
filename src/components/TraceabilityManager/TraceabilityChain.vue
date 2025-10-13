@@ -92,12 +92,14 @@
 
     <!-- 关系图谱 -->
     <el-divider content-position="left">关系图谱</el-divider>
-    <div class="relationship-graph" ref="graphContainer" v-if="traceabilityData.length > 0">
-      <!-- 这里可以集成 ECharts 或其他图表库来显示关系图谱 -->
-      <div class="graph-placeholder">
-        <el-button type="primary" @click="showRelationshipGraph">显示关系图谱</el-button>
-      </div>
+    <div v-if="traceabilityData.length > 0">
+      <relationship-graph :traceability-data="traceabilityData" />
     </div>
+    <el-empty 
+      v-else 
+      description="暂无数据生成关系图谱"
+      :image-size="100"
+    />
   </div>
 </template>
 
@@ -108,9 +110,13 @@ import {
   getChangeReasonText,
   getGoodsStatusText
 } from '@/constants/traceability'
+import RelationshipGraph from './RelationshipGraph.vue'
 
 export default {
   name: 'TraceabilityChain',
+  components: {
+    RelationshipGraph
+  },
   props: {
     identifyCode: {
       type: String,
@@ -301,12 +307,6 @@ export default {
     // 查看订单详情
     viewOrderDetail(item) {
       this.$emit('view-order', item.orderId)
-    },
-
-    // 显示关系图谱
-    showRelationshipGraph() {
-      this.$message.info('关系图谱功能开发中...')
-      // 这里可以集成图表库来显示复杂的关系图谱
     },
 
     // 导出追溯数据

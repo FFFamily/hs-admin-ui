@@ -558,9 +558,9 @@ export default {
           contractPrice: item.goodPrice || item.contractPrice || 0,
           goodPrice: item.goodPrice || 0,
           goodWeight: item.goodWeight || 0,
-          goodRating: item.goodRating || 0,
+          ratingCoefficient: item.ratingCoefficient || 0,
           goodRatingPrice: item.goodRatingPrice || 0,
-          otherRatingPrice: item.otherRatingPrice || 0,
+          otherAdjustAmount: item.otherAdjustAmount || 0,
           goodTotalPrice: this.calcTotal(item),
           goodRemark: item.goodRemark || '',
           direction: 'in'
@@ -732,8 +732,8 @@ export default {
       const price = Number(item.goodPrice) || 0  // 货物单价
       const count = Number(item.goodCount) || 0  // 数量
       const weight = Number(item.goodWeight) || 0  // 重量
-      const rating = Number(item.goodRating) || 0  // 评级系数
-      const otherPrice = Number(item.otherRatingPrice) || 0  // 其他调价
+      const rating = Number(item.ratingCoefficient) || 0  // 评级系数
+      const otherPrice = Number(item.otherAdjustAmount) || 0  // 其他调价
       
       // 货物总价 = (货物单价 * 数量 * 重量) * (1 + 评级系数) + 其他调价
       const basePrice = price * count * weight

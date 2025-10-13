@@ -213,7 +213,7 @@ export default {
         } else {
           // 将API返回的items转换为PDF需要的格式
           this.orderItems = this.orderData.items.map((item, index) => ({
-            type: 'goods',
+            type: item.goodType || '货物', // 直接使用订单明细中的货物类型
             name: item.goodName || '商品' + (index + 1),
             specification: item.goodModel || '标准规格',
             remark: item.remark || '',
@@ -298,13 +298,17 @@ export default {
 
     // 获取项目类型显示文本
     getItemTypeText(type) {
+      // 如果type是订单明细中的货物类型（如：废纸、废塑料等），直接返回
+      // 如果是系统预定义的类型，则进行映射转换
       const typeMap = {
         'goods': '货物',
         'transport': '运输',
         'service': '服务',
         'other': '其他'
       }
-      return typeMap[type] || '未知'
+      
+      // 如果在预定义映射中找到，使用映射值；否则直接返回原值（货物类型）
+      return typeMap[type] || type || '未知'
     },
 
     // 获取流转方向文本
