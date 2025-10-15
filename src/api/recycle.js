@@ -98,4 +98,12 @@ export function batchCreateInvoice(data) {
     method: 'post',
     data
   })
+}
+
+// 根据识别码查询订单列表
+export function getOrdersByIdentifyCode(code) {
+  return request({
+    url: `/recycle/order/identifyCode/${code}`,
+    method: 'get'
+  })
 } 

@@ -30,25 +30,15 @@
                 </el-tag>
                 <span class="identify-code">{{ item.identifyCode }}</span>
               </div>
-              <el-button 
-                type="text" 
-                size="small" 
-                @click="viewOrderDetail(item)"
-                v-if="item.orderId"
-              >
-                查看订单
-              </el-button>
             </div>
             
             <div class="card-content">
               <!-- 货物信息 -->
-              <div class="goods-section">
+              <div class="goods-section" v-if="item.goods && item.goods.length > 0">
                 <h4>货物信息</h4>
                 <el-table :data="item.goods" size="small" border>
-                  <el-table-column prop="goodNo" label="货物编号" width="120" />
-                  <el-table-column prop="goodName" label="货物名称" min-width="150" />
-                  <el-table-column prop="goodCount" label="数量" width="80" align="center" />
-                  <el-table-column prop="goodWeight" label="重量" width="100" align="center" />
+                  <el-table-column prop="goodNo" label="货物编号" width="150" />
+                  <el-table-column prop="goodName" label="货物名称" min-width="200" />
                 </el-table>
               </div>
 
@@ -66,16 +56,6 @@
                     <span class="change-reason">({{ getChangeReasonText(source.changeReason) }})</span>
                   </el-tag>
                 </div>
-              </div>
-
-              <!-- 操作信息 -->
-              <div class="operation-section">
-                <el-descriptions :column="2" size="small" border>
-                  <el-descriptions-item label="操作人">{{ item.processor || '--' }}</el-descriptions-item>
-                  <el-descriptions-item label="操作时间">{{ formatDateTime(item.operationTime) }}</el-descriptions-item>
-                  <el-descriptions-item label="地点">{{ item.location || '--' }}</el-descriptions-item>
-                  <el-descriptions-item label="备注">{{ item.remark || '--' }}</el-descriptions-item>
-                </el-descriptions>
               </div>
             </div>
           </el-card>

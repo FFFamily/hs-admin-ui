@@ -61,20 +61,38 @@
         style="margin-top: 10px;"
         v-if="sourceCodes.length > 0"
       >
-        <el-table-column prop="identifyCode" label="源识别码" width="380">
+        <el-table-column prop="identifyCode" label="源识别码" width="250">
           <template slot-scope="scope">
-            <el-input 
-              v-model="scope.row.identifyCode" 
-              placeholder="请输入源识别码"
-              size="small"
-            />
+            <div style="display: flex; gap: 5px; align-items: center;">
+              <el-input 
+                v-model="scope.row.identifyCode" 
+                placeholder="请输入源识别码"
+                size="small"
+                style="flex: 1;"
+              />
+              <el-button 
+                type="primary" 
+                size="mini"
+                :disabled="!scope.row.identifyCode"
+                @click="showRelatedOrdersDialog(scope.$index)"
+              >
+                选择订单
+              </el-button>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="flowStep" label="来源订单类型" width="120">
+        <el-table-column prop="orderType" label="来源订单类型" width="120">
           <template slot-scope="scope">
-            <el-tag size="small" :type="getFlowStepTagType(scope.row.flowStep)">
-              {{ getFlowStepText(scope.row.flowStep) }}
+            <el-tag v-if="scope.row.orderType" size="small" :type="getOrderTypeTagType(scope.row.orderType)">
+              {{ getOrderTypeText(scope.row.orderType) }}
             </el-tag>
+            <span v-else style="color: #909399;">未选择</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="orderNo" label="来源订单编码" width="200" align="center">
+          <template slot-scope="scope">
+            <span v-if="scope.row.orderNo">{{ scope.row.orderNo }}</span>
+            <span v-else style="color: #909399;">--</span>
           </template>
         </el-table-column>
         <el-table-column prop="changeReason" label="变更原因" width="150">
@@ -93,7 +111,7 @@
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center">
+        <el-table-column label="操作" align="center" >
           <template slot-scope="scope">
             <el-button 
               type="danger" 
@@ -134,6 +152,51 @@
         @cancel="sourceCodeSelectorVisible = false"
       />
     </el-dialog>
+
+    <!-- 关联订单选择弹窗 -->
+    <el-dialog 
+      title="选择关联订单" 
+      :visible.sync="relatedOrdersDialogVisible" 
+      width="60%"
+      append-to-body
+      :close-on-click-modal="false"
+    >
+      <div v-loading="relatedOrdersLoading">
+        <el-table 
+          :data="relatedOrders" 
+          border 
+          size="small"
+          max-height="500"
+        >
+          <el-table-column prop="no" label="订单编码" width="200" align="center" show-overflow-tooltip />
+          <el-table-column prop="identifyCode" label="订单识别码" width="250" align="center" show-overflow-tooltip />
+          <el-table-column prop="type" label="订单类型" width="120" align="center">
+            <template slot-scope="scope">
+              <el-tag size="small" :type="getOrderTypeTagType(scope.row.type)">
+                {{ getOrderTypeText(scope.row.type) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" align="center">
+            <template slot-scope="scope">
+              <el-button 
+                type="primary" 
+                size="mini"
+                @click="handleSelectOrder(scope.row)"
+              >
+                选择
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        
+        <el-empty 
+          v-if="!relatedOrdersLoading && relatedOrders.length === 0" 
+          description="没有找到相关订单"
+          :image-size="100"
+        />
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -143,6 +206,7 @@ import {
   getFlowStepText,
   getChangeReasonText
 } from '@/constants/traceability'
+import { getOrdersByIdentifyCode } from '@/api/recycle'
 import TraceabilityChain from './TraceabilityChain.vue'
 import InventoryIdentifyCodeSelector from './InventoryIdentifyCodeSelector.vue'
 
@@ -179,6 +243,10 @@ export default {
       changeReasonOptions: IDENTIFY_CODE_CHANGE_REASON_OPTIONS,
       traceabilityDialogVisible: false,
       sourceCodeSelectorVisible: false,
+      relatedOrdersDialogVisible: false,
+      relatedOrders: [],
+      relatedOrdersLoading: false,
+      currentSelectingIndex: null, // 当前正在选择关联订单的源识别码索引
       isUpdating: false // 防止循环更新的标志
     }
   },
@@ -218,7 +286,9 @@ export default {
     addSourceCode() {
       this.sourceCodes.push({
         identifyCode: '',
-        flowStep: '',
+        orderType: '',
+        orderId: null,
+        orderNo: '',
         goodName: '',
         goodCount: 0,
         goodWeight: '',
@@ -241,7 +311,9 @@ export default {
       selectedCodes.forEach(code => {
         this.sourceCodes.push({
           identifyCode: code.identifyCode,
-          flowStep: code.flowStep,
+          orderType: code.orderType || code.type || '',
+          orderId: code.orderId || null,
+          orderNo: code.orderNo || code.no || '',
           goodName: code.goodName,
           goodCount: code.goodCount,
           goodWeight: code.goodWeight,
@@ -296,6 +368,73 @@ export default {
       this.$nextTick(() => {
         this.isUpdating = false
       })
+    },
+
+    // 显示关联订单弹窗
+    async showRelatedOrdersDialog(index) {
+      const sourceCode = this.sourceCodes[index]
+      if (!sourceCode.identifyCode) {
+        this.$message.warning('请先输入源识别码')
+        return
+      }
+      
+      this.currentSelectingIndex = index
+      this.relatedOrdersDialogVisible = true
+      this.relatedOrdersLoading = true
+      this.relatedOrders = []
+      
+      try {
+        const response = await getOrdersByIdentifyCode(sourceCode.identifyCode)
+        this.relatedOrders = response.data || []
+        
+        if (this.relatedOrders.length === 0) {
+          this.$message.info('未找到相关订单')
+        }
+      } catch (error) {
+        console.error('获取关联订单失败:', error)
+        this.$message.error('获取关联订单失败')
+      } finally {
+        this.relatedOrdersLoading = false
+      }
+    },
+
+    // 选择订单
+    handleSelectOrder(order) {
+      if (this.currentSelectingIndex !== null) {
+        // 更新对应行的数据
+        this.$set(this.sourceCodes[this.currentSelectingIndex], 'orderId', order.id)
+        this.$set(this.sourceCodes[this.currentSelectingIndex], 'orderNo', order.no)
+        this.$set(this.sourceCodes[this.currentSelectingIndex], 'orderType', order.type)
+        
+        this.$message.success(`已关联订单：${order.no}`)
+        this.relatedOrdersDialogVisible = false
+        this.currentSelectingIndex = null
+      }
+    },
+
+    // 获取订单类型标签类型
+    getOrderTypeTagType(type) {
+      const typeMap = {
+        'purchase': 'success',
+        'transport': 'info',
+        'process': 'warning',
+        'storage': 'primary',
+        'sales': 'danger'
+      }
+      return typeMap[type] || 'info'
+    },
+
+    // 获取订单类型文本
+    getOrderTypeText(type) {
+      const textMap = {
+        'purchase': '采购订单',
+        'transport': '运输订单',
+        'process': '加工订单',
+        'sales': '销售订单',
+        'storage': '仓储订单',
+        'other': '其他订单'
+      }
+      return textMap[type] || '未知类型'
     }
   }
 }
