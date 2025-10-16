@@ -135,7 +135,7 @@ export class PDFGenerator {
     pdf.setFontSize(12)
     pdf.setFont('helvetica', 'bold')
     pdf.text(title, pageWidth / 2, margin + 5, { align: 'center' })
-    
+
     // 添加分隔线
     pdf.setDrawColor(200, 200, 200)
     pdf.line(margin, margin + 10, pageWidth - margin, margin + 10)
@@ -152,7 +152,7 @@ export class PDFGenerator {
    */
   static addFooter(pdf, currentPage, totalPages, pageWidth, pageHeight, margin) {
     const footerY = pageHeight - margin
-    
+
     // 添加页码
     pdf.setFontSize(10)
     pdf.setFont('helvetica', 'normal')
@@ -162,7 +162,7 @@ export class PDFGenerator {
       footerY,
       { align: 'center' }
     )
-    
+
     // 添加生成时间
     const now = new Date()
     const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -360,4 +360,4 @@ export class PDFGenerator {
   }
 }
 
-export default PDFGenerator 
+export default PDFGenerator

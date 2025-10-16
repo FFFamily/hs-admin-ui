@@ -1,11 +1,11 @@
 // 租赁商品 接口
 import request from '@/utils/request'
 // 分页获取租赁商品列表
-export function getLeaseGoodListPage(pageParam,searchParam) {
+export function getLeaseGoodListPage(pageParam, searchParam) {
   return request({
     url: '/lease/good/page',
     method: 'get',
-    params:{
+    params: {
       ...pageParam,
       ...searchParam
     }

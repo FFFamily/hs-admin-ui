@@ -1,3 +1,3 @@
 import AgentSelector from './index.vue'
 
-export default AgentSelector 
+export default AgentSelector

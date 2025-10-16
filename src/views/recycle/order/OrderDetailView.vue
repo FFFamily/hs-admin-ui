@@ -154,9 +154,8 @@
         </el-row>
       </el-card>
 
-
       <!-- 备注信息 -->
-      <el-card class="detail-card" shadow="never" v-if="orderData.remark">
+      <el-card v-if="orderData.remark" class="detail-card" shadow="never">
         <div slot="header" class="card-header">
           <span>备注信息</span>
         </div>
@@ -170,16 +169,16 @@
         <div slot="header" class="card-header">
           <span>订单明细</span>
         </div>
-        
+
         <el-tabs type="card">
           <!-- 进项明细 -->
           <el-tab-pane label="进项明细">
             <span slot="label">
-              <i class="el-icon-box"></i> 进项明细 
+              <i class="el-icon-box" /> 进项明细
               <el-badge v-if="inItems.length > 0" :value="inItems.length" class="item-badge" />
             </span>
-            
-            <el-table :data="inItems" border fit style="width: 100%" v-loading="itemsLoading">
+
+            <el-table v-loading="itemsLoading" :data="inItems" border fit style="width: 100%">
               <el-table-column prop="goodNo" label="货物编号" width="180" align="center" show-overflow-tooltip />
               <el-table-column prop="goodType" label="货物分类" width="160" align="center" show-overflow-tooltip />
               <el-table-column prop="goodName" label="货物名称" min-width="160" show-overflow-tooltip />
@@ -216,15 +215,15 @@
               <el-empty description="暂无进项明细数据" />
             </div>
           </el-tab-pane>
-          
+
           <!-- 销项明细 -->
           <el-tab-pane label="销项明细">
             <span slot="label">
-              <i class="el-icon-sold-out"></i> 销项明细 
+              <i class="el-icon-sold-out" /> 销项明细
               <el-badge v-if="outItems.length > 0" :value="outItems.length" class="item-badge" />
             </span>
-            
-            <el-table :data="outItems" border fit style="width: 100%" v-loading="itemsLoading">
+
+            <el-table v-loading="itemsLoading" :data="outItems" border fit style="width: 100%">
               <el-table-column prop="goodNo" label="货物编号" width="180" align="center" show-overflow-tooltip />
               <el-table-column prop="goodType" label="货物分类" width="160" align="center" show-overflow-tooltip />
               <el-table-column prop="goodName" label="货物名称" min-width="160" show-overflow-tooltip />
@@ -269,8 +268,8 @@
 <script>
 import { parseTime } from '@/utils'
 import { getRecycleDetail } from '@/api/recycle'
-import { 
-  ORDER_TYPE_OPTIONS, 
+import {
+  ORDER_TYPE_OPTIONS,
   ORDER_STATUS_OPTIONS,
   ORDER_TYPE_TAG_TYPE,
   getOrderStatusTagType,
@@ -297,8 +296,8 @@ export default {
   data() {
     return {
       getOrderTypeTagType: ORDER_TYPE_TAG_TYPE,
-      inItems: [],  // 进项明细
-      outItems: [],  // 销项明细
+      inItems: [], // 进项明细
+      outItems: [], // 销项明细
       itemsLoading: false
     }
   },
@@ -334,7 +333,7 @@ export default {
           const orderData = response.data
           // 更新订单数据
           this.$emit('update:orderData', orderData)
-          
+
           // 后端返回统一的 items 数组，前端根据 direction 分离
           const items = orderData.items || []
           this.inItems = items.filter(item => item.direction === 'in')
@@ -484,7 +483,7 @@ export default {
   // 标签页徽章样式
   .item-badge {
     margin-left: 8px;
-    
+
     ::v-deep .el-badge__content {
       background-color: #409eff;
       border: none;

@@ -59,4 +59,4 @@ export function batchDeleteAgent(ids) {
     method: 'delete',
     data: { ids }
   })
-} 
+}

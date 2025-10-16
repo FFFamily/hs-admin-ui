@@ -27,8 +27,12 @@
         <el-table-column label="操作" fixed="right" width="400">
           <template slot-scope="scope">
             <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button v-if="scope.row.status === 'disable'" size="mini" type="success"
-              @click="handleEnable(scope.row)">
+            <el-button
+              v-if="scope.row.status === 'disable'"
+              size="mini"
+              type="success"
+              @click="handleEnable(scope.row)"
+            >
               启用
             </el-button>
             <el-button v-if="scope.row.status === 'use'" size="mini" type="warning" @click="handleDisable(scope.row)">
@@ -39,13 +43,19 @@
         </el-table-column>
       </el-table>
       <div style="margin-top: 20px; text-align: right;">
-        <el-pagination background layout="total, prev, pager, next, jumper" :total="total" :page-size="pageSize"
-          :current-page.sync="page" @current-change="fetchList" />
+        <el-pagination
+          background
+          layout="total, prev, pager, next, jumper"
+          :total="total"
+          :page-size="pageSize"
+          :current-page.sync="page"
+          @current-change="fetchList"
+        />
       </div>
     </el-card>
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="500px">
-      <el-form :model="form" :rules="form.id ? rules : updateRules" ref="form" label-width="100px">
+      <el-form ref="form" :model="form" :rules="form.id ? rules : updateRules" label-width="100px">
         <el-form-item label="登录账号" prop="username">
           <el-input v-model="form.username" placeholder="请输入登录账号" />
         </el-form-item>
@@ -59,8 +69,14 @@
           <el-input v-model="form.phone" placeholder="请输入手机号" />
         </el-form-item>
         <el-form-item label="头像" prop="avatar">
-          <ImageUploader v-model="form.avatar" :multiple="false" :limit="1" :list-type="'picture-card'"
-            :tips="'支持 JPG、PNG、GIF 格式，大小不超过 2MB'" @success="handleAvatarSuccess" />
+          <ImageUploader
+            v-model="form.avatar"
+            :multiple="false"
+            :limit="1"
+            :list-type="'picture-card'"
+            :tips="'支持 JPG、PNG、GIF 格式，大小不超过 2MB'"
+            @success="handleAvatarSuccess"
+          />
         </el-form-item>
         <el-form-item label="用户状态" prop="status">
           <el-select v-model="form.status" placeholder="请选择用户状态">
@@ -117,7 +133,7 @@ export default {
         password: [
           { required: true, message: '请输入登录密码', trigger: 'blur' },
           { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
-        ],
+        ]
       },
       updateRules: {
         username: [

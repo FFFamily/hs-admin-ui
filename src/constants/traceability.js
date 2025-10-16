@@ -1,10 +1,10 @@
 // 货物流转步骤枚举
 export const FLOW_STEPS = {
-  PURCHASE: 'purchase',     // 采购
-  TRANSPORT: 'transport',   // 运输
-  PROCESS: 'process',       // 加工
-  STORAGE: 'storage',       // 仓储
-  SALES: 'sales'           // 销售
+  PURCHASE: 'purchase', // 采购
+  TRANSPORT: 'transport', // 运输
+  PROCESS: 'process', // 加工
+  STORAGE: 'storage', // 仓储
+  SALES: 'sales' // 销售
 }
 
 // 流转步骤选项
@@ -18,14 +18,14 @@ export const FLOW_STEP_OPTIONS = [
 
 // 识别码变更原因枚举
 export const IDENTIFY_CODE_CHANGE_REASONS = {
-  INITIAL: 'initial',           // 初始创建
-  MERGE: 'merge',              // 合并批次
-  SPLIT: 'split',              // 分拆批次
-  REPROCESS: 'reprocess',      // 重新加工
-  REPACKAGE: 'repackage',      // 重新包装
+  INITIAL: 'initial', // 初始创建
+  MERGE: 'merge', // 合并批次
+  SPLIT: 'split', // 分拆批次
+  REPROCESS: 'reprocess', // 重新加工
+  REPACKAGE: 'repackage', // 重新包装
   QUALITY_CHANGE: 'quality_change', // 品质变化
   CATEGORY_CHANGE: 'category_change', // 分类变化
-  OTHER: 'other'               // 其他原因
+  OTHER: 'other' // 其他原因
 }
 
 // 识别码变更原因选项
@@ -42,11 +42,11 @@ export const IDENTIFY_CODE_CHANGE_REASON_OPTIONS = [
 
 // 货物状态枚举
 export const GOODS_STATUS = {
-  IN_STOCK: 'in_stock',        // 在库
-  IN_TRANSIT: 'in_transit',    // 在途
-  PROCESSING: 'processing',     // 加工中
-  COMPLETED: 'completed',       // 已完成
-  SOLD: 'sold'                 // 已销售
+  IN_STOCK: 'in_stock', // 在库
+  IN_TRANSIT: 'in_transit', // 在途
+  PROCESSING: 'processing', // 加工中
+  COMPLETED: 'completed', // 已完成
+  SOLD: 'sold' // 已销售
 }
 
 // 货物状态选项
@@ -65,7 +65,8 @@ export function getFlowStepText(step) {
     [FLOW_STEPS.TRANSPORT]: '运输',
     [FLOW_STEPS.PROCESS]: '加工',
     [FLOW_STEPS.STORAGE]: '仓储',
-    [FLOW_STEPS.SALES]: '销售'
+    [FLOW_STEPS.SALES]: '销售',
+    'current': '当前订单'
   }
   return textMap[step] || '未知步骤'
 }
@@ -80,7 +81,8 @@ export function getChangeReasonText(reason) {
     [IDENTIFY_CODE_CHANGE_REASONS.REPACKAGE]: '重新包装',
     [IDENTIFY_CODE_CHANGE_REASONS.QUALITY_CHANGE]: '品质变化',
     [IDENTIFY_CODE_CHANGE_REASONS.CATEGORY_CHANGE]: '分类变化',
-    [IDENTIFY_CODE_CHANGE_REASONS.OTHER]: '其他原因'
+    [IDENTIFY_CODE_CHANGE_REASONS.OTHER]: '其他原因',
+    'trace_relation': '追溯关联'
   }
   return textMap[reason] || '未知原因'
 }
@@ -106,10 +108,10 @@ export function generateIdentifyCode(step, timestamp = Date.now()) {
     [FLOW_STEPS.STORAGE]: 'STO',
     [FLOW_STEPS.SALES]: 'SAL'
   }
-  
+
   const prefix = stepPrefix[step] || 'UNK'
   const dateStr = new Date(timestamp).toISOString().slice(0, 10).replace(/-/g, '')
   const randomStr = Math.random().toString(36).substr(2, 6).toUpperCase()
-  
+
   return `${prefix}${dateStr}${randomStr}`
 }

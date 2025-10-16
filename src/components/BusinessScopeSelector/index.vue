@@ -9,7 +9,7 @@
   >
     <div class="business-scope-selector">
       <!-- 搜索区域 -->
-      <el-form :inline="true" :model="searchForm" ref="searchFormRef">
+      <el-form ref="searchFormRef" :inline="true" :model="searchForm">
         <el-form-item label="货物类型" prop="goodType">
           <el-input
             v-model="searchForm.goodType"
@@ -18,7 +18,7 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="货物名称" prop="goodName">
@@ -29,7 +29,7 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="规格型号" prop="goodModel">
@@ -40,7 +40,7 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
       </el-form>
@@ -48,14 +48,14 @@
       <!-- 经营范围列表 -->
       <div class="business-scope-list-container">
         <el-table
+          v-loading="loading"
           :data="filteredBusinessScopeList"
           style="width: 100%"
           highlight-current-row
           border
+          :row-class-name="getRowClassName"
           @selection-change="handleSelectionChange"
           @row-click="handleRowClick"
-          :row-class-name="getRowClassName"
-          v-loading="loading"
         >
           <!-- 多选列 -->
           <el-table-column
@@ -64,26 +64,26 @@
             width="55"
             :selectable="isSelectable"
           />
-          
+
           <!-- 编号列 -->
           <el-table-column prop="no" label="编号" width="80" align="center" />
-          
+
           <!-- 货物类型列 -->
           <el-table-column prop="goodType" label="货物类型" min-width="120" align="center" />
-          
+
           <!-- 货物名称列 -->
           <el-table-column prop="goodName" label="货物名称" min-width="150" align="center" />
-          
+
           <!-- 规格型号列 -->
           <el-table-column prop="goodModel" label="规格型号" min-width="150" align="center" />
-          
+
           <!-- 公示价格列 -->
           <el-table-column prop="publicPrice" label="公示价格" width="120" align="center">
             <template slot-scope="scope">
               <span class="price">¥{{ scope.row.publicPrice || 0 }}</span>
             </template>
           </el-table-column>
-          
+
           <!-- 状态列 -->
           <el-table-column prop="isShow" label="状态" width="80" align="center">
             <template slot-scope="scope">
@@ -96,7 +96,7 @@
       </div>
 
       <!-- 分页 -->
-      <div class="pagination-container" v-if="showPagination">
+      <div v-if="showPagination" class="pagination-container">
         <el-pagination
           background
           layout="total, prev, pager, next, jumper"
@@ -108,7 +108,7 @@
       </div>
 
       <!-- 已选择经营范围展示 -->
-      <div class="selected-business-scopes" v-if="multiple && selectedBusinessScopes.length > 0">
+      <div v-if="multiple && selectedBusinessScopes.length > 0" class="selected-business-scopes">
         <div class="selected-title">
           <span>已选择经营范围 ({{ selectedBusinessScopes.length }})：</span>
           <el-button type="text" @click="clearSelection">清空选择</el-button>
@@ -118,8 +118,8 @@
             v-for="item in selectedBusinessScopes"
             :key="item.id"
             closable
-            @close="removeBusinessScope(item)"
             style="margin-right: 8px; margin-bottom: 8px;"
+            @close="removeBusinessScope(item)"
           >
             {{ item.goodType }} - {{ item.goodName }} ({{ item.goodModel }})
           </el-tag>
@@ -129,7 +129,7 @@
 
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleConfirm" :disabled="!canConfirm">
+      <el-button type="primary" :disabled="!canConfirm" @click="handleConfirm">
         {{ confirmText }}
       </el-button>
     </div>
@@ -252,12 +252,12 @@ export default {
           pageNum: this.currentPage,
           pageSize: this.pageSize
         }
-        
+
         // 如果只显示启用的经营范围
         if (this.onlyShowEnabled) {
           params.isShow = 'Y'
         }
-        
+
         const response = await getBusinessScopePage(params)
         if (response && response.data) {
           this.businessScopeList = response.data.records || []
@@ -274,18 +274,18 @@ export default {
 
     // 搜索处理
     handleSearch() {
-      if (!this.searchForm.goodType.trim() && 
-          !this.searchForm.goodName.trim() && 
+      if (!this.searchForm.goodType.trim() &&
+          !this.searchForm.goodName.trim() &&
           !this.searchForm.goodModel.trim()) {
         this.filteredBusinessScopeList = [...this.businessScopeList]
         return
       }
-      
+
       this.filteredBusinessScopeList = this.businessScopeList.filter(item => {
         const goodType = this.searchForm.goodType.toLowerCase()
         const goodName = this.searchForm.goodName.toLowerCase()
         const goodModel = this.searchForm.goodModel.toLowerCase()
-        
+
         return (!goodType || (item.goodType && item.goodType.toLowerCase().includes(goodType))) &&
                (!goodName || (item.goodName && item.goodName.toLowerCase().includes(goodName))) &&
                (!goodModel || (item.goodModel && item.goodModel.toLowerCase().includes(goodModel)))
@@ -306,7 +306,7 @@ export default {
     // 行点击处理（单选模式）
     handleRowClick(row, column, event) {
       if (this.multiple) return
-      
+
       // 单选模式，直接选择该行
       this.selectedBusinessScopes = [row]
     },
@@ -363,7 +363,7 @@ export default {
   .business-scope-selector {
     .search-container {
       margin-bottom: 20px;
-      
+
       .search-input {
         width: 200px;
       }
@@ -372,22 +372,22 @@ export default {
     .business-scope-list-container {
       max-height: 400px;
       overflow-y: auto;
-      
+
       .selected-row {
         background-color: #e6f7ff !important;
         border-left: 4px solid #1890ff !important;
-        
+
         &:hover {
           background-color: #bae7ff !important;
         }
       }
-      
+
       // 增强选中行的视觉效果
       .el-table__row.selected-row {
         td {
           background-color: #e6f7ff !important;
         }
-        
+
         &:hover td {
           background-color: #bae7ff !important;
         }
@@ -404,7 +404,7 @@ export default {
       padding: 15px;
       background-color: #f8f9fa;
       border-radius: 4px;
-      
+
       .selected-title {
         display: flex;
         justify-content: space-between;
@@ -413,7 +413,7 @@ export default {
         font-weight: 500;
         color: #606266;
       }
-      
+
       .selected-tags {
         .el-tag {
           margin-right: 8px;
@@ -438,13 +438,13 @@ export default {
 ::v-deep .selected-row {
   background-color: #e6f7ff !important;
   border-left: 4px solid #1890ff !important;
-  
+
   &:hover {
     background-color: #bae7ff !important;
   }
-  
+
   td {
     background-color: #e6f7ff !important;
   }
 }
-</style> 
+</style>

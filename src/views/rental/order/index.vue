@@ -13,7 +13,7 @@
           <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
         <el-tooltip content="状态说明：待审核 → 租赁中 → 待开票 → 已完成" placement="top">
-          <i class="el-icon-question" style="margin-left: 8px; color: #909399; cursor: help;"></i>
+          <i class="el-icon-question" style="margin-left: 8px; color: #909399; cursor: help;" />
         </el-tooltip>
       </el-form-item>
       <el-form-item>
@@ -80,13 +80,21 @@
           <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           <!-- 待审核状态时显示审核通过按钮 -->
-          <el-button v-if="scope.row.status === 'PENDING_REVIEW'" size="mini" type="success"
-            @click="handleApprove(scope.row)">
+          <el-button
+            v-if="scope.row.status === 'PENDING_REVIEW'"
+            size="mini"
+            type="success"
+            @click="handleApprove(scope.row)"
+          >
             审核通过
           </el-button>
           <!--租赁中状态时才显示上传发票按钮-->
-          <el-button v-if="scope.row.status === 'LEASING'" size="mini" type="primary"
-            @click="handleUploadInvoice(scope.row)">
+          <el-button
+            v-if="scope.row.status === 'LEASING'"
+            size="mini"
+            type="primary"
+            @click="handleUploadInvoice(scope.row)"
+          >
             确认开票
           </el-button>
         </template>
@@ -94,19 +102,25 @@
     </el-table>
     <!-- 分页组件 -->
     <div class="pagination-container" style="margin-top: 20px;">
-      <el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="total"
-        :current-page="currentPage" :page-size="pageSize" @size-change="handleSizeChange"
-        @current-change="handleCurrentChange" />
+      <el-pagination
+        background
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
     </div>
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="1200px">
-      <el-form :model="form" :rules="formRules" ref="form" label-width="120px">
+      <el-form ref="form" :model="form" :rules="formRules" label-width="120px">
         <!-- 基本信息 -->
         <el-divider content-position="left">基本信息</el-divider>
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="用户" prop="userName">
-              <el-input @focus="searchUserSelectorVisible = true" v-model="form.userName" />
+              <el-input v-model="form.userName" @focus="searchUserSelectorVisible = true" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -121,14 +135,24 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="押金金额" prop="depositAmount">
-              <el-input-number v-model="form.depositAmount" :min="0" :precision="2" style="width: 100%"
-                :disabled="form.id && form.status !== 'PENDING_REVIEW'" />
+              <el-input-number
+                v-model="form.depositAmount"
+                :min="0"
+                :precision="2"
+                style="width: 100%"
+                :disabled="form.id && form.status !== 'PENDING_REVIEW'"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="已支付金额" prop="paidAmount">
-              <el-input-number v-model="form.paidAmount" :min="0" :precision="2" style="width: 100%"
-                :disabled="form.id && form.status !== 'PENDING_REVIEW'" />
+              <el-input-number
+                v-model="form.paidAmount"
+                :min="0"
+                :precision="2"
+                style="width: 100%"
+                :disabled="form.id && form.status !== 'PENDING_REVIEW'"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -138,14 +162,26 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="租赁开始时间" prop="leaseStartTime">
-              <el-date-picker v-model="form.leaseStartTime" type="datetime" placeholder="选择租赁开始时间" style="width: 100%"
-                @change="calculateLeaseDays" :disabled="form.id && form.status !== 'PENDING_REVIEW'" />
+              <el-date-picker
+                v-model="form.leaseStartTime"
+                type="datetime"
+                placeholder="选择租赁开始时间"
+                style="width: 100%"
+                :disabled="form.id && form.status !== 'PENDING_REVIEW'"
+                @change="calculateLeaseDays"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="租赁结束时间" prop="leaseEndTime">
-              <el-date-picker v-model="form.leaseEndTime" type="datetime" placeholder="选择租赁结束时间" style="width: 100%"
-                @change="calculateLeaseDays" :disabled="form.id && form.status !== 'PENDING_REVIEW'" />
+              <el-date-picker
+                v-model="form.leaseEndTime"
+                type="datetime"
+                placeholder="选择租赁结束时间"
+                style="width: 100%"
+                :disabled="form.id && form.status !== 'PENDING_REVIEW'"
+                @change="calculateLeaseDays"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -209,13 +245,13 @@
 
     <!-- 订单明细弹窗 -->
     <el-dialog :title="itemDialogTitle" :visible.sync="itemDialogVisible" width="800px">
-      <el-form :model="itemForm" :rules="itemFormRules" ref="itemForm" label-width="120px">
+      <el-form ref="itemForm" :model="itemForm" :rules="itemFormRules" label-width="120px">
         <!-- 商品信息 -->
         <el-divider content-position="left">商品信息</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="商品" prop="goodId">
-              <el-select v-model="itemForm.goodId" placeholder="请选择商品" @change="handleGoodChange" style="width: 100%">
+              <el-select v-model="itemForm.goodId" placeholder="请选择商品" style="width: 100%" @change="handleGoodChange">
                 <el-option v-for="good in goodOptions" :key="good.id" :label="good.name" :value="good.id" />
               </el-select>
             </el-form-item>
@@ -237,8 +273,12 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="租赁数量" prop="quantity">
-              <el-input-number v-model="itemForm.quantity" :min="1" @change="calculateItemSubtotal"
-                style="width: 100%" />
+              <el-input-number
+                v-model="itemForm.quantity"
+                :min="1"
+                style="width: 100%"
+                @change="calculateItemSubtotal"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -248,14 +288,24 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="租赁开始时间" prop="leaseStartTime">
-              <el-date-picker v-model="itemForm.leaseStartTime" type="datetime" placeholder="选择开始时间"
-                @change="calculateItemLeaseDays" style="width: 100%" />
+              <el-date-picker
+                v-model="itemForm.leaseStartTime"
+                type="datetime"
+                placeholder="选择开始时间"
+                style="width: 100%"
+                @change="calculateItemLeaseDays"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="租赁结束时间" prop="leaseEndTime">
-              <el-date-picker v-model="itemForm.leaseEndTime" type="datetime" placeholder="选择结束时间"
-                @change="calculateItemLeaseDays" style="width: 100%" />
+              <el-date-picker
+                v-model="itemForm.leaseEndTime"
+                type="datetime"
+                placeholder="选择结束时间"
+                style="width: 100%"
+                @change="calculateItemLeaseDays"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -283,16 +333,21 @@
       </div>
     </el-dialog>
 
-    <UserSelector :visible.sync="searchUserSelectorVisible" title="选择签署用户" :multiple="false" @confirm="handleUserSelect"
-      @close="searchUserSelectorVisible = false" />
+    <UserSelector
+      :visible.sync="searchUserSelectorVisible"
+      title="选择签署用户"
+      :multiple="false"
+      @confirm="handleUserSelect"
+      @close="searchUserSelectorVisible = false"
+    />
   </div>
 </template>
 
 <script>
-import { getLeaseOrderListPage, getLeaseOrderDetail, addLeaseOrder, updateLeaseOrder, deleteLeaseOrder, approveOrder, getGoodList, getOrderItemList, addOrderItem, updateOrderItem, deleteOrderItem, updateOrderLogistics, getOrderStatusAll, bindContract, unbindContract } from '@/api/leaseOrder';
-import { getUserList } from '@/api/user';
-import { getContractPage } from '@/api/contract';
-import UserSelector from '@/components/UserSelector';
+import { getLeaseOrderListPage, getLeaseOrderDetail, addLeaseOrder, updateLeaseOrder, deleteLeaseOrder, approveOrder, getGoodList, getOrderItemList, addOrderItem, updateOrderItem, deleteOrderItem, updateOrderLogistics, getOrderStatusAll, bindContract, unbindContract } from '@/api/leaseOrder'
+import { getUserList } from '@/api/user'
+import { getContractPage } from '@/api/contract'
+import UserSelector from '@/components/UserSelector'
 export default {
   components: {
     UserSelector
@@ -406,7 +461,7 @@ export default {
       const hours = String(date.getHours()).padStart(2, '0')
       const minutes = String(date.getMinutes()).padStart(2, '0')
       const seconds = String(date.getSeconds()).padStart(2, '0')
-      
+
       return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
     },
     getUserOptions() {
@@ -789,11 +844,11 @@ export default {
           // 新增订单 - 显示确认对话框
           this.$confirm('确定要创建订单吗？',
             '确认创建订单', {
-            confirmButtonText: '确定创建',
-            cancelButtonText: '取消',
-            type: 'warning',
-            dangerouslyUseHTMLString: true
-          }).then(() => {
+              confirmButtonText: '确定创建',
+              cancelButtonText: '取消',
+              type: 'warning',
+              dangerouslyUseHTMLString: true
+            }).then(() => {
             // 显示加载状态
             const loading = this.$loading({
               lock: true,
@@ -812,7 +867,7 @@ export default {
                 goodName: item.goodName,
                 goodPrice: item.goodPrice,
                 quantity: item.quantity,
-                leaseStartTime:  item.leaseStartTime,
+                leaseStartTime: item.leaseStartTime,
                 leaseEndTime: item.leaseEndTime,
                 leaseDays: item.leaseDays,
                 subtotal: item.subtotal,
@@ -936,7 +991,7 @@ export default {
     handleContractRadioChange(row) {
       this.selectedContract = row
       this.selectedContractId = row.id
-    },
+    }
   }
 }
 </script>

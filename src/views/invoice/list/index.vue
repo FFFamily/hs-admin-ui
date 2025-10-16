@@ -31,11 +31,11 @@
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
           <template slot-scope="scope">
-            <el-button size="mini" @click="handleEdit(scope.row)" type="primary">编辑</el-button>
-            <el-button 
-              v-if="scope.row.status !== 'invoiced'" 
-              size="mini" 
-              type="success" 
+            <el-button size="mini" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button
+              v-if="scope.row.status !== 'invoiced'"
+              size="mini"
+              type="success"
               @click="handleConfirm(scope.row)"
             >
               确认
@@ -57,7 +57,7 @@
     </el-card>
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="1000px">
-      <el-form :model="form" :rules="rules" ref="form" label-width="120px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <!-- 基本信息 -->
         <el-divider content-position="left">基本信息</el-divider>
         <div class="form-section">
@@ -69,15 +69,15 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="关联订单" prop="orderId">
-                <el-input 
-                  v-model="form.orderId" 
-                  placeholder="请选择关联订单" 
-                  readonly 
+                <el-input
+                  v-model="form.orderId"
+                  placeholder="请选择关联订单"
+                  readonly
                   @focus="openOrderSelector"
                 >
                   <el-button slot="append" icon="el-icon-search" @click="openOrderSelector">选择订单</el-button>
                 </el-input>
-                
+
               </el-form-item>
             </el-col>
             <!-- <el-col :span="12">
@@ -100,18 +100,18 @@
             </el-col> -->
             <el-col :span="12">
               <el-form-item label="开票银行" prop="invoiceBank">
-                <el-input 
-                  v-model="form.invoiceBank" 
-                  placeholder="请先选择订单，再选择开票银行" 
-                  readonly 
+                <el-input
+                  v-model="form.invoiceBank"
+                  placeholder="请先选择订单，再选择开票银行"
+                  readonly
                   :disabled="!form.orderId"
                   @focus="openBankSelector"
                 >
-                  <el-button 
-                    slot="append" 
-                    icon="el-icon-search" 
-                    @click="openBankSelector"
+                  <el-button
+                    slot="append"
+                    icon="el-icon-search"
                     :disabled="!form.orderId"
+                    @click="openBankSelector"
                   >
                     选择银行
                   </el-button>
@@ -121,12 +121,12 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="计划开票时间" prop="plannedInvoiceTime">
-                <el-date-picker 
-                  v-model="form.plannedInvoiceTime" 
-                  type="datetime" 
-                  placeholder="选择计划开票时间" 
-                  style="width: 100%;" 
-                  value-format="yyyy-MM-dd HH:mm:ss" 
+                <el-date-picker
+                  v-model="form.plannedInvoiceTime"
+                  type="datetime"
+                  placeholder="选择计划开票时间"
+                  style="width: 100%;"
+                  value-format="yyyy-MM-dd HH:mm:ss"
                 />
               </el-form-item>
             </el-col>
@@ -208,7 +208,7 @@
               </el-col> -->
             </el-row>
           </div>
-          
+
           <el-table :data="form.details" border style="width: 100%; margin-top: 10px;">
             <el-table-column prop="orderNo" label="订单编号" width="180" />
             <el-table-column prop="orderType" label="订单类型" width="120">
@@ -266,14 +266,14 @@
 
     <!-- 确认发票弹窗 -->
     <el-dialog title="确认发票" :visible.sync="confirmDialogVisible" width="1000px">
-      <el-form :model="confirmForm" :rules="confirmRules" ref="confirmForm" label-width="120px">
+      <el-form ref="confirmForm" :model="confirmForm" :rules="confirmRules" label-width="120px">
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="经办人" prop="processor">
-              <el-input 
-                v-model="confirmForm.processor" 
-                placeholder="请选择经办人" 
-                readonly 
+              <el-input
+                v-model="confirmForm.processor"
+                placeholder="请选择经办人"
+                readonly
                 @focus="openAdminUserSelector"
               >
                 <el-button slot="append" icon="el-icon-search" @click="openAdminUserSelector">选择经办人</el-button>
@@ -282,42 +282,42 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="开票时间" prop="invoiceTime">
-              <el-date-picker 
-                v-model="confirmForm.invoiceTime" 
-                type="datetime" 
-                placeholder="选择开票时间" 
-                style="width: 100%;" 
-                value-format="yyyy-MM-dd HH:mm:ss" 
+              <el-date-picker
+                v-model="confirmForm.invoiceTime"
+                type="datetime"
+                placeholder="选择开票时间"
+                style="width: 100%;"
+                value-format="yyyy-MM-dd HH:mm:ss"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="总金额" prop="totalAmount">
-              <el-input-number 
-                v-model="confirmForm.totalAmount" 
-                :min="0" 
-                :precision="2" 
-                style="width: 100%;" 
+              <el-input-number
+                v-model="confirmForm.totalAmount"
+                :min="0"
+                :precision="2"
+                style="width: 100%;"
                 placeholder="请输入总金额"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="税额" prop="taxAmount">
-              <el-input-number 
-                v-model="confirmForm.taxAmount" 
-                :min="0" 
-                :precision="2" 
-                style="width: 100%;" 
+              <el-input-number
+                v-model="confirmForm.taxAmount"
+                :min="0"
+                :precision="2"
+                style="width: 100%;"
                 placeholder="请输入税额"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="不含税金额">
-              <el-input 
-                :value="formatAmount(calculatedAmountWithoutTax)" 
-                placeholder="不含税金额" 
+              <el-input
+                :value="formatAmount(calculatedAmountWithoutTax)"
+                placeholder="不含税金额"
                 readonly
               >
                 <template slot="prepend">¥</template>
@@ -427,9 +427,6 @@ export default {
       }
     }
   },
-  created() {
-    this.fetchList()
-  },
   computed: {
     totalOrderAmount() {
       return this.form.details.reduce((sum, detail) => sum + (Number(detail.orderTotalAmount) || 0), 0)
@@ -446,6 +443,9 @@ export default {
       return totalAmount - taxAmount
     }
   },
+  created() {
+    this.fetchList()
+  },
   methods: {
     async fetchList() {
       this.loading = true
@@ -455,14 +455,14 @@ export default {
           pageSize: this.pageSize,
           ...this.search
         }
-        
+
         // 过滤空值
         Object.keys(params).forEach(key => {
           if (params[key] === '' || params[key] === null || params[key] === undefined) {
             delete params[key]
           }
         })
-        
+
         const response = await getInvoicePage(params)
         if (response && response.data) {
           this.list = response.data.records || []
@@ -477,14 +477,14 @@ export default {
     },
     handleAdd() {
       this.dialogTitle = '新增发票'
-      this.form = { 
-        id: null, 
-        invoiceNo: '', 
-        orderId: '', 
-        orderType: '', 
-        invoiceType: '', 
-        partner: '', 
-        invoiceBank: '', 
+      this.form = {
+        id: null,
+        invoiceNo: '',
+        orderId: '',
+        orderType: '',
+        invoiceType: '',
+        partner: '',
+        invoiceBank: '',
         plannedInvoiceTime: '',
         // 确认开票信息
         processor: '',
@@ -494,7 +494,7 @@ export default {
         totalAmount: 0,
         taxAmount: 0,
         amountWithoutTax: 0,
-        details: [] 
+        details: []
       }
       this.selectedOrderInfo = null
       this.selectedOrders = []
@@ -504,13 +504,13 @@ export default {
     },
     async handleEdit(row) {
       this.dialogTitle = '编辑发票'
-      
+
       // 重置选择器状态
       this.selectedOrderInfo = null
       this.selectedOrders = []
       this.selectedBankInfo = null
       this.selectedOrderPartnerId = null
-      
+
       try {
         // 获取发票详情
         const response = await getInvoiceDetail(row.id)
@@ -518,7 +518,7 @@ export default {
           // 根据后端返回的数据结构，invoice和details是分开的
           const invoiceData = response.data.invoice || {}
           const detailsData = response.data.details || []
-          
+
           // 设置表单数据
           this.form = {
             id: invoiceData.id,
@@ -541,7 +541,7 @@ export default {
           }
           // 取明细中的第一条作为订单信息
           const orderDetail = detailsData[0]
-          this.form.orderId = orderDetail.orderId 
+          this.form.orderId = orderDetail.orderId
           this.form.partnerId = orderDetail.orderPartner
 
           // 设置选中的订单信息用于显示
@@ -555,7 +555,7 @@ export default {
             this.selectedOrders = [this.selectedOrderInfo]
             this.selectedOrderPartnerId = orderDetail.orderPartner || null
           }
-          
+
           // 设置选中的银行信息用于显示
           if (this.form.invoiceBank) {
             this.selectedBankInfo = {
@@ -565,7 +565,7 @@ export default {
               bankCode: invoiceData.bankCode || ''
             }
           }
-        } 
+        }
         console.log('编辑表单数据:', this.form)
         this.dialogVisible = true
       } catch (error) {
@@ -593,15 +593,15 @@ export default {
         this.$message.warning('请选择一个订单')
         return
       }
-      
+
       const order = selectedOrders[0]
       if (!order) return
-      
+
       // 填充表单数据
       this.form.orderId = order.id || ''
       this.form.orderType = this.getOrderTypeText(order.type) || ''
       this.form.partner = order.contractPartnerName || ''
-      
+
       // 保存选中的订单信息用于显示
       this.selectedOrderInfo = {
         id: order.id,
@@ -609,10 +609,10 @@ export default {
         contractName: order.contractName,
         type: order.type
       }
-      
+
       // 设置合作方ID用于银行过滤
       this.selectedOrderPartnerId = order.contractPartner || null
-      
+
       // 清空之前选择的银行信息
       this.selectedBankInfo = null
       this.form.invoiceBank = ''
@@ -635,14 +635,14 @@ export default {
         orderActualInvoice: 0,
         orderShouldInvoice: Number(order.totalAmount) || 0
       }
-      
+
       // 检查是否已存在相同订单
       const existingIndex = this.form.details.findIndex(d => d.orderNo === detail.orderNo)
       if (existingIndex >= 0) {
         this.$message.warning('该订单已存在，请勿重复添加')
         return
       }
-      
+
       this.form.details.push(detail)
     },
     // 获取订单类型文本
@@ -657,35 +657,35 @@ export default {
       }
       return typeMap[type] || '未知类型'
     },
-    
+
     // 打开银行选择器
     openBankSelector() {
       if (!this.form.orderId) {
         this.$message.warning('请先选择订单')
         return
       }
-      
+
       if (!this.selectedOrderPartnerId) {
         this.$message.warning('所选订单缺少合作方信息，无法选择银行')
         return
       }
-      
+
       this.bankFilters = {
         // 可以添加其他过滤条件
       }
       this.bankSelectorVisible = true
     },
-    
+
     // 银行选择确认
     handleBankConfirm(selectedBanks) {
       if (!selectedBanks || selectedBanks.length === 0) {
         this.$message.warning('请选择一个银行')
         return
       }
-      
+
       const bank = selectedBanks[0]
       if (!bank) return
-      
+
       // 填充银行信息
       this.form.invoiceBank = bank.bankName
       this.selectedBankInfo = {
@@ -694,30 +694,30 @@ export default {
         cardNumber: bank.cardNumber,
         bankCode: bank.bankCode
       }
-      
+
       this.$message.success('银行选择成功')
     },
-    
+
     // 银行选择取消
     handleBankCancel() {
       this.$message.info('已取消选择银行')
     },
-    
+
     // 打开后台用户选择器
     openAdminUserSelector() {
       this.adminUserSelectorVisible = true
     },
-    
+
     // 后台用户选择确认
     handleAdminUserConfirm(selectedUsers) {
       if (!selectedUsers || selectedUsers.length === 0) {
         this.$message.warning('请选择一个后台用户')
         return
       }
-      
+
       const adminUser = selectedUsers[0]
       if (!adminUser) return
-      
+
       // 填充经办人信息
       this.confirmForm.processor = adminUser.nickname
       this.confirmForm.processorId = adminUser.id
@@ -727,10 +727,10 @@ export default {
         nickname: adminUser.nickname,
         phone: adminUser.phone
       }
-      
+
       this.$message.success('经办人选择成功')
     },
-    
+
     // 后台用户选择取消
     handleAdminUserCancel() {
       this.$message.info('已取消选择经办人')
@@ -760,7 +760,7 @@ export default {
         amountWithoutTax: 0
       }
       console.log('设置确认表单数据:', this.confirmForm)
-      
+
       // 如果已有经办人信息，设置选中状态
       if (row.processor) {
         this.selectedAdminUserInfo = {
@@ -772,13 +772,13 @@ export default {
       } else {
         this.selectedAdminUserInfo = null
       }
-      
+
       this.confirmDialogVisible = true
     },
     async handleConfirmSubmit() {
       try {
         await this.$refs.confirmForm.validate()
-        
+
         const confirmData = {
           invoiceId: this.confirmForm.id,
           processor: this.confirmForm.processor,
@@ -788,7 +788,7 @@ export default {
           taxAmount: this.confirmForm.taxAmount,
           amountWithoutTax: this.calculatedAmountWithoutTax
         }
-        
+
         console.log('确认发票数据:', confirmData)
         await confirmInvoice(confirmData)
         this.$message.success('确认发票成功')
@@ -816,7 +816,7 @@ export default {
       try {
         // 验证表单
         await this.$refs.form.validate()
-        
+
         // 计算总金额
         this.form.totalAmount = this.totalOrderAmount
 
@@ -843,7 +843,7 @@ export default {
             orderShouldInvoice: detail.orderShouldInvoice
           }))
         }
-        
+
         if (this.form.id) {
           // 更新发票
           await updateInvoice(apiData)
@@ -853,7 +853,7 @@ export default {
           await createInvoice(apiData)
           this.$message.success('创建发票成功')
         }
-        
+
         this.dialogVisible = false
         this.fetchList()
       } catch (error) {
@@ -910,7 +910,7 @@ export default {
 
 .selected-order-info {
   margin-top: 8px;
-  
+
   .el-tag {
     margin-right: 8px;
   }
@@ -918,7 +918,7 @@ export default {
 
 .selected-bank-info {
   margin-top: 8px;
-  
+
   .el-tag {
     margin-right: 8px;
   }
@@ -926,7 +926,7 @@ export default {
 
 .selected-admin-user-info {
   margin-top: 8px;
-  
+
   .el-tag {
     margin-right: 8px;
   }
@@ -937,11 +937,11 @@ export default {
   padding: 16px;
   border-radius: 4px;
   border: 1px solid #e4e7ed;
-  
+
   .el-input.is-disabled .el-input__inner {
     background-color: #f5f7fa;
     border-color: #e4e7ed;
     color: #909399;
   }
 }
-</style> 
+</style>

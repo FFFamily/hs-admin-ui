@@ -25,7 +25,7 @@
       </el-form-item>
     </el-form>
 
-    <el-table :data="list" v-loading="listLoading" border fit highlight-current-row style="margin-top: 20px;">
+    <el-table v-loading="listLoading" :data="list" border fit highlight-current-row style="margin-top: 20px;">
       <el-table-column prop="partnerName" label="合作方" min-width="140" />
       <el-table-column prop="contractNo" label="合同编号" width="160" />
       <el-table-column prop="orderNo" label="订单编号" width="160" />
@@ -36,7 +36,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="orderType" label="订单类型" width="120" >
+      <el-table-column prop="orderType" label="订单类型" width="120">
         <template slot-scope="scope">
           <el-tag size="medium">
             {{ getOrderTypeText(scope.row.orderType) }}
@@ -100,42 +100,48 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination :current-page="pagination.page" :page-sizes="[10, 20, 50, 100]" :page-size="pagination.size"
-      :total="pagination.total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
-      @current-change="handleCurrentChange" style="margin-top: 20px; text-align: right;" />
+    <el-pagination
+      :current-page="pagination.page"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="pagination.size"
+      :total="pagination.total"
+      layout="total, sizes, prev, pager, next, jumper"
+      style="margin-top: 20px; text-align: right;"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
 
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="700px">
-      <el-form :model="form" :rules="rules" ref="form" label-width="100px" :disabled="form.status === fundFlowStatus.CONFIRM">
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px" :disabled="form.status === fundFlowStatus.CONFIRM">
         <!-- 分割线 -->
         <el-divider content-position="left">基本信息</el-divider>
         <div class="form-section">
           <el-row :gutter="16">
             <el-col :span="12">
               <el-form-item label="合同编号" prop="contractNo">
-                <el-input disabled v-model="form.contractNo" placeholder="请选择合同" readonly @focus="openContractSelector">
-                </el-input>
+                <el-input v-model="form.contractNo" disabled placeholder="请选择合同" readonly @focus="openContractSelector" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="合同名称" prop="contractName">
-                <el-input disabled v-model="form.contractName" placeholder="请输入合同名称" />
+                <el-input v-model="form.contractName" disabled placeholder="请输入合同名称" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="合作方" prop="partner">
-                <el-input disabled v-model="form.partner" placeholder="请输入合作方" />
+                <el-input v-model="form.partner" disabled placeholder="请输入合作方" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="合同状态" prop="contractStatus">
                 <el-tag :type="getStatusType(form.contractStartTime, form.contractEndTime)" size="medium">
-                    {{ getStatusText(form.contractStartTime, form.contractEndTime) }}
+                  {{ getStatusText(form.contractStartTime, form.contractEndTime) }}
                 </el-tag>
               </el-form-item>
             </el-col>
             <el-col :span="24">
               <el-form-item label="订单编号" prop="orderNo">
-                <el-input disabled v-model="form.orderNo" placeholder="请输入订单编号" />
+                <el-input v-model="form.orderNo" disabled placeholder="请输入订单编号" />
               </el-form-item>
             </el-col>
             <el-col :span="24">
@@ -147,12 +153,12 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="订单总金额" prop="orderTotalAmount">
-                <el-input disabled v-model="form.orderTotalAmount" placeholder="请输入订单总金额" />
+                <el-input v-model="form.orderTotalAmount" disabled placeholder="请输入订单总金额" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="订单应走金额" prop="orderShouldAmount">
-                <el-input disabled v-model="form.orderShouldAmount" placeholder="请输入订单应走金额" />
+                <el-input v-model="form.orderShouldAmount" disabled placeholder="请输入订单应走金额" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -209,8 +215,13 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="计划走款时间" prop="planPayTime">
-                <el-date-picker v-model="form.planPayTime" type="date" placeholder="选择计划走款时间" style="width: 100%;"
-                  value-format="yyyy-MM-dd" />
+                <el-date-picker
+                  v-model="form.planPayTime"
+                  type="date"
+                  placeholder="选择计划走款时间"
+                  style="width: 100%;"
+                  value-format="yyyy-MM-dd"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -218,12 +229,12 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="handleSave" :disabled="form.status === fundFlowStatus.CONFIRM">{{ form.id ? '更新' : '添加' }}</el-button>
+        <el-button type="primary" :disabled="form.status === fundFlowStatus.CONFIRM" @click="handleSave">{{ form.id ? '更新' : '添加' }}</el-button>
       </div>
     </el-dialog>
     <!-- 确认走款弹框 -->
     <el-dialog title="确认走款" :visible.sync="confirmDialogVisible" width="500px">
-      <el-form :model="confirmForm" :rules="confirmRules" ref="confirmForm" label-width="120px">
+      <el-form ref="confirmForm" :model="confirmForm" :rules="confirmRules" label-width="120px">
         <el-form-item label="经办人" prop="processor">
           <el-input v-model="confirmForm.processor" placeholder="请选择经办人" readonly @focus="openAgentSelector">
             <el-button slot="append" icon="el-icon-search" @click="openAgentSelector">选择</el-button>
@@ -233,8 +244,13 @@
           <el-input v-model="confirmForm.voucher" placeholder="请输入凭证" />
         </el-form-item>
         <el-form-item label="支付时间" prop="payFundTime">
-          <el-date-picker v-model="confirmForm.payFundTime" type="datetime" placeholder="选择支付时间" style="width: 100%;"
-            value-format="yyyy-MM-dd HH:mm:ss" />
+          <el-date-picker
+            v-model="confirmForm.payFundTime"
+            type="datetime"
+            placeholder="选择支付时间"
+            style="width: 100%;"
+            value-format="yyyy-MM-dd HH:mm:ss"
+          />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -243,14 +259,29 @@
       </div>
     </el-dialog>
 
-    <contract-selector :visible.sync="contractSelectorVisible" title="选择合同" :multiple="false" :show-pagination="true"
-      @confirm="handleContractConfirm" />
-    
-    <agent-selector :visible.sync="agentSelectorVisible" title="选择经办人" :multiple="false" :show-pagination="true"
-      @confirm="handleAgentConfirm" />
-    
-    <bank-info-selector :visible.sync="bankInfoSelectorVisible" title="选择银行信息" :multiple="false" :show-pagination="true"
-      @confirm="handleBankInfoConfirm" />
+    <contract-selector
+      :visible.sync="contractSelectorVisible"
+      title="选择合同"
+      :multiple="false"
+      :show-pagination="true"
+      @confirm="handleContractConfirm"
+    />
+
+    <agent-selector
+      :visible.sync="agentSelectorVisible"
+      title="选择经办人"
+      :multiple="false"
+      :show-pagination="true"
+      @confirm="handleAgentConfirm"
+    />
+
+    <bank-info-selector
+      :visible.sync="bankInfoSelectorVisible"
+      title="选择银行信息"
+      :multiple="false"
+      :show-pagination="true"
+      @confirm="handleBankInfoConfirm"
+    />
   </div>
 
 </template>
@@ -392,15 +423,15 @@ export default {
       this.fetchData()
     },
     handleReset() {
-      this.searchForm = { 
-        no: '', 
-        contractNo: '', 
-        partner: '', 
-        orderNo: '', 
-        orderType: '', 
-        orderStatus: '', 
-        fundFlowDirection: '', 
-        payFundTimeRange: [] 
+      this.searchForm = {
+        no: '',
+        contractNo: '',
+        partner: '',
+        orderNo: '',
+        orderType: '',
+        orderStatus: '',
+        fundFlowDirection: '',
+        payFundTimeRange: []
       }
       this.pagination.page = 1
       this.fetchData()
@@ -515,7 +546,7 @@ export default {
         this.$message.warning('已确认的走款不允许删除')
         return
       }
-      
+
       this.$confirm('确定要删除该记录吗？', '提示', { type: 'warning' })
         .then(() => {
           deleteFundFlow(row.id).then(() => {
@@ -534,7 +565,7 @@ export default {
         this.$message.warning('已确认的走款不允许编辑')
         return
       }
-      
+
       this.$refs.form.validate((valid) => {
         if (!valid) return
         const action = this.form.id ? updateFundFlow : addFundFlow

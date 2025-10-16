@@ -7,17 +7,24 @@
         <el-button type="primary" @click="clearAllPrices">货物单价清零</el-button>
         <el-button type="primary" @click="addOrderItem">新增行</el-button>
         <el-button type="success" icon="el-icon-refresh" @click="openOrderListDialog">同步订单明细</el-button>
-        <el-button type="danger" @click="deleteSelectedItems" :disabled="selectedItems.length === 0">删除行</el-button>
+        <el-button type="danger" :disabled="selectedItems.length === 0" @click="deleteSelectedItems">删除行</el-button>
       </el-form-item>
     </el-form>
-    <el-table :data="items" border fit style="width: 100%" v-loading="itemsLoading"
-      @selection-change="handleSelectionChange" :show-summary="true" :summary-method="getPurchaseSummary">
+    <el-table
+      v-loading="itemsLoading"
+      :data="items"
+      border
+      fit
+      style="width: 100%"
+      :show-summary="true"
+      :summary-method="getPurchaseSummary"
+      @selection-change="handleSelectionChange"
+    >
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column prop="goodNo" label="货物编号" fixed="left" width="180" align="center">
         <template slot-scope="scope">
           <el-input v-model="scope.row.goodNo" placeholder="选择货物" :disabled="!scope.row.goodNo" readonly>
-            <el-button slot="append" icon="el-icon-search" @click="openBusinessScopeSelector(scope.$index)">
-            </el-button>
+            <el-button slot="append" icon="el-icon-search" @click="openBusinessScopeSelector(scope.$index)" />
           </el-input>
         </template>
       </el-table-column>
@@ -38,21 +45,39 @@
       </el-table-column>
       <el-table-column prop="goodCount" label="货物数量" width="155" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.goodCount" style="width:130px;" :min="1" :precision="0" @change="onItemFieldChange(scope.row)"
-            :disabled="!scope.row.goodNo" />
+          <el-input-number
+            v-model="scope.row.goodCount"
+            style="width:130px;"
+            :min="1"
+            :precision="0"
+            :disabled="!scope.row.goodNo"
+            @change="onItemFieldChange(scope.row)"
+          />
         </template>
       </el-table-column>
       <el-table-column prop="goodWeight" label="货物重量(kg)" width="160" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.goodWeight" :min="0" :precision="2" controls-position="right"
-            @change="onItemFieldChange(scope.row)" placeholder="请输入货物重量" :disabled="!scope.row.goodNo"
-            style="width: 130px;" />
+          <el-input-number
+            v-model="scope.row.goodWeight"
+            :min="0"
+            :precision="2"
+            controls-position="right"
+            placeholder="请输入货物重量"
+            :disabled="!scope.row.goodNo"
+            style="width: 130px;"
+            @change="onItemFieldChange(scope.row)"
+          />
         </template>
       </el-table-column>
       <el-table-column prop="goodPrice" label="货物单价" width="210" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.goodPrice" :min="0" :precision="2" @change="onItemFieldChange(scope.row)"
-            :disabled="!scope.row.goodNo" />
+          <el-input-number
+            v-model="scope.row.goodPrice"
+            :min="0"
+            :precision="2"
+            :disabled="!scope.row.goodNo"
+            @change="onItemFieldChange(scope.row)"
+          />
         </template>
       </el-table-column>
 
@@ -63,16 +88,28 @@
       </el-table-column>
       <el-table-column label="评级系数" width="160" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.ratingCoefficient" :precision="4" controls-position="right"
-            @change="onItemFieldChange(scope.row)" placeholder="评级系数" :disabled="!scope.row.goodNo"
-            style="width: 130px;" />
+          <el-input-number
+            v-model="scope.row.ratingCoefficient"
+            :precision="4"
+            controls-position="right"
+            placeholder="评级系数"
+            :disabled="!scope.row.goodNo"
+            style="width: 130px;"
+            @change="onItemFieldChange(scope.row)"
+          />
         </template>
       </el-table-column>
       <el-table-column label="其他调价" width="160" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.otherAdjustAmount" :precision="2" controls-position="right"
-            @change="onItemFieldChange(scope.row)" placeholder="其他调价" :disabled="!scope.row.goodNo"
-            style="width: 130px;" />
+          <el-input-number
+            v-model="scope.row.otherAdjustAmount"
+            :precision="2"
+            controls-position="right"
+            placeholder="其他调价"
+            :disabled="!scope.row.goodNo"
+            style="width: 130px;"
+            @change="onItemFieldChange(scope.row)"
+          />
         </template>
       </el-table-column>
       <!-- 移除货物识别码列，使用订单主识别码 -->
@@ -89,8 +126,14 @@
     </el-table>
 
     <!-- 经营范围选择器 -->
-    <BusinessScopeSelector :visible.sync="businessScopeSelectorVisible" title="选择经营范围" :multiple="false"
-      :only-show-enabled="true" @confirm="handleBusinessScopeConfirm" @close="handleBusinessScopeClose" />
+    <BusinessScopeSelector
+      :visible.sync="businessScopeSelectorVisible"
+      title="选择经营范围"
+      :multiple="false"
+      :only-show-enabled="true"
+      @confirm="handleBusinessScopeConfirm"
+      @close="handleBusinessScopeClose"
+    />
 
     <!-- 订单列表弹窗组件 -->
     <order-list-dialog :visible.sync="orderListVisible" @sync-items="handleSyncOrderItems" />
@@ -165,7 +208,7 @@ export default {
           currentRow.ratingCoefficient = 0
           currentRow.otherAdjustAmount = 0
           currentRow.goodTotalPrice = this.calcTotal(currentRow)
-          currentRow.direction = 'in'  // 确保进项标记
+          currentRow.direction = 'in' // 确保进项标记
 
           // 触发重新计算订单金额
           this.$emit('recalc-order-amount')
@@ -219,7 +262,7 @@ export default {
         otherAdjustAmount: 0,
         goodTotalPrice: 0,
         goodRemark: '',
-        direction: 'in'  // 进项标记
+        direction: 'in' // 进项标记
       }
 
       this.$emit('add-item', newItem)
@@ -255,11 +298,11 @@ export default {
     // 计算合计金额
     // 计算规则：货物总价 = （货物单价 * 数量 * 重量）* (1 + 评级系数) + 其他调价
     calcTotal(item) {
-      const price = Number(item.goodPrice) || 0  // 货物单价
-      const count = Number(item.goodCount) || 0  // 数量
-      const weight = Number(item.goodWeight) || 0  // 重量
-      const rating = Number(item.ratingCoefficient) || 0  // 评级系数
-      const otherPrice = Number(item.otherAdjustAmount) || 0  // 其他调价
+      const price = Number(item.goodPrice) || 0 // 货物单价
+      const count = Number(item.goodCount) || 0 // 数量
+      const weight = Number(item.goodWeight) || 0 // 重量
+      const rating = Number(item.ratingCoefficient) || 0 // 评级系数
+      const otherPrice = Number(item.otherAdjustAmount) || 0 // 其他调价
 
       // 货物总价 = (货物单价 * 数量 * 重量) * (1 + 评级系数) + 其他调价
       const basePrice = price * count * weight
@@ -368,7 +411,7 @@ export default {
           goodTotalPrice: this.calcTotal(item),
           goodRemark: item.goodRemark || '',
           orderAmount: item.orderAmount || 0,
-          direction: 'in'  // 确保同步的明细为进项
+          direction: 'in' // 确保同步的明细为进项
         }))
 
         // 清空现有明细并添加新明细

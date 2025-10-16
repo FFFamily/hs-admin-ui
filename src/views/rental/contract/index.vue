@@ -22,10 +22,10 @@
           v-model="searchForm.userName"
           placeholder="请选择签署用户"
           readonly
-          @click="showSearchUserSelector"
           style="cursor: pointer;"
+          @click="showSearchUserSelector"
         >
-          <el-button slot="append" icon="el-icon-search" @click="showSearchUserSelector"></el-button>
+          <el-button slot="append" icon="el-icon-search" @click="showSearchUserSelector" />
         </el-input>
       </el-form-item>
       <el-form-item>
@@ -81,14 +81,14 @@
       :page-size="pagination.size"
       :total="pagination.total"
       layout="total, sizes, prev, pager, next, jumper"
+      style="margin-top: 20px; text-align: right;"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
-      style="margin-top: 20px; text-align: right;"
     />
 
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px">
-      <el-form :model="form" :rules="rules" ref="form" label-width="100px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="合同名" prop="name">
           <el-input v-model="form.name" placeholder="请输入合同名称" />
         </el-form-item>
@@ -132,10 +132,10 @@
             v-model="form.userName"
             placeholder="请选择签署用户"
             readonly
-            @focus="showFormUserSelector"
             style="cursor: pointer;"
+            @focus="showFormUserSelector"
           >
-            <el-button slot="append" icon="el-icon-search" @click="showFormUserSelector"></el-button>
+            <el-button slot="append" icon="el-icon-search" @click="showFormUserSelector" />
           </el-input>
         </el-form-item>
       </el-form>
@@ -150,9 +150,9 @@
       <div style="margin-bottom: 20px;">
         <el-button type="primary" size="small" @click="handleAddItem">新增明细</el-button>
       </div>
-      
+
       <!-- 采购货物明细 -->
-      <el-table v-if="currentContractType === 'recycle'" :data="contractItems.filter(item => item.recycleGoodId)" border style="margin-bottom: 20px;" v-loading="listLoading">
+      <el-table v-if="currentContractType === 'recycle'" v-loading="listLoading" :data="contractItems.filter(item => item.recycleGoodId)" border style="margin-bottom: 20px;">
         <el-table-column label="采购货物明细" align="center" header-align="center">
           <el-table-column label="货物名称" prop="recycleGoodName" />
           <el-table-column label="规格型号" prop="recycleGoodSpecificationModel" />
@@ -172,7 +172,7 @@
       </el-table>
 
       <!-- 租赁设备明细 -->
-      <el-table v-if="currentContractType === 'lease'" :data="contractItems.filter(item => item.leaseGoodId)" border v-loading="listLoading">
+      <el-table v-if="currentContractType === 'lease'" v-loading="listLoading" :data="contractItems.filter(item => item.leaseGoodId)" border>
         <el-table-column label="租赁设备明细" align="center" header-align="center">
           <el-table-column label="设备名称" prop="leaseGoodName" />
           <el-table-column label="押金" prop="leaseGoodDeposit">
@@ -197,14 +197,14 @@
 
       <!-- 新增/编辑明细弹窗 -->
       <el-dialog :title="itemDialogTitle" :visible.sync="itemDialogVisible" width="500px" append-to-body>
-        <el-form :model="itemForm" :rules="itemRules" ref="itemForm" label-width="120px">
+        <el-form ref="itemForm" :model="itemForm" :rules="itemRules" label-width="120px">
           <el-form-item label="明细类型" prop="itemType">
             <el-radio-group v-model="itemForm.itemType" :disabled="true">
-              <el-radio label="recycle" v-if="currentContractType === 'recycle'">采购货物</el-radio>
-              <el-radio label="lease" v-if="currentContractType === 'lease'">租赁设备</el-radio>
+              <el-radio v-if="currentContractType === 'recycle'" label="recycle">采购货物</el-radio>
+              <el-radio v-if="currentContractType === 'lease'" label="lease">租赁设备</el-radio>
             </el-radio-group>
           </el-form-item>
-          
+
           <!-- 采购货物字段 -->
           <template v-if="itemForm.itemType === 'recycle'">
             <el-form-item label="货物名称" prop="recycleGoodName">
@@ -269,7 +269,7 @@
 
     <!-- 合同变更记录弹窗 -->
     <el-dialog title="合同变更记录" :visible.sync="logsDialogVisible" width="900px">
-      <el-table :data="contractLogs" border v-loading="logsLoading">
+      <el-table v-loading="logsLoading" :data="contractLogs" border>
         <el-table-column label="操作类型" prop="operationTypeLabel" width="120">
           <template slot-scope="scope">
             <el-tag v-if="scope.row.operationType === 'CREATE'" type="success">创建</el-tag>
@@ -386,9 +386,9 @@ export default {
       },
       itemRules: {
         itemType: [{ required: true, message: '请选择明细类型', trigger: 'change' }],
-        recycleGoodName: [{ 
-          required: true, 
-          message: '请输入货物名称', 
+        recycleGoodName: [{
+          required: true,
+          message: '请输入货物名称',
           trigger: 'blur',
           validator: (rule, value, callback) => {
             if (this.currentContractType === 'recycle' && !value) {
@@ -398,9 +398,9 @@ export default {
             }
           }
         }],
-        leaseGoodName: [{ 
-          required: true, 
-          message: '请输入设备名称', 
+        leaseGoodName: [{
+          required: true,
+          message: '请输入设备名称',
           trigger: 'blur',
           validator: (rule, value, callback) => {
             if (this.currentContractType === 'lease' && !value) {
@@ -582,7 +582,7 @@ export default {
             this.$message.error('明细类型与合同类型不匹配')
             return
           }
-          
+
           // 验证必填字段
           if (this.currentContractType === 'recycle') {
             if (!this.itemForm.recycleGoodName || !this.itemForm.recycleGoodSubtotal) {
@@ -595,7 +595,7 @@ export default {
               return
             }
           }
-          
+
           if (this.itemForm.id) {
             // 编辑明细
             // updateContractItem(this.itemForm.id, this.itemForm).then(() => {

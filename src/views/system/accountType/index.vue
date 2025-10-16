@@ -33,14 +33,14 @@
       :page-size="pagination.size"
       :total="pagination.total"
       layout="total, sizes, prev, pager, next, jumper"
+      style="margin-top: 20px; text-align: right;"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
-      style="margin-top: 20px; text-align: right;"
     />
 
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="500px">
-      <el-form :model="form" :rules="rules" ref="form" label-width="100px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="编号" prop="code">
           <el-input v-model="form.code" placeholder="请输入编号" />
         </el-form-item>
@@ -190,4 +190,4 @@ export default {
 .demo-form-inline .el-form-item {
   margin-right: 20px;
 }
-</style> 
+</style>

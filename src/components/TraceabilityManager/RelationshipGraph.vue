@@ -4,61 +4,51 @@
       <!-- 操作按钮 -->
       <div class="graph-toolbar">
         <el-button-group size="small">
-          <el-button @click="resetLayout" icon="el-icon-refresh">重置布局</el-button>
-          <el-button @click="fitView" icon="el-icon-full-screen">适应视图</el-button>
-          <el-button @click="exportGraph" icon="el-icon-download">导出图片</el-button>
+          <el-button icon="el-icon-refresh" @click="resetLayout">重置布局</el-button>
+          <el-button icon="el-icon-full-screen" @click="fitView">适应视图</el-button>
+          <el-button icon="el-icon-download" @click="exportGraph">导出图片</el-button>
         </el-button-group>
-        
-        <div class="layout-options">
-          <span class="option-label">布局方式：</span>
-          <el-select v-model="layoutType" @change="updateLayout" size="small" style="width: 120px;">
-            <el-option label="力导向图" value="force" />
-            <el-option label="环形布局" value="circular" />
-            <el-option label="层次布局" value="none" />
-          </el-select>
-        </div>
       </div>
-      
+
       <!-- 图例说明 -->
       <div class="graph-legend">
         <span class="legend-title">订单类型：</span>
         <div class="legend-items">
           <div class="legend-item">
-            <div class="legend-color purchase"></div>
+            <div class="legend-color purchase" />
             <span>采购</span>
           </div>
           <div class="legend-item">
-            <div class="legend-color transport"></div>
+            <div class="legend-color transport" />
             <span>运输</span>
           </div>
           <div class="legend-item">
-            <div class="legend-color process"></div>
+            <div class="legend-color process" />
             <span>加工</span>
           </div>
           <div class="legend-item">
-            <div class="legend-color storage"></div>
+            <div class="legend-color storage" />
             <span>仓储</span>
           </div>
           <div class="legend-item">
-            <div class="legend-color sales"></div>
+            <div class="legend-color sales" />
             <span>销售</span>
           </div>
         </div>
       </div>
     </div>
-    
-    <div 
-      ref="chartContainer" 
-      class="chart-container"
+
+    <div
+      ref="chartContainer"
       v-loading="loading"
+      class="chart-container"
       element-loading-text="正在生成关系图..."
-    ></div>
-    
+    />
 
     <!-- 节点详情弹窗 -->
-    <el-dialog 
-      title="订单详情" 
-      :visible.sync="nodeDetailVisible" 
+    <el-dialog
+      title="订单详情"
+      :visible.sync="nodeDetailVisible"
       width="60%"
       append-to-body
     >
@@ -97,10 +87,15 @@
 <script>
 import * as echarts from 'echarts'
 import { parseTime } from '@/utils'
-import { 
-  getFlowStepText, 
-  getChangeReasonText 
+import {
+  getFlowStepText,
+  getChangeReasonText
 } from '@/constants/traceability'
+import {
+  ORDER_TYPES,
+  getOrderTypeText,
+  ORDER_TYPE_TAG_TYPE
+} from '@/constants/orderTypes'
 
 export default {
   name: 'RelationshipGraph',
@@ -114,17 +109,25 @@ export default {
     return {
       chart: null,
       loading: false,
-      layoutType: 'force',
       nodeDetailVisible: false,
       selectedNode: null,
-      // 节点颜色配置
+      // 节点颜色配置 - 与订单类型对应
       nodeColors: {
-        purchase: '#67C23A',
-        transport: '#409EFF', 
-        process: '#E6A23C',
-        storage: '#909399',
-        sales: '#F56C6C'
+        [ORDER_TYPES.PURCHASE]: '#67C23A',    // 采购 - 绿色
+        [ORDER_TYPES.TRANSPORT]: '#409EFF',   // 运输 - 蓝色
+        [ORDER_TYPES.PROCESS]: '#E6A23C',     // 加工 - 橙色
+        [ORDER_TYPES.STORAGE]: '#909399',     // 仓储 - 灰色
+        [ORDER_TYPES.SALES]: '#F56C6C',       // 销售 - 红色
+        [ORDER_TYPES.OTHER]: '#909399'        // 其他 - 灰色
       }
+    }
+  },
+  watch: {
+    graphData: {
+      handler() {
+        this.updateChart()
+      },
+      deep: true
     }
   },
   mounted() {
@@ -136,22 +139,14 @@ export default {
       this.chart.dispose()
     }
   },
-  watch: {
-    graphData: {
-      handler() {
-        this.updateChart()
-      },
-      deep: true
-    }
-  },
   methods: {
     // 初始化图表
     initChart() {
       this.chart = echarts.init(this.$refs.chartContainer)
-      
+
       // 监听窗口大小变化
       window.addEventListener('resize', this.handleResize)
-      
+
       // 监听节点点击事件
       this.chart.on('click', this.handleNodeClick)
     },
@@ -159,12 +154,12 @@ export default {
     // 更新图表
     updateChart() {
       if (!this.chart || !this.graphData || Object.keys(this.graphData).length === 0) return
-      
+
       this.loading = true
-      
+
       try {
         const { nodes, links } = this.transformData()
-        
+
         const option = {
           title: {
             text: '货物追溯关系图',
@@ -183,7 +178,7 @@ export default {
                   <div style="padding: 8px;">
                     <div style="font-weight: bold; margin-bottom: 5px;">订单编号: ${data.orderNo}</div>
                     <div>订单ID: ${data.orderId}</div>
-                    <div>类型: ${this.getOrderTypeText(data.orderType)}</div>
+                    <div>类型: ${getOrderTypeText(data.orderType)}</div>
                     <div>识别码: ${data.identifyCode}</div>
                   </div>
                 `
@@ -200,7 +195,7 @@ export default {
           },
           series: [{
             type: 'graph',
-            layout: this.layoutType,
+            layout: 'force',
             data: nodes,
             links: links,
             categories: this.getCategories(),
@@ -210,7 +205,7 @@ export default {
               position: 'inside',
               formatter: (params) => {
                 const data = params.data
-                const typeText = this.getOrderTypeText(data.orderType)
+                const typeText = getOrderTypeText(data.orderType)
                 const orderNo = data.orderNo
                 // 显示订单类型和订单编号（截断）
                 const shortNo = orderNo.length > 12 ? orderNo.substring(0, 12) + '...' : orderNo
@@ -240,15 +235,12 @@ export default {
                 borderColor: '#333'
               }
             },
-            force: this.layoutType === 'force' ? {
+            force: {
               repulsion: 1500,
               gravity: 0.08,
               edgeLength: [200, 400],
               layoutAnimation: true
-            } : undefined,
-            circular: this.layoutType === 'circular' ? {
-              rotateLabel: true
-            } : undefined,
+            },
             symbol: 'rect',
             symbolSize: [120, 60], // [宽度, 高度]
             itemStyle: {
@@ -260,7 +252,7 @@ export default {
             }
           }]
         }
-        
+
         this.chart.setOption(option, true)
       } catch (error) {
         console.error('图表更新失败:', error)
@@ -270,117 +262,118 @@ export default {
       }
     },
 
-    // 转换数据格式
+    // 转换数据格式 - 适配邻接表
     transformData() {
       const nodes = []
       const links = []
       const nodeMap = new Map()
-      
-      // 遍历 graph 对象创建节点和连接线
+
+      console.log('开始转换图数据，原始数据:', this.graphData)
+
+      // 第一遍遍历：收集所有出现在 value 中的节点信息
       Object.keys(this.graphData).forEach(orderId => {
-        const sourceOrders = this.graphData[orderId]
         
-        // 为当前订单创建节点（如果还没创建）
-        if (!nodeMap.has(orderId)) {
-          // 从 sourceOrders 或其他地方获取当前订单信息
-          // 如果当前订单有源订单，从第一个源订单的关系中可能能找到当前订单信息
-          // 否则需要从其他订单的 sourceOrders 中查找
-          let currentOrderInfo = this.findOrderInfo(orderId)
-          
-          if (currentOrderInfo) {
-            const node = {
-              id: orderId,
-              name: currentOrderInfo.no,
-              orderId: orderId,
-              orderNo: currentOrderInfo.no,
-              orderType: currentOrderInfo.type,
-              identifyCode: currentOrderInfo.identifyCode,
-              category: currentOrderInfo.type,
-              itemStyle: {
-                color: this.nodeColors[currentOrderInfo.type] || '#909399'
-              }
-            }
-            nodes.push(node)
-            nodeMap.set(orderId, node)
-          }
-        }
-        
-        // 创建源订单节点和连接线
-        if (sourceOrders && sourceOrders.length > 0) {
-          sourceOrders.forEach(sourceOrder => {
-            const sourceOrderId = sourceOrder.orderId
-            const sourceContext = sourceOrder.context
-            
-            // 创建源订单节点（如果还没创建）
-            if (!nodeMap.has(sourceOrderId)) {
-              const sourceNode = {
-                id: sourceOrderId,
-                name: sourceContext.no,
-                orderId: sourceOrderId,
-                orderNo: sourceContext.no,
-                orderType: sourceContext.type,
-                identifyCode: sourceContext.identifyCode,
-                category: sourceContext.type,
+        const targetOrders = this.graphData[orderId]
+        console.log(`第一遍遍历：收集所有出现在 value 中的节点信息，orderId: ${orderId} 判断信息：${targetOrders && targetOrders.length > 0}`,)
+        // 为 value 中的节点收集 context 信息
+        if (targetOrders && targetOrders.length > 0) {
+          targetOrders.forEach(targetOrder => {
+            if (!nodeMap.has(targetOrder.orderId)) {
+              const orderType = targetOrder.context.type || ORDER_TYPES.OTHER
+              console.log(`节点 ${targetOrder.orderId} 订单类型: ${orderType}`)
+              const node = {
+                id: targetOrder.orderId,
+                name: targetOrder.context.no,
+                orderId: targetOrder.orderId,
+                orderNo: targetOrder.context.no,
+                orderType: orderType,
+                identifyCode: targetOrder.context.identifyCode,
+                category: orderType,
                 itemStyle: {
-                  color: this.nodeColors[sourceContext.type] || '#909399'
+                  color: this.nodeColors[orderType] || this.nodeColors[ORDER_TYPES.OTHER]
                 }
               }
-              nodes.push(sourceNode)
-              nodeMap.set(sourceOrderId, sourceNode)
+              nodeMap.set(targetOrder.orderId, node)
             }
-            
-            // 创建连接线：从源订单指向当前订单
+          })
+        }
+      })
+
+      // 第二遍遍历：创建 key 节点和连接线
+      Object.keys(this.graphData).forEach(orderId => {
+        const targetOrders = this.graphData[orderId]
+
+        // 为 key 节点创建节点（如果还没创建）
+        if (!nodeMap.has(orderId)) {
+          console.log(`为 key 节点 ${orderId} 创建节点`)
+          // 查找该节点的信息
+          const orderInfo = this.findOrderInfo(orderId)
+          const orderType = orderInfo ? (orderInfo.type || ORDER_TYPES.OTHER) : ORDER_TYPES.OTHER
+
+          const node = {
+            id: orderId,
+            name: orderInfo ? orderInfo.no : orderId,
+            orderId: orderId,
+            orderNo: orderInfo ? orderInfo.no : orderId,
+            orderType: orderType,
+            identifyCode: orderInfo ? orderInfo.identifyCode : '--',
+            category: orderType,
+            itemStyle: {
+              color: this.nodeColors[orderType] || this.nodeColors[ORDER_TYPES.OTHER]
+            }
+          }
+          nodeMap.set(orderId, node)
+        }
+
+        // 创建连接线：从 key 指向 value
+        if (targetOrders && targetOrders.length > 0) {
+          targetOrders.forEach(targetOrder => {
+            const orderType = targetOrder.context.type || ORDER_TYPES.OTHER
             links.push({
-              source: sourceOrderId,
-              target: orderId,
-              sourceName: sourceContext.no,
-              targetName: nodeMap.get(orderId)?.orderNo || orderId,
+              source: orderId, // 从 key
+              target: targetOrder.orderId, // 指向 value
+              sourceName: nodeMap.get(orderId)?.orderNo || orderId,
+              targetName: targetOrder.context.no,
               lineStyle: {
-                color: this.nodeColors[sourceContext.type] || '#909399'
+                color: this.nodeColors[orderType] || this.nodeColors[ORDER_TYPES.OTHER]
               }
             })
           })
         }
       })
-      
+
+      // 将 Map 转换为数组
+      nodes.push(...nodeMap.values())
+
+      console.log('图数据转换完成，节点数量:', nodes.length, '连接数量:', links.length)
+      console.log('转换后的节点:', nodes)
+
       return { nodes, links }
     },
-    
+
     // 查找订单信息
     findOrderInfo(orderId) {
-      // 遍历所有订单的源订单列表，查找目标订单信息
-      for (const [currentOrderId, sourceOrders] of Object.entries(this.graphData)) {
-        if (currentOrderId === orderId) {
-          // 如果有源订单，可能需要从其他地方获取当前订单信息
-          // 这里先从其他订单的源订单中查找
-          for (const [_, sources] of Object.entries(this.graphData)) {
-            const found = sources.find(s => s.orderId === orderId)
-            if (found) {
-              return found.context
-            }
+      // 遍历所有节点的目标节点列表，查找该订单的 context 信息
+      for (const targetOrders of Object.values(this.graphData)) {
+        if (targetOrders && targetOrders.length > 0) {
+          const found = targetOrders.find(t => t.orderId === orderId)
+          if (found) {
+            return found.context
           }
         }
-        
-        // 在源订单列表中查找
-        const found = sourceOrders.find(s => s.orderId === orderId)
-        if (found) {
-          return found.context
-        }
       }
-      
-      // 如果是叶子节点（没有被其他节点引用），可能在 graph 的 key 中
-      // 需要额外处理，这里返回 null，调用者需要处理
       return null
     },
 
     // 获取分类配置
     getCategories() {
       return [
-        { name: 'purchase', itemStyle: { color: this.nodeColors.purchase } },
-        { name: 'transport', itemStyle: { color: this.nodeColors.transport } },
-        { name: 'process', itemStyle: { color: this.nodeColors.process } },
-        { name: 'storage', itemStyle: { color: this.nodeColors.storage } },
-        { name: 'sales', itemStyle: { color: this.nodeColors.sales } }
+        { name: ORDER_TYPES.PURCHASE, itemStyle: { color: this.nodeColors[ORDER_TYPES.PURCHASE] }},
+        { name: ORDER_TYPES.TRANSPORT, itemStyle: { color: this.nodeColors[ORDER_TYPES.TRANSPORT] }},
+        { name: ORDER_TYPES.PROCESS, itemStyle: { color: this.nodeColors[ORDER_TYPES.PROCESS] }},
+        { name: ORDER_TYPES.STORAGE, itemStyle: { color: this.nodeColors[ORDER_TYPES.STORAGE] }},
+        { name: ORDER_TYPES.SALES, itemStyle: { color: this.nodeColors[ORDER_TYPES.SALES] }},
+        { name: ORDER_TYPES.OTHER, itemStyle: { color: this.nodeColors[ORDER_TYPES.OTHER] }}
       ]
     },
 
@@ -450,17 +443,12 @@ export default {
           pixelRatio: 2,
           backgroundColor: '#fff'
         })
-        
+
         const link = document.createElement('a')
         link.download = `追溯关系图_${new Date().getTime()}.png`
         link.href = url
         link.click()
       }
-    },
-
-    // 更新布局
-    updateLayout() {
-      this.updateChart()
     },
 
     // 处理窗口大小变化
@@ -471,28 +459,16 @@ export default {
     },
 
     // 获取流转步骤标签类型
-    getFlowStepTagType(step) {
+    getFlowStepTagType(orderType) {
       const typeMap = {
-        'purchase': 'success',
-        'transport': 'info',
-        'process': 'warning',
-        'storage': 'primary',
-        'sales': 'danger'
+        [ORDER_TYPES.PURCHASE]: 'success',
+        [ORDER_TYPES.TRANSPORT]: 'info',
+        [ORDER_TYPES.PROCESS]: 'warning',
+        [ORDER_TYPES.STORAGE]: 'primary',
+        [ORDER_TYPES.SALES]: 'danger',
+        [ORDER_TYPES.OTHER]: 'info'
       }
-      return typeMap[step] || 'info'
-    },
-
-    // 获取订单类型文本
-    getOrderTypeText(type) {
-      const textMap = {
-        'purchase': '采购订单',
-        'transport': '运输订单',
-        'process': '加工订单',
-        'sales': '销售订单',
-        'storage': '仓储订单',
-        'other': '其他订单'
-      }
-      return textMap[type] || '未知类型'
+      return typeMap[orderType] || 'info'
     },
 
     // 格式化日期时间
@@ -504,7 +480,10 @@ export default {
     getFlowStepText,
 
     // 获取变更原因文本
-    getChangeReasonText
+    getChangeReasonText,
+
+    // 获取订单类型文本（从 orderTypes.js 导入）
+    getOrderTypeText
   }
 }
 </script>
@@ -514,34 +493,22 @@ export default {
   display: flex;
   flex-direction: column;
   width: 100%;
-  
+
   .graph-header {
     margin-bottom: 15px;
   }
-  
+
   .graph-toolbar {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     margin-bottom: 10px;
     padding: 12px 15px;
     background: #f5f7fa;
     border-radius: 6px;
     border: 1px solid #e4e7ed;
-    
-    .layout-options {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      
-      .option-label {
-        font-size: 13px;
-        color: #606266;
-        font-weight: 500;
-      }
-    }
   }
-  
+
   .graph-legend {
     display: flex;
     align-items: center;
@@ -550,33 +517,33 @@ export default {
     background: #fafbfc;
     border-radius: 6px;
     border: 1px solid #ebeef5;
-    
+
     .legend-title {
       font-size: 13px;
       color: #606266;
       font-weight: 500;
       margin-right: 15px;
     }
-    
+
     .legend-items {
       display: flex;
       gap: 20px;
     }
-    
+
     .legend-item {
       display: flex;
       align-items: center;
       gap: 6px;
       font-size: 12px;
       color: #606266;
-      
+
       .legend-color {
         width: 14px;
         height: 14px;
         border-radius: 3px;
         border: 1px solid rgba(255,255,255,0.8);
         box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        
+
         &.purchase { background-color: #67C23A; }
         &.transport { background-color: #409EFF; }
         &.process { background-color: #E6A23C; }
@@ -585,7 +552,7 @@ export default {
       }
     }
   }
-  
+
   .chart-container {
     width: 90%;
     height: 550px;
@@ -595,18 +562,18 @@ export default {
     background: #fff;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
-  
+
   .source-codes {
     .source-tag {
       margin-right: 8px;
       margin-bottom: 8px;
       cursor: pointer;
-      
+
       .change-reason {
         font-size: 12px;
         opacity: 0.8;
       }
-      
+
       &:hover {
         opacity: 0.8;
       }

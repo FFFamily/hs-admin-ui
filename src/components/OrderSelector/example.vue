@@ -1,7 +1,7 @@
 <template>
   <div class="order-selector-example">
     <h2>订单选择器使用示例</h2>
-    
+
     <div class="demo-section">
       <h3>单选模式</h3>
       <el-button type="primary" @click="openSingleSelector">
@@ -73,12 +73,12 @@ export default {
       selectorTitle: '选择订单',
       isMultiple: false,
       showFlowDirection: false,
-      
+
       // 选择结果
       singleSelectedOrder: null,
       multipleSelectedOrders: [],
       filteredSelectedOrder: null,
-      
+
       // 过滤条件
       filterConditions: {}
     }
@@ -104,7 +104,7 @@ export default {
       this.filterConditions = {}
       this.selectorVisible = true
     },
-    
+
     // 打开多选选择器
     openMultipleSelector() {
       this.isMultiple = true
@@ -113,7 +113,7 @@ export default {
       this.filterConditions = {}
       this.selectorVisible = true
     },
-    
+
     // 打开带过滤条件的选择器
     openFilteredSelector() {
       this.isMultiple = false
@@ -125,7 +125,7 @@ export default {
       }
       this.selectorVisible = true
     },
-    
+
     // 处理订单选择
     handleOrderSelected(orders) {
       if (this.isMultiple) {
@@ -139,12 +139,12 @@ export default {
         this.$message.success('已选择订单')
       }
     },
-    
+
     // 取消选择
     handleCancel() {
       this.$message.info('已取消选择')
     },
-    
+
     // 工具方法
     getOrderTypeText,
     getOrderStatusText
@@ -155,37 +155,37 @@ export default {
 <style lang="scss" scoped>
 .order-selector-example {
   padding: 20px;
-  
+
   .demo-section {
     margin-bottom: 30px;
     padding: 20px;
     border: 1px solid #e4e7ed;
     border-radius: 4px;
-    
+
     h3 {
       margin-top: 0;
       color: #303133;
     }
-    
+
     .el-button {
       margin-right: 10px;
     }
   }
-  
+
   .selected-info {
     margin-top: 15px;
     padding: 15px;
     background-color: #f5f7fa;
     border-radius: 4px;
-    
+
     p {
       margin: 5px 0;
     }
-    
+
     ul {
       margin: 10px 0;
       padding-left: 20px;
-      
+
       li {
         margin: 5px 0;
       }

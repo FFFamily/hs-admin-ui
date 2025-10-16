@@ -29,15 +29,15 @@
     </el-table>
 
     <!-- 分页组件 -->
-    <el-pagination 
-      :current-page="pagination.current" 
-      :page-sizes="[10, 20, 50, 100]" 
+    <el-pagination
+      :current-page="pagination.current"
+      :page-sizes="[10, 20, 50, 100]"
       :page-size="pagination.size"
-      :total="pagination.total" 
-      layout="total, sizes, prev, pager, next, jumper" 
+      :total="pagination.total"
+      layout="total, sizes, prev, pager, next, jumper"
+      class="pagination"
       @size-change="handleSizeChange"
-      @current-change="handleCurrentChange" 
-      class="pagination" 
+      @current-change="handleCurrentChange"
     />
 
     <!-- 明细弹窗 -->
@@ -56,11 +56,11 @@
         </p>
       </div>
 
-      <el-table 
-        v-loading="detailLoading" 
-        :data="detailList" 
-        border 
-        fit 
+      <el-table
+        v-loading="detailLoading"
+        :data="detailList"
+        border
+        fit
         highlight-current-row
         max-height="400"
       >
@@ -186,8 +186,8 @@ export default {
     exportData() {
       exportInventoryReport().then(response => {
         // 创建下载链接
-        const blob = new Blob([response], { 
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        const blob = new Blob([response], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
@@ -197,7 +197,7 @@ export default {
         link.click()
         document.body.removeChild(link)
         window.URL.revokeObjectURL(url)
-        
+
         this.$message.success('导出成功')
       }).catch(error => {
         console.error('导出失败:', error)
@@ -208,9 +208,9 @@ export default {
     // 格式化金额
     formatAmount(amount) {
       const num = Number(amount) || 0
-      return num.toLocaleString(undefined, { 
-        minimumFractionDigits: 2, 
-        maximumFractionDigits: 2 
+      return num.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
       })
     },
 
@@ -249,8 +249,8 @@ export default {
     // 获取流转方向标签类型
     getFlowDirectionTagType(direction) {
       const tagTypeMap = {
-        'IN': 'success',  // 入库 - 绿色
-        'OUT': 'warning'  // 出库 - 橙色
+        'IN': 'success', // 入库 - 绿色
+        'OUT': 'warning' // 出库 - 橙色
       }
       return tagTypeMap[direction] || 'info'
     },
@@ -305,7 +305,7 @@ export default {
       font-weight: 600;
     }
   }
-  
+
   .el-table__body {
     tr:hover {
       background-color: #f5f7fa;

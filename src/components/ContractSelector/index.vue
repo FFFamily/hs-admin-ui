@@ -1,18 +1,34 @@
 <template>
-  <el-dialog :title="title" :visible.sync="visible" :width="width" :before-close="handleClose" append-to-body
-    class="contract-selector-dialog">
+  <el-dialog
+    :title="title"
+    :visible.sync="visible"
+    :width="width"
+    :before-close="handleClose"
+    append-to-body
+    class="contract-selector-dialog"
+  >
     <div class="contract-selector">
       <!-- 搜索区域 -->
-      <el-form :inline="true" :model="searchForm" ref="searchFormRef">
+      <el-form ref="searchFormRef" :inline="true" :model="searchForm">
         <el-form-item label="合同名称">
-          <el-input v-model="searchKeyword" placeholder="请输入合同名称搜索" class="search-input" clearable
-            @input="handleSearch">
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+          <el-input
+            v-model="searchKeyword"
+            placeholder="请输入合同名称搜索"
+            class="search-input"
+            clearable
+            @input="handleSearch"
+          >
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="合同类型">
-          <el-select v-model="searchForm.type" placeholder="请选择合同类型" clearable @change="handleSearch"
-            style="width: 150px;">
+          <el-select
+            v-model="searchForm.type"
+            placeholder="请选择合同类型"
+            clearable
+            style="width: 150px;"
+            @change="handleSearch"
+          >
             <el-option label="采购合同" value="purchase" />
             <el-option label="销售合同" value="sale" />
             <el-option label="运输合同" value="transport" />
@@ -22,18 +38,30 @@
           </el-select>
         </el-form-item>
         <el-form-item label="合作方">
-          <el-input v-model="searchForm.partner" placeholder="请输入合作方搜索" class="search-input" clearable
-            @input="handleSearch">
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+          <el-input
+            v-model="searchForm.partner"
+            placeholder="请输入合作方搜索"
+            class="search-input"
+            clearable
+            @input="handleSearch"
+          >
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
       </el-form>
 
       <!-- 合同列表 -->
       <div class="contract-list-container">
-        <el-table :data="filteredContractList" style="width: 100%" highlight-current-row border
-          @selection-change="handleSelectionChange" @row-click="handleRowClick" :row-class-name="getRowClassName"
-          v-loading="loading">
+        <el-table
+          v-loading="loading"
+          :data="filteredContractList"
+          style="width: 100%"
+          highlight-current-row
+          border
+          :row-class-name="getRowClassName"
+          @selection-change="handleSelectionChange"
+          @row-click="handleRowClick"
+        >
           <!-- 多选列 -->
           <el-table-column v-if="multiple" type="selection" width="55" :selectable="isSelectable" />
 
@@ -77,20 +105,31 @@
       </div>
 
       <!-- 分页 -->
-      <div class="pagination-container" v-if="showPagination">
-        <el-pagination background layout="total, prev, pager, next, jumper" :total="total" :page-size="pageSize"
-          :current-page.sync="currentPage" @current-change="handlePageChange" />
+      <div v-if="showPagination" class="pagination-container">
+        <el-pagination
+          background
+          layout="total, prev, pager, next, jumper"
+          :total="total"
+          :page-size="pageSize"
+          :current-page.sync="currentPage"
+          @current-change="handlePageChange"
+        />
       </div>
 
       <!-- 已选择合同展示 -->
-      <div class="selected-contracts" v-if="multiple && selectedContracts.length > 0">
+      <div v-if="multiple && selectedContracts.length > 0" class="selected-contracts">
         <div class="selected-title">
           <span>已选择合同 ({{ selectedContracts.length }})：</span>
           <el-button type="text" @click="clearSelection">清空选择</el-button>
         </div>
         <div class="selected-tags">
-          <el-tag v-for="contract in selectedContracts" :key="contract.id" closable @close="removeContract(contract)"
-            style="margin-right: 8px; margin-bottom: 8px;">
+          <el-tag
+            v-for="contract in selectedContracts"
+            :key="contract.id"
+            closable
+            style="margin-right: 8px; margin-bottom: 8px;"
+            @close="removeContract(contract)"
+          >
             {{ contract.name }} - {{ getTypeText(contract.type) }}
           </el-tag>
         </div>
@@ -99,7 +138,7 @@
 
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleConfirm" :disabled="!canConfirm">
+      <el-button type="primary" :disabled="!canConfirm" @click="handleConfirm">
         {{ confirmText }}
       </el-button>
     </div>

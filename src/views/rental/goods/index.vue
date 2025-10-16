@@ -6,9 +6,9 @@
       </el-form-item>
       <el-form-item label="状态">
         <el-select v-model="searchForm.status" placeholder="请选择状态">
-            <el-option label="上架" value="up" />
-            <el-option label="下架" value="down" />
-          </el-select>
+          <el-option label="上架" value="up" />
+          <el-option label="下架" value="down" />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
@@ -48,8 +48,8 @@
       <el-table-column label="状态" prop="status" width="100" align="center">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'up' ? 'success' : 'info'">
-              {{ scope.row.status === 'up' ? '上架' : '下架' }}
-            </el-tag>
+            {{ scope.row.status === 'up' ? '上架' : '下架' }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="220" align="center">
@@ -78,10 +78,10 @@
     <el-dialog :visible.sync="dialogImageVisible" title="预览图片" :close-on-click-modal="false">
       <img :src="previewImage" alt="预览图片" style="max-width: 100%;">
     </el-dialog>
-    
+
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="800px">
-      <el-form :model="form" :rules="rules" ref="form" label-width="120px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="商品名" prop="name">
           <el-input v-model="form.name" placeholder="请输入商品名称" />
         </el-form-item>
@@ -122,11 +122,11 @@
             <el-radio v-model="form.dynamicFields.parameter.type" label="image" style="margin-left: 20px;">图片</el-radio>
           </div>
           <div v-if="form.dynamicFields.parameter.type === 'text'">
-            <el-input 
-              v-model="form.dynamicFields.parameter.data" 
-              type="textarea" 
+            <el-input
+              v-model="form.dynamicFields.parameter.data"
+              type="textarea"
               :rows="4"
-              placeholder="请输入设备参数，支持换行" 
+              placeholder="请输入设备参数，支持换行"
             />
           </div>
           <div v-else>
@@ -134,8 +134,8 @@
               v-model="form.dynamicFields.parameter.images"
               :multiple="true"
               :limit="5"
-              @preview="handlePictureCardPreview"
               tips="最多上传5张图片，每张不超过2MB"
+              @preview="handlePictureCardPreview"
             />
           </div>
         </el-form-item>
@@ -145,11 +145,11 @@
             <el-radio v-model="form.dynamicFields.serviceContent.type" label="image" style="margin-left: 20px;">图片</el-radio>
           </div>
           <div v-if="form.dynamicFields.serviceContent.type === 'text'">
-            <el-input 
-              v-model="form.dynamicFields.serviceContent.data" 
-              type="textarea" 
+            <el-input
+              v-model="form.dynamicFields.serviceContent.data"
+              type="textarea"
               :rows="4"
-              placeholder="请输入服务内容，支持换行" 
+              placeholder="请输入服务内容，支持换行"
             />
           </div>
           <div v-else>
@@ -157,8 +157,8 @@
               v-model="form.dynamicFields.serviceContent.images"
               :multiple="true"
               :limit="5"
-              @preview="handlePictureCardPreview"
               tips="最多上传5张图片，每张不超过2MB"
+              @preview="handlePictureCardPreview"
             />
           </div>
         </el-form-item>
@@ -168,11 +168,11 @@
             <el-radio v-model="form.dynamicFields.precaution.type" label="image" style="margin-left: 20px;">图片</el-radio>
           </div>
           <div v-if="form.dynamicFields.precaution.type === 'text'">
-            <el-input 
-              v-model="form.dynamicFields.precaution.data" 
-              type="textarea" 
+            <el-input
+              v-model="form.dynamicFields.precaution.data"
+              type="textarea"
               :rows="4"
-              placeholder="请输入注意事项，支持换行" 
+              placeholder="请输入注意事项，支持换行"
             />
           </div>
           <div v-else>
@@ -180,8 +180,8 @@
               v-model="form.dynamicFields.precaution.images"
               :multiple="true"
               :limit="5"
-              @preview="handlePictureCardPreview"
               tips="最多上传5张图片，每张不超过2MB"
+              @preview="handlePictureCardPreview"
             />
           </div>
         </el-form-item>
@@ -195,7 +195,7 @@
 </template>
 
 <script>
-import { getCategoriesList,changeGoodStatus, getLeaseGoodListPage, addLeaseGood, updateLeaseGood, deleteLeaseGood } from '@/api/leaseGood';
+import { getCategoriesList, changeGoodStatus, getLeaseGoodListPage, addLeaseGood, updateLeaseGood, deleteLeaseGood } from '@/api/leaseGood'
 import ImageUploader from '@/components/ImageUploader/index.vue'
 export default {
   components: { ImageUploader },
@@ -231,7 +231,7 @@ export default {
             images: []
           },
           serviceContent: {
-            type: 'text', 
+            type: 'text',
             data: '',
             images: []
           },
@@ -242,12 +242,12 @@ export default {
           }
         }
       },
-      categoryOptions: [],  // 分类选项
-      
+      categoryOptions: [], // 分类选项
+
       // 图片预览相关
       previewImage: '',
       dialogImageVisible: false,
-      
+
       // 表单验证规则
       rules: {
         name: [
@@ -276,11 +276,7 @@ export default {
       return process.env.VUE_APP_BASE_URL || ''
     }
   },
-  created() {
-    this.fetchData()
-    this.getCategoryOptions()
-  },
-  
+
   watch: {
     // 监听动态字段类型变化，清空对应的数据
     'form.dynamicFields.parameter.type'(newType) {
@@ -305,6 +301,10 @@ export default {
       }
     }
   },
+  created() {
+    this.fetchData()
+    this.getCategoryOptions()
+  },
   methods: {
     displayUrl(raw) {
       if (!raw) return ''
@@ -314,7 +314,7 @@ export default {
       const path = String(raw).startsWith('/') ? raw : `/${raw}`
       return `${base}${path}`
     },
-    
+
     getCategoryOptions() {
       getCategoriesList()
         .then(response => {
@@ -331,8 +331,8 @@ export default {
       console.log(this.searchForm)
       getLeaseGoodListPage({
         pageNum: this.currentPage,
-        pageSize: this.pageSize,
-      },this.searchForm)
+        pageSize: this.pageSize
+      }, this.searchForm)
         .then(response => {
           this.list = response.data.records || []
           this.total = response.data.total || 0
@@ -394,10 +394,10 @@ export default {
     },
     handleEdit(row) {
       this.dialogTitle = '编辑商品'
-      
+
       // 解析JSON数据，处理兼容性问题
       let parameter, serviceContent, precaution
-      
+
       try {
         parameter = JSON.parse(row.parameter || '{"type":"text","data":"","images":[]}')
         serviceContent = JSON.parse(row.serviceContent || '{"type":"text","data":"","images":[]}')
@@ -408,7 +408,7 @@ export default {
         serviceContent = { type: 'text', data: '', images: [] }
         precaution = { type: 'text', data: '', images: [] }
       }
-      
+
       // 处理旧版本数据结构兼容
       if (parameter && !parameter.images && parameter.data && Array.isArray(parameter.data)) {
         parameter.images = parameter.data
@@ -422,7 +422,7 @@ export default {
         precaution.images = precaution.data
         precaution.data = ''
       }
-      
+
       this.form = {
         ...row,
         categoryId: row.categoryId || '',
@@ -448,7 +448,7 @@ export default {
           }
         }
       }
-      
+
       console.log('编辑表单数据:', this.form)
       this.dialogVisible = true
     },
@@ -474,114 +474,112 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        const newStatus = row.status === 'up' ? 'down' : 'up';
+        const newStatus = row.status === 'up' ? 'down' : 'up'
         changeGoodStatus(row.id, newStatus).then(response => {
-          this.$message({ type: 'success', message: '操作成功!' });
+          this.$message({ type: 'success', message: '操作成功!' })
           // 更新本地状态
-          row.status = newStatus;
+          row.status = newStatus
           // 刷新表格数据
-          this.fetchData();
+          this.fetchData()
         }).catch(error => {
-          this.$message({ type: 'error', message: '操作失败: ' + (error.message || '未知错误') });
-        });
+          this.$message({ type: 'error', message: '操作失败: ' + (error.message || '未知错误') })
+        })
       }).catch(() => {
-        this.$message({ type: 'info', message: '已取消操作' });
-      });
+        this.$message({ type: 'info', message: '已取消操作' })
+      })
     },
     // 根据分类ID获取分类名称
     getCategoryName(categoryId) {
-      const category = this.categoryOptions.find(item => item.id === categoryId);
-      return category ? category.name : '';
+      const category = this.categoryOptions.find(item => item.id === categoryId)
+      return category ? category.name : ''
     },
-    
+
     // 图片预览
     handlePictureCardPreview(file) {
       const raw = file.url || (file.response && file.response.data && (file.response.data.url || file.response.data.fileUrl))
       this.previewImage = this.displayUrl(raw)
-      this.dialogImageVisible = true;
+      this.dialogImageVisible = true
     },
 
-    
-    
     handleSave() {
       // 表单验证
       this.$refs.form.validate((valid) => {
         if (!valid) {
-          this.$message.error('请检查表单信息');
-          return;
+          this.$message.error('请检查表单信息')
+          return
         }
-        
+
         // 处理表单数据
-        const formData = { ...this.form };
-        
+        const formData = { ...this.form }
+
         // 处理动态字段数据
         formData.parameter = JSON.stringify({
           type: this.form.dynamicFields.parameter.type,
-          data: this.form.dynamicFields.parameter.type === 'text' 
-            ? this.form.dynamicFields.parameter.data 
+          data: this.form.dynamicFields.parameter.type === 'text'
+            ? this.form.dynamicFields.parameter.data
             : this.form.dynamicFields.parameter.images
-        });
-        
+        })
+
         formData.serviceContent = JSON.stringify({
           type: this.form.dynamicFields.serviceContent.type,
-          data: this.form.dynamicFields.serviceContent.type === 'text' 
-            ? this.form.dynamicFields.serviceContent.data 
+          data: this.form.dynamicFields.serviceContent.type === 'text'
+            ? this.form.dynamicFields.serviceContent.data
             : this.form.dynamicFields.serviceContent.images
-        });
-        
+        })
+
         formData.precaution = JSON.stringify({
           type: this.form.dynamicFields.precaution.type,
-          data: this.form.dynamicFields.precaution.type === 'text' 
-            ? this.form.dynamicFields.precaution.data 
+          data: this.form.dynamicFields.precaution.type === 'text'
+            ? this.form.dynamicFields.precaution.data
             : this.form.dynamicFields.precaution.images
-        });
-        
+        })
+
         console.log('准备提交的数据:', formData)
-        
+
         // 确保主图片数据正确
         formData.image = this.form.image || ''
 
         // 删除不需要提交的字段
-        delete formData.dynamicFields;
-        
+        delete formData.dynamicFields
+
         // 显示加载状态
         const loading = this.$loading({
           lock: true,
           text: this.form.id ? '正在更新商品...' : '正在创建商品...',
           spinner: 'el-icon-loading',
           background: 'rgba(0, 0, 0, 0.7)'
-        });
-        
+        })
+
         if (this.form.id) {
           // 编辑
           updateLeaseGood(formData)
             .then(() => {
-              loading.close();
-              this.$message.success('编辑成功');
-              this.dialogVisible = false;
-              this.fetchData();
+              loading.close()
+              this.$message.success('编辑成功')
+              this.dialogVisible = false
+              this.fetchData()
             })
             .catch(error => {
-              loading.close();
-              console.error('编辑商品失败:', error);
-              this.$message.error('编辑商品失败：' + (error.message || '未知错误'));
-            });
+              loading.close()
+              console.error('编辑商品失败:', error)
+              this.$message.error('编辑商品失败：' + (error.message || '未知错误'))
+            })
         } else {
           // 新增
           addLeaseGood(formData)
             .then(() => {
-              loading.close();
-              this.$message.success('新增成功');
-              this.dialogVisible = false;
-              this.fetchData();
+              loading.close()
+              this.$message.success('新增成功')
+              this.dialogVisible = false
+              this.fetchData()
             })
             .catch(error => {
-              loading.close();
-              console.error('新增商品失败:', error);
-              this.$message.error('新增商品失败：' + (error.message || '未知错误'));
-            });
+              loading.close()
+              console.error('新增商品失败:', error)
+              this.$message.error('新增商品失败：' + (error.message || '未知错误'))
+            })
         }
-      });
+      })
     }
   }
 }

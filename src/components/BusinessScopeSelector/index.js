@@ -1,3 +1,3 @@
 import BusinessScopeSelector from './index.vue'
 
-export default BusinessScopeSelector 
+export default BusinessScopeSelector

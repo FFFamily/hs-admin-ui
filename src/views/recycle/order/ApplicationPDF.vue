@@ -7,7 +7,7 @@
         <h2>业务申请单预览</h2>
       </div>
       <div class="header-right">
-        <el-button type="primary" icon="el-icon-download" @click="generatePDF" :loading="generating">
+        <el-button type="primary" icon="el-icon-download" :loading="generating" @click="generatePDF">
           生成PDF
         </el-button>
         <el-button type="success" icon="el-icon-view" @click="previewPDF">
@@ -16,14 +16,14 @@
         <el-button type="warning" icon="el-icon-printer" @click="printPDF">
           打印
         </el-button>
-        <el-button @click="refreshData" icon="el-icon-refresh">
+        <el-button icon="el-icon-refresh" @click="refreshData">
           刷新数据
         </el-button>
       </div>
     </div>
 
     <!-- 申请单预览 -->
-    <div class="preview-container" ref="previewContainer">
+    <div ref="previewContainer" class="preview-container">
       <div class="application-preview">
         <!-- 申请单标题 -->
         <div class="application-title">
@@ -56,7 +56,7 @@
         <!-- 一、订单信息 -->
         <div class="order-info-section">
           <h2 class="section-title">一、订单信息</h2>
-          
+
           <!-- （1）订单类型 -->
           <div class="order-type-info">
             <p class="info-item">
@@ -70,7 +70,7 @@
             <p class="info-item">
               <span class="label">（2）订单内容</span>
             </p>
-            
+
             <!-- 订单明细表格 -->
             <div class="order-details-table">
               <table>
@@ -135,18 +135,18 @@
         <!-- 二、其他信息 -->
         <div class="other-info-section">
           <h2 class="section-title">二、其他信息</h2>
-          
+
           <div class="other-info-content">
             <p class="info-item">
               <span class="label">订单申请时间：</span>
               <span class="value">{{ formatDateTime(orderData.startTime) }}（我方）</span>
             </p>
-            
+
             <p class="info-item">
               <span class="label">订单内容流转方向：</span>
               <span class="value">{{ getFlowDirectionText(orderData.type) }}</span>
             </p>
-            
+
             <p class="info-item">
               <span class="label">合同约定走款账号：</span>
               <span class="value">{{ orderData.paymentAccount || '6222021234567890123' }}</span>
@@ -174,7 +174,7 @@
 <script>
 import { generateSettlementPDF, getRecycleDetail } from '@/api/recycle'
 import { parseTime } from '@/utils'
-import { 
+import {
   getOrderTypeText,
   getOrderStatusText
 } from '@/constants/orderTypes'
@@ -192,7 +192,7 @@ export default {
   created() {
     // 从路由参数获取订单ID
     this.orderId = this.$route.params.orderId || this.$route.query.orderId
-    
+
     // 如果有orderId，则从API获取订单数据
     if (this.orderId) {
       this.loadOrderData()
@@ -202,11 +202,11 @@ export default {
     // 加载订单数据
     async loadOrderData() {
       if (!this.orderId) return
-      
+
       try {
         const response = await getRecycleDetail(this.orderId)
         this.orderData = response.data || {}
-        
+
         // 如果API返回的数据中没有items，则使用模拟数据
         if (!this.orderData.items || this.orderData.items.length === 0) {
           this.loadMockOrderItems()
@@ -229,7 +229,7 @@ export default {
         this.loadMockOrderData()
       }
     },
-    
+
     // 加载模拟订单数据（作为备用）
     loadMockOrderData() {
       this.orderData = {
@@ -252,7 +252,7 @@ export default {
       }
       this.loadMockOrderItems()
     },
-    
+
     // 加载模拟订单明细数据
     loadMockOrderItems() {
       // 模拟订单明细数据
@@ -306,7 +306,7 @@ export default {
         'service': '服务',
         'other': '其他'
       }
-      
+
       // 如果在预定义映射中找到，使用映射值；否则直接返回原值（货物类型）
       return typeMap[type] || type || '未知'
     },
@@ -333,10 +333,10 @@ export default {
     async generatePDF() {
       try {
         this.generating = true
-        
+
         // 使用前端生成PDF
         await this.generatePDFFromFrontend()
-        
+
         this.$message.success('PDF生成成功')
       } catch (error) {
         console.error('PDF生成失败:', error)
@@ -367,17 +367,17 @@ export default {
       ])
 
       const filename = `业务申请单_${this.orderData.no || this.orderId}_${new Date().getTime()}.pdf`
-      
+
       // 显示加载提示
       const loading = this.showLoading('正在生成PDF...')
 
       try {
         // 添加PDF模式样式
         previewContainer.classList.add('pdf-mode')
-        
+
         // 等待样式应用
         await new Promise(resolve => setTimeout(resolve, 100))
-        
+
         // 创建PDF文档，使用中文字体支持
         const pdf = new jsPDF({
           orientation: 'portrait',
@@ -482,7 +482,7 @@ export default {
       pdf.setFontSize(14)
       pdf.setFont('helvetica', 'bold')
       pdf.text(title, pageWidth / 2, margin + 8, { align: 'center' })
-      
+
       // 添加分隔线
       pdf.setDrawColor(200, 200, 200)
       pdf.line(margin, margin + 15, pageWidth - margin, margin + 15)
@@ -491,7 +491,7 @@ export default {
     // 添加PDF页脚
     addPDFFooter(pdf, currentPage, totalPages, pageWidth, pageHeight, margin) {
       const footerY = pageHeight - margin
-      
+
       // 添加页码
       pdf.setFontSize(10)
       pdf.setFont('helvetica', 'normal')
@@ -501,7 +501,7 @@ export default {
         footerY,
         { align: 'center' }
       )
-      
+
       // 添加生成时间
       const now = new Date()
       const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -527,17 +527,17 @@ export default {
       ])
 
       const filename = `业务申请单_${this.orderData.no || this.orderId}_${new Date().getTime()}.pdf`
-      
+
       // 显示加载提示
       const loading = this.showLoading('正在生成简化版PDF...')
 
       try {
         // 添加PDF模式样式
         previewContainer.classList.add('pdf-mode')
-        
+
         // 等待样式应用
         await new Promise(resolve => setTimeout(resolve, 100))
-        
+
         // 创建PDF文档
         const pdf = new jsPDF({
           orientation: 'portrait',
@@ -558,31 +558,31 @@ export default {
         const pageWidth = pdf.internal.pageSize.getWidth()
         const pageHeight = pdf.internal.pageSize.getHeight()
         const margin = 10
-        
+
         // 计算缩放比例
         const imgWidth = pageWidth - (margin * 2)
         const imgHeight = (canvas.height * imgWidth) / canvas.width
-        
+
         // 如果内容超过一页，需要分页
         if (imgHeight > pageHeight - (margin * 2)) {
           const pages = Math.ceil(imgHeight / (pageHeight - (margin * 2)))
-          
+
           for (let i = 0; i < pages; i++) {
             if (i > 0) {
               pdf.addPage()
             }
-            
+
             const sourceY = i * (pageHeight - (margin * 2)) * (canvas.height / imgHeight)
             const sourceHeight = Math.min((pageHeight - (margin * 2)) * (canvas.height / imgHeight), canvas.height - sourceY)
-            
+
             // 创建临时canvas
             const tempCanvas = document.createElement('canvas')
             const tempCtx = tempCanvas.getContext('2d')
             tempCanvas.width = canvas.width
             tempCanvas.height = sourceHeight
-            
+
             tempCtx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight)
-            
+
             const imgData = tempCanvas.toDataURL('image/jpeg', 0.8)
             pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, (sourceHeight * imgWidth) / canvas.width)
           }
@@ -877,7 +877,7 @@ export default {
 
       printWindow.document.close()
       printWindow.focus()
-      
+
       // 等待内容加载完成后打印
       printWindow.onload = () => {
         printWindow.print()
@@ -969,29 +969,29 @@ export default {
       border-radius: 0;
       box-shadow: none;
       background: white;
-      
+
       .application-preview {
         padding: 20px;
         font-size: 11px;
-        
+
         .application-title h1 {
           font-size: 24px;
         }
-        
+
         .section-title {
           font-size: 16px;
         }
-        
+
         table {
           font-size: 10px;
-          
+
           th, td {
             padding: 6px;
           }
         }
       }
     }
-    
+
     .application-preview {
       padding: 40px;
       font-family: 'SimSun', 'Microsoft YaHei', 'PingFang SC', serif;

@@ -4,7 +4,7 @@ import request from '@/utils/request'
 export function uploadFile(file) {
   const formData = new FormData()
   formData.append('file', file)
-  
+
   const upload = request({
     url: '/system/file/upload',
     method: 'post',
@@ -13,10 +13,10 @@ export function uploadFile(file) {
       'Content-Type': 'multipart/form-data'
     }
   })
-  const res = {};
+  const res = {}
   upload().then(r => {
     r.url = process.env.VUE_APP_BASE_API + r.fileUrl
     res = r
   })
   return Promise.resolve(res)
-} 
+}

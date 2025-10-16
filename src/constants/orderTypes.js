@@ -109,4 +109,4 @@ export function getFlowDirectionText(direction) {
     [FLOW_DIRECTION.OUT]: '出库'
   }
   return textMap[direction] || '未知'
-} 
+}

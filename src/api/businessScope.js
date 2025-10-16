@@ -50,13 +50,13 @@ export function batchDeleteBusinessScope(ids) {
     method: 'delete',
     data: ids
   })
-} 
+}
 // 更新是否显示
 export function updateBusinessScopeVisible(id, isShow) {
   return request({
     url: `/recycle/business-scope/update/isShow`,
     method: 'put',
-    data: { id,isShow }
+    data: { id, isShow }
   })
 }
 

@@ -84,7 +84,7 @@ export function getUserPage(params) {
 }
 
 // 根据用户类型生成对应的用户账号
-export function generateAccountUsername(id,accountType){
+export function generateAccountUsername(id, accountType) {
   return request({
     url: '/wx/user/generateAccountUsername/' + accountType,
     method: 'get',

@@ -14,6 +14,7 @@ import router from './router'
 
 import '@/icons' // icon
 import '@/permission' // permission control
+import DictPlugin from '@/utils/dict' // dict plugin
 
 /**
  * If you don't want to use mock-server
@@ -32,6 +33,9 @@ if (process.env.NODE_ENV === 'production') {
 Vue.use(ElementUI, { locale })
 // 如果想要英文版 element-ui，按如下方式声明
 // Vue.use(ElementUI)
+
+// 注册字典插件
+Vue.use(DictPlugin)
 
 Vue.config.productionTip = false
 

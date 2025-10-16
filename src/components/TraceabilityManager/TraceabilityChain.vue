@@ -1,10 +1,10 @@
 <template>
   <div class="traceability-chain">
-    <div class="chain-content" v-loading="loading">
+    <div v-loading="loading" class="chain-content">
       <!-- 追溯链时间轴 -->
       <el-timeline v-if="traceabilityData.length > 0 && traceabilityData">
         <el-timeline-item v-for="(nodeOrders, nodeIndex) in traceabilityData" :key="nodeIndex" placement="top">
-          <el-card class="timeline-card" shadow="hover" v-if="nodeOrders && nodeOrders.length > 0">
+          <el-card v-if="nodeOrders && nodeOrders.length > 0" class="timeline-card" shadow="hover">
             <div class="card-header">
               <div class="step-info">
                 <span class="node-title">节点 {{ nodeIndex + 1 }}</span>
@@ -16,10 +16,11 @@
               <!-- 该节点下的所有订单 -->
               <el-collapse v-if="nodeOrders.length > 1" accordion>
                 <template v-for="(order, orderIndex) in nodeOrders">
-                  <el-collapse-item 
-                    v-if="order && order.context" 
-                    :key="orderIndex" 
-                    :name="String(orderIndex)">
+                  <el-collapse-item
+                    v-if="order && order.context"
+                    :key="orderIndex"
+                    :name="String(orderIndex)"
+                  >
                     <template slot="title">
                       <div class="order-title">
                         <el-tag :type="getFlowStepTagType(order.context.type)" size="small">
@@ -148,10 +149,6 @@ export default {
       loading: false
     }
   },
-  mounted() {
-    // 自动加载追溯链数据
-    this.autoLoadTraceabilityChain()
-  },
   watch: {
     orderId(newVal) {
       if (newVal) {
@@ -163,6 +160,10 @@ export default {
         this.searchIdentifyCode = newVal
       }
     }
+  },
+  mounted() {
+    // 自动加载追溯链数据
+    this.autoLoadTraceabilityChain()
   },
   methods: {
     // 自动加载追溯链数据
@@ -204,8 +205,9 @@ export default {
           this.$message.info('未找到相关追溯数据')
         }
       } catch (error) {
-        this.$message.error('加载追溯数据失败')
+        this.$message.error('加载追溯数据失败2')
         console.error('追溯数据加载失败:', error)
+        this.traceabilityData = []
       } finally {
         this.loading = false
       }
@@ -218,7 +220,8 @@ export default {
         'transport': 'info',
         'process': 'warning',
         'storage': 'primary',
-        'sales': 'danger'
+        'sales': 'danger',
+        'current': 'primary'
       }
       return typeMap[flowStep] || 'info'
     },
@@ -230,7 +233,8 @@ export default {
         'transport': 'el-icon-truck',
         'process': 'el-icon-setting',
         'storage': 'el-icon-box',
-        'sales': 'el-icon-sell'
+        'sales': 'el-icon-sell',
+        'current': 'el-icon-star-on'
       }
       return iconMap[flowStep] || 'el-icon-info'
     },
@@ -242,7 +246,8 @@ export default {
         'transport': 'info',
         'process': 'warning',
         'storage': 'primary',
-        'sales': 'danger'
+        'sales': 'danger',
+        'current': 'primary'
       }
       return typeMap[step] || 'info'
     },

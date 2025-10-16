@@ -16,7 +16,7 @@ export function getWxHomeConfig() {
 }
 
 // 更新首页配置
-export function updateHomeConfig(id,data) {
+export function updateHomeConfig(id, data) {
   return request({
     url: `/system/home/config/update/${id}`,
     method: 'put',

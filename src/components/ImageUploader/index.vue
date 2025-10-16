@@ -20,7 +20,7 @@
     </el-upload>
     <div v-if="tips" class="uploader-tips">{{ tips }}</div>
   </div>
-  
+
 </template>
 
 <script>

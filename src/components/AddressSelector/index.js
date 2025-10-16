@@ -1,3 +1,3 @@
 import AddressSelector from './index.vue'
 
-export default AddressSelector 
+export default AddressSelector

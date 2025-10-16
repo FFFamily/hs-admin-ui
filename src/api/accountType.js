@@ -49,4 +49,4 @@ export function getAccountTypeById(id) {
     url: `/system/accountType/get/${id}`,
     method: 'get'
   })
-} 
+}

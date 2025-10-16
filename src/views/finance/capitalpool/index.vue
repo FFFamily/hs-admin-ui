@@ -8,21 +8,21 @@
       </el-form-item>
     </el-form>
 
-    <el-table :data="list" v-loading="listLoading" border fit highlight-current-row style="margin-top: 20px;">
+    <el-table v-loading="listLoading" :data="list" border fit highlight-current-row style="margin-top: 20px;">
       <el-table-column prop="no" label="资金池编号" width="180" />
       <el-table-column prop="contractNo" label="合同编号" width="220" />
       <el-table-column prop="contractName" label="合同名称" width="140" />
       <el-table-column prop="contractPartnerName" label="合作方" width="140" />
       <el-table-column prop="contractName" label="合同类型" width="140" />
-      <el-table-column prop="fundPoolDirection" label="资金池方向" width="140" >
+      <el-table-column prop="fundPoolDirection" label="资金池方向" width="140">
         <template slot-scope="scope">
           {{ getFundPoolDirectionName(scope.row.fundPoolDirection) }}
         </template>
       </el-table-column>
       <el-table-column prop="balance" label="当前余额" width="140">
         <template slot-scope="scope">¥{{ formatAmount(scope.row.balance) }}</template>
-      </el-table-column> 
-      <el-table-column label="操作"  align="center">
+      </el-table-column>
+      <el-table-column label="操作" align="center">
         <template slot-scope="scope">
           <el-button size="mini" @click="handleViewDetail(scope.row)">明细</el-button>
           <el-button size="mini" type="warning" @click="handleEdit(scope.row)">编辑</el-button>
@@ -37,14 +37,14 @@
       :page-size="pagination.size"
       :total="pagination.total"
       layout="total, sizes, prev, pager, next, jumper"
+      style="margin-top: 20px; text-align: right;"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
-      style="margin-top: 20px; text-align: right;"
     />
 
     <!-- 新增/编辑资金池 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="700px">
-      <el-form :model="form" :rules="dynamicRules" ref="form" label-width="140px">
+      <el-form ref="form" :model="form" :rules="dynamicRules" label-width="140px">
         <!-- 基本信息 -->
         <div class="form-section">
           <el-row :gutter="16">
@@ -87,11 +87,11 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="初始金额" prop="initialAmount">
-                <el-input-number 
-                  v-model="form.initialAmount" 
-                  :min="0" 
-                  :precision="2" 
-                  style="width: 100%;" 
+                <el-input-number
+                  v-model="form.initialAmount"
+                  :min="0"
+                  :precision="2"
+                  style="width: 100%;"
                   placeholder="请输入初始金额"
                   :disabled="!!form.id"
                 />
@@ -99,11 +99,11 @@
             </el-col>
             <el-col :span="24">
               <el-form-item label="初始余额凭证" prop="initialBalanceVoucher">
-                <el-input 
-                  v-model="form.initialBalanceVoucher" 
-                  type="textarea" 
+                <el-input
+                  v-model="form.initialBalanceVoucher"
+                  type="textarea"
                   :rows="3"
-                  placeholder="请输入初始余额凭证" 
+                  placeholder="请输入初始余额凭证"
                 />
               </el-form-item>
             </el-col>
@@ -197,7 +197,6 @@
           </el-row>
         </div>
 
-
         <!-- 详细记录表格 -->
         <div class="detail-table-section">
           <el-card shadow="never">
@@ -205,7 +204,7 @@
               <span class="card-title">详细记录</span>
               <span class="record-count">共 {{ details.length }} 条记录</span>
             </div>
-            <el-table :data="details" v-loading="detailsLoading" border fit size="small">
+            <el-table v-loading="detailsLoading" :data="details" border fit size="small">
               <el-table-column prop="createTime" label="变更时间" width="160">
                 <template slot-scope="scope">
                   {{ formatTime(scope.row.createTime) }}
@@ -354,7 +353,7 @@ export default {
     calculateBalanceSummary(details) {
       let totalIncome = 0
       let totalExpense = 0
-      
+
       details.forEach(detail => {
         const amount = Number(detail.amount) || 0
         if (detail.direction === '0') {
@@ -363,7 +362,7 @@ export default {
           totalExpense += amount
         }
       })
-      
+
       this.balanceSummary = {
         totalIncome,
         totalExpense,
@@ -396,16 +395,16 @@ export default {
     },
     handleAdd() {
       this.dialogTitle = '新增资金池'
-      this.form = { 
-        id: null, 
-        no: '', 
-        contractNo: '', 
-        contractName: '', 
-        contractPartner: '', 
+      this.form = {
+        id: null,
+        no: '',
+        contractNo: '',
+        contractName: '',
+        contractPartner: '',
         contractPartnerName: '',
-        fundPoolDirection: '', 
-        initialAmount: 0, 
-        initialBalanceVoucher: '' 
+        fundPoolDirection: '',
+        initialAmount: 0,
+        initialBalanceVoucher: ''
       }
       this.dialogVisible = true
     },
@@ -421,8 +420,8 @@ export default {
       const contract = Array.isArray(selected) ? selected[0] : selected
       if (!contract) return
       this.form.contractId = contract.id
-      this.form.contractNo = contract.no 
-      this.form.contractName = contract.name 
+      this.form.contractNo = contract.no
+      this.form.contractName = contract.name
       this.form.contractPartner = contract.partner
       this.form.contractPartnerName = contract.partnerName
       this.contractSelectorVisible = false
@@ -440,7 +439,7 @@ export default {
     handleSave() {
       this.$refs.form.validate(valid => {
         if (!valid) return
-        
+
         let submitData
         if (this.form.id) {
           // 编辑模式：只提交可编辑的字段
@@ -453,7 +452,7 @@ export default {
           // 新增模式：提交所有字段
           submitData = { ...this.form }
         }
-        
+
         const action = this.form.id ? updateCapitalPool : createCapitalPool
         action(submitData).then(() => {
           this.$message.success(this.form.id ? '更新成功' : '新增成功')

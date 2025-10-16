@@ -8,7 +8,7 @@
           查看追溯链
         </el-button>
       </div>
-      
+
       <el-alert
         title="说明"
         type="info"
@@ -22,20 +22,20 @@
           <p style="margin: 5px 0;">源识别码用于追溯货物的来源和流转历程</p>
         </div>
       </el-alert>
-      
+
       <!-- 当前识别码 -->
       <el-form label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="订单识别码" required>
-              <el-input 
-                v-model="localIdentifyCode" 
+              <el-input
+                v-model="localIdentifyCode"
                 placeholder="请手动输入订单识别码"
                 :disabled="!canEditIdentifyCode"
               />
             </el-form-item>
           </el-col>
-          
+
         </el-row>
       </el-form>
 
@@ -45,33 +45,33 @@
         <el-button type="success" size="small" @click="addSourceCode">
           添加源识别码
         </el-button>
-        <el-button 
-          type="warning" 
-          size="small" 
+        <el-button
+          type="warning"
+          size="small"
           @click="showSourceCodeSelector"
         >
           从库存选择
         </el-button>
       </div>
-      
-      <el-table 
-        :data="sourceCodes" 
-        border 
-        size="small" 
-        style="margin-top: 10px;"
+
+      <el-table
         v-if="sourceCodes.length > 0"
+        :data="sourceCodes"
+        border
+        size="small"
+        style="margin-top: 10px;"
       >
         <el-table-column prop="identifyCode" label="源识别码" width="250">
           <template slot-scope="scope">
             <div style="display: flex; gap: 5px; align-items: center;">
-              <el-input 
-                v-model="scope.row.identifyCode" 
+              <el-input
+                v-model="scope.row.identifyCode"
                 placeholder="请输入源识别码"
                 size="small"
                 style="flex: 1;"
               />
-              <el-button 
-                type="primary" 
+              <el-button
+                type="primary"
                 size="mini"
                 :disabled="!scope.row.identifyCode"
                 @click="showRelatedOrdersDialog(scope.$index)"
@@ -97,25 +97,25 @@
         </el-table-column>
         <el-table-column prop="changeReason" label="变更原因" width="150">
           <template slot-scope="scope">
-            <el-select 
-              v-model="scope.row.changeReason" 
+            <el-select
+              v-model="scope.row.changeReason"
               placeholder="选择原因"
               size="small"
             >
-              <el-option 
-                v-for="option in changeReasonOptions" 
-                :key="option.value" 
-                :label="option.label" 
-                :value="option.value" 
+              <el-option
+                v-for="option in changeReasonOptions"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
               />
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" >
+        <el-table-column label="操作" align="center">
           <template slot-scope="scope">
-            <el-button 
-              type="danger" 
-              size="mini" 
+            <el-button
+              type="danger"
+              size="mini"
               icon="el-icon-delete"
               @click="removeSourceCode(scope.$index)"
             />
@@ -125,29 +125,29 @@
     </el-card>
 
     <!-- 追溯链查看弹窗 -->
-    <el-dialog 
-      title="货物追溯链" 
-      :visible.sync="traceabilityDialogVisible" 
+    <el-dialog
+      title="货物追溯链"
+      :visible.sync="traceabilityDialogVisible"
       width="80%"
       :close-on-click-modal="false"
       append-to-body
     >
-      <traceability-chain 
+      <traceability-chain
+        v-if="traceabilityDialogVisible"
         :identify-code="localIdentifyCode"
         :order-id="currentOrderId"
-        v-if="traceabilityDialogVisible"
       />
     </el-dialog>
 
     <!-- 库存识别码选择弹窗 -->
-    <el-dialog 
-      title="选择库存识别码" 
-      :visible.sync="sourceCodeSelectorVisible" 
+    <el-dialog
+      title="选择库存识别码"
+      :visible.sync="sourceCodeSelectorVisible"
       width="70%"
       append-to-body
       :close-on-click-modal="false"
     >
-      <inventory-identify-code-selector 
+      <inventory-identify-code-selector
         :visible="sourceCodeSelectorVisible"
         @confirm="handleSourceCodeSelected"
         @cancel="sourceCodeSelectorVisible = false"
@@ -155,22 +155,23 @@
     </el-dialog>
 
     <!-- 关联订单选择弹窗 -->
-    <el-dialog 
-      title="选择关联订单" 
-      :visible.sync="relatedOrdersDialogVisible" 
+    <el-dialog
+      title="选择关联订单"
+      :visible.sync="relatedOrdersDialogVisible"
       width="60%"
       append-to-body
       :close-on-click-modal="false"
     >
       <div v-loading="relatedOrdersLoading">
-        <el-table 
-          :data="relatedOrders" 
-          border 
+        <el-table
+          :data="relatedOrders"
+          border
           size="small"
           max-height="500"
+          :row-class-name="getRowClassName"
         >
           <el-table-column prop="no" label="订单编码" width="200" align="center" show-overflow-tooltip />
-          <el-table-column prop="identifyCode" label="订单识别码" width="250" align="center" show-overflow-tooltip />
+          <el-table-column prop="identifyCode" label="订单识别码" width="200" align="center" show-overflow-tooltip />
           <el-table-column prop="type" label="订单类型" width="120" align="center">
             <template slot-scope="scope">
               <el-tag size="small" :type="getOrderTypeTagType(scope.row.type)">
@@ -178,21 +179,42 @@
               </el-tag>
             </template>
           </el-table-column>
+          <el-table-column label="标识" width="100" align="center">
+            <template slot-scope="scope">
+              <el-tag
+                v-if="isCurrentOrder(scope.row)"
+                type="warning"
+                size="mini"
+                effect="plain"
+              >
+                当前订单
+              </el-tag>
+              <el-tag
+                v-else-if="isOrderSelected(scope.row)"
+                type="success"
+                size="mini"
+                effect="plain"
+              >
+                已选择
+              </el-tag>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" align="center">
             <template slot-scope="scope">
-              <el-button 
-                type="primary" 
+              <el-button
+                type="primary"
                 size="mini"
+                :disabled="isCurrentOrder(scope.row) || isOrderSelected(scope.row)"
                 @click="handleSelectOrder(scope.row)"
               >
-                选择
+                {{ getButtonText(scope.row) }}
               </el-button>
             </template>
           </el-table-column>
         </el-table>
-        
-        <el-empty 
-          v-if="!relatedOrdersLoading && relatedOrders.length === 0" 
+
+        <el-empty
+          v-if="!relatedOrdersLoading && relatedOrders.length === 0"
           description="没有找到相关订单"
           :image-size="100"
         />
@@ -202,7 +224,7 @@
 </template>
 
 <script>
-import { 
+import {
   IDENTIFY_CODE_CHANGE_REASON_OPTIONS,
   getFlowStepText,
   getChangeReasonText
@@ -383,16 +405,16 @@ export default {
         this.$message.warning('请先输入源识别码')
         return
       }
-      
+
       this.currentSelectingIndex = index
       this.relatedOrdersDialogVisible = true
       this.relatedOrdersLoading = true
       this.relatedOrders = []
-      
+
       try {
         const response = await getOrdersByIdentifyCode(sourceCode.identifyCode)
         this.relatedOrders = response.data || []
-        
+
         if (this.relatedOrders.length === 0) {
           this.$message.info('未找到相关订单')
         }
@@ -411,7 +433,7 @@ export default {
         this.$set(this.sourceCodes[this.currentSelectingIndex], 'orderId', order.id)
         this.$set(this.sourceCodes[this.currentSelectingIndex], 'orderNo', order.no)
         this.$set(this.sourceCodes[this.currentSelectingIndex], 'orderType', order.type)
-        
+
         this.$message.success(`已关联订单：${order.no}`)
         this.relatedOrdersDialogVisible = false
         this.currentSelectingIndex = null
@@ -441,6 +463,39 @@ export default {
         'other': '其他订单'
       }
       return textMap[type] || '未知类型'
+    },
+
+    // 判断是否为当前订单
+    isCurrentOrder(order) {
+      // 通过订单编号判断是否为当前订单
+      return order.no === this.currentOrderNo && this.currentOrderNo !== ''
+    },
+
+    // 判断订单是否已经被选择
+    isOrderSelected(order) {
+      // 检查订单编号是否已经在源识别码列表中
+      return this.sourceCodes.some(sourceCode => sourceCode.orderNo === order.no)
+    },
+
+    // 获取按钮文本
+    getButtonText(order) {
+      if (this.isCurrentOrder(order)) {
+        return '当前订单'
+      } else if (this.isOrderSelected(order)) {
+        return '已选择'
+      } else {
+        return '选择'
+      }
+    },
+
+    // 获取表格行样式类名
+    getRowClassName({ row }) {
+      if (this.isCurrentOrder(row)) {
+        return 'current-order-row'
+      } else if (this.isOrderSelected(row)) {
+        return 'selected-order-row'
+      }
+      return ''
     }
   }
 }
@@ -450,7 +505,7 @@ export default {
 .traceability-manager {
   .identify-code-card {
     margin-bottom: 20px;
-    
+
     .card-header {
       display: flex;
       justify-content: space-between;
@@ -460,7 +515,7 @@ export default {
 
   .source-codes-section {
     margin-bottom: 10px;
-    
+
     .el-button {
       margin-right: 10px;
     }
@@ -471,6 +526,32 @@ export default {
       font-size: 12px;
       color: #909399;
       margin-top: 4px;
+    }
+  }
+
+  // 当前订单行样式
+  :deep(.current-order-row) {
+    background-color: #fdf6ec !important;
+
+    &:hover {
+      background-color: #faecd8 !important;
+    }
+
+    td {
+      border-color: #f5dab1 !important;
+    }
+  }
+
+  // 已选择订单行样式
+  :deep(.selected-order-row) {
+    background-color: #f0f9ff !important;
+
+    &:hover {
+      background-color: #e1f5fe !important;
+    }
+
+    td {
+      border-color: #b3e5fc !important;
     }
   }
 }

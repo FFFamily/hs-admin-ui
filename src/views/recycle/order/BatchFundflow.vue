@@ -1,6 +1,6 @@
 <template>
-  <el-dialog title="批量走款" :visible.sync="visible" width="90%" :close-on-click-modal="false" top="5vh">    
-    <el-table :data="fundflowList" border fit style="width: 100%" v-loading="loading">
+  <el-dialog title="批量走款" :visible.sync="visible" width="90%" :close-on-click-modal="false" top="5vh">
+    <el-table v-loading="loading" :data="fundflowList" border fit style="width: 100%">
       <el-table-column prop="orderNo" label="订单编号" width="150" align="center" />
       <el-table-column prop="orderType" label="订单类型" width="120" align="center">
         <template slot-scope="scope">
@@ -58,8 +58,8 @@
       <el-table-column prop="fundFlowAmount" label="本次计划走款金额" width="160" align="center">
         <template slot-scope="scope">
           <el-input-number
-            disabled
             v-model="scope.row.fundFlowAmount"
+            disabled
             :min="0"
             :precision="2"
             controls-position="right"
@@ -95,17 +95,17 @@
       </el-table-column>
       <el-table-column prop="fundBank" label="走款银行" width="200" align="center">
         <template slot-scope="scope">
-          <el-select 
-            v-model="scope.row.fundBank" 
-            placeholder="选择银行账号" 
+          <el-select
+            v-model="scope.row.fundBank"
+            placeholder="选择银行账号"
             style="width: 100%;"
-            @change="onBankChange(scope.row)"
             filterable
+            @change="onBankChange(scope.row)"
           >
-            <el-option 
-              v-for="bank in scope.row.partnerBankList" 
+            <el-option
+              v-for="bank in scope.row.partnerBankList"
               :key="bank.cardNumber"
-              :label="`${bank.cardNumber}`" 
+              :label="`${bank.cardNumber}`"
               :value="bank.id"
             />
           </el-select>
@@ -115,13 +115,13 @@
 
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleCancel">取消</el-button>
-      <el-button type="primary" @click="handleSave" :loading="saveLoading">保存</el-button>
+      <el-button type="primary" :loading="saveLoading" @click="handleSave">保存</el-button>
     </div>
   </el-dialog>
 </template>
 
 <script>
-import { 
+import {
   getOrderTypeText,
   getOrderStatusTagType,
   getOrderStatusText
@@ -149,8 +149,11 @@ export default {
       fundflowList: [],
       getOrderTypeText,
       getOrderStatusTagType,
-      getOrderStatusText,
+      getOrderStatusText
     }
+  },
+  computed: {
+    // 移除资金池验证逻辑
   },
   watch: {
     visible(newVal) {
@@ -167,9 +170,6 @@ export default {
       immediate: true
     }
   },
-  computed: {
-    // 移除资金池验证逻辑
-  },
   methods: {
     // 初始化数据
     async initData() {
@@ -178,7 +178,7 @@ export default {
         this.fundflowList = []
         return
       }
-      
+
       this.loading = true
       try {
         // 将选中的订单转换为走款列表，并异步获取资金池余额和银行账号
@@ -191,10 +191,10 @@ export default {
           ])
           // 找到默认的银行卡
           const defaultBank = partnerBankList.find(bank => bank.isDefault)
-          
+
           // 判断合同是否有资金池
           const hasFundPool = typeof contractFundPoolBalance === 'number'
-          
+
           fundflowList.push({
             ...order,
             orderId: order.id,
@@ -230,18 +230,18 @@ export default {
     async getCapitalPoolRemaining(contractNo) {
       try {
         const res = await getCapitalPoolByContractNo(contractNo)
-        console.log("资金池接口返回:", res)
-        
+        console.log('资金池接口返回:', res)
+
         if (!res.data || res.data === null) {
-          return "合同尚未创建资金池"
+          return '合同尚未创建资金池'
         }
-        
+
         // 确保返回的是数字类型
         const balance = Number(res.data.balance) || 0
         return balance
       } catch (error) {
         console.error('获取资金池余额失败:', error)
-        return "获取失败"
+        return '获取失败'
       }
     },
 
@@ -249,10 +249,10 @@ export default {
     async getMainBankInfo(contractNo) {
       try {
         const res = await getContractByNo(contractNo)
-        if(res.data == null){
-          return null;
+        if (res.data == null) {
+          return null
         }
-        return res.data.mainBankCard;
+        return res.data.mainBankCard
       } catch (error) {
         console.error('获取主银行账号失败:', error)
         return null
@@ -266,7 +266,7 @@ export default {
           return []
         }
         const res = await getBankInfoByUserId(accountId)
-        
+
         if (res.data && Array.isArray(res.data)) {
           return res.data
         }
@@ -298,21 +298,19 @@ export default {
     // 根据ID获取银行信息
     getBankInfoById(bankId, mainBankInfo, partnerBankList) {
       if (!bankId) return null
-      
+
       // 先检查是否是主银行账号
       if (mainBankInfo && mainBankInfo.id === bankId) {
         return mainBankInfo
       }
-      
+
       // 再检查合作方银行账号列表
       if (partnerBankList && Array.isArray(partnerBankList)) {
         return partnerBankList.find(bank => bank.id === bankId) || null
       }
-      
+
       return null
     },
-
-
 
     // 格式化金额
     formatAmount(amount) {
@@ -328,8 +326,8 @@ export default {
     handleSave() {
       // 验证必填字段
       const invalidRows = this.fundflowList.filter(row => {
-        return !row.planPayTime || 
-               !row.fundFlowAmount || 
+        return !row.planPayTime ||
+               !row.fundFlowAmount ||
                row.fundFlowAmount <= 0 ||
                !row.fundBank
       })
@@ -346,7 +344,7 @@ export default {
         const fundFlowAmount = row.fundFlowAmount || 0
         const fundAmount = row.fundAmount || 0
         const fundPoolAmount = row.fundPoolAmount || 0
-        
+
         return fundFlowAmount !== (fundAmount + fundPoolAmount)
       })
 
@@ -370,9 +368,9 @@ export default {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(async () => {
+      }).then(async() => {
         this.saveLoading = true
-        
+
         try {
           // 准备批量走款数据
           const batchData = this.fundflowList.map(i => {
@@ -384,7 +382,7 @@ export default {
               orderActualAmount: i.orderActualAmount,
               fundFlowDirection: i.fundFlowDirection,
               fundFlowAmount: i.fundFlowAmount,
-              //货款方向
+              // 货款方向
               fundDirection: i.fundDirection,
               fundAmount: i.fundAmount,
               fundBank: i.fundBank,
@@ -392,10 +390,10 @@ export default {
               fundPoolAmount: i.fundPoolAmount,
               partner: i.partner,
               partnerName: i.partnerName,
-              planPayTime: i.planPayTime,
+              planPayTime: i.planPayTime
             }
-          });
-          
+          })
+
           // 调用批量新增走款API
           await batchAddFundFlow(batchData)
           this.$emit('success', this.fundflowList)
@@ -466,4 +464,4 @@ export default {
     font-size: 13px;
   }
 }
-</style> 
+</style>

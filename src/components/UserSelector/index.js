@@ -1,3 +1,3 @@
 import UserSelector from './index.vue'
 
-export default UserSelector 
+export default UserSelector

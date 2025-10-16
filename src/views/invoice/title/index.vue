@@ -7,7 +7,7 @@
         <el-button type="primary" icon="el-icon-search" @click="fetchList">搜索</el-button>
         <el-button type="success" icon="el-icon-plus" style="margin-left: 10px;" @click="handleAdd">新增抬头</el-button>
       </div>
-      <el-table :data="list" v-loading="loading" style="width: 100%; margin-top: 20px;" border>
+      <el-table v-loading="loading" :data="list" style="width: 100%; margin-top: 20px;" border>
         <el-table-column prop="title" label="发票抬头名称" width="180" />
         <el-table-column prop="taxNumber" label="纳税人识别号" width="180" />
         <el-table-column prop="registeredAddress" label="注册地址" width="200" />
@@ -43,20 +43,20 @@
     </el-card>
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="700px">
-              <el-form :model="form" :rules="rules" ref="form" label-width="120px">
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="账户名称" prop="accountName">
-                <el-input v-model="form.accountName" placeholder="请选择用户" readonly @focus="openUserSelector">
-                  <el-button slot="append" icon="el-icon-search" @click="openUserSelector">选择</el-button>
-                </el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="发票抬头名称" prop="title">
-                <el-input v-model="form.title" placeholder="请输入发票抬头名称" />
-              </el-form-item>
-            </el-col>
+      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="账户名称" prop="accountName">
+              <el-input v-model="form.accountName" placeholder="请选择用户" readonly @focus="openUserSelector">
+                <el-button slot="append" icon="el-icon-search" @click="openUserSelector">选择</el-button>
+              </el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="发票抬头名称" prop="title">
+              <el-input v-model="form.title" placeholder="请输入发票抬头名称" />
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
             <el-form-item label="纳税人识别号" prop="taxNumber">
               <el-input v-model="form.taxNumber" placeholder="请输入纳税人识别号" />
@@ -173,7 +173,7 @@ export default {
         size: this.pageSize,
         ...this.search
       }
-      
+
       try {
         const res = await getInvoiceTitlePage(params)
         this.list = res.data.records || res.data || []
@@ -187,19 +187,19 @@ export default {
     },
     handleAdd() {
       this.dialogTitle = '新增抬头'
-      this.form = { 
-        id: null, 
-        accountId: '', 
-        accountName: '', 
-        type: '', 
-        title: '', 
-        taxNumber: '', 
-        registeredAddress: '', 
-        phone: '', 
-        bankName: '', 
-        bankCode: '', 
-        bankAccount: '', 
-        isDefault: '0' 
+      this.form = {
+        id: null,
+        accountId: '',
+        accountName: '',
+        type: '',
+        title: '',
+        taxNumber: '',
+        registeredAddress: '',
+        phone: '',
+        bankName: '',
+        bankCode: '',
+        bankAccount: '',
+        isDefault: '0'
       }
       this.dialogVisible = true
     },
@@ -209,7 +209,7 @@ export default {
       this.dialogVisible = true
     },
     handleDelete(row) {
-      this.$confirm('确定要删除该抬头吗？', '提示', { type: 'warning' }).then(async () => {
+      this.$confirm('确定要删除该抬头吗？', '提示', { type: 'warning' }).then(async() => {
         try {
           await deleteInvoiceTitle(row.id)
           this.$message.success('删除成功')
@@ -223,9 +223,9 @@ export default {
       })
     },
     async handleSave() {
-      this.$refs.form.validate(async (valid) => {
+      this.$refs.form.validate(async(valid) => {
         if (!valid) return
-        
+
         try {
           const action = this.form.id ? updateInvoiceTitle : createInvoiceTitle
           await action(this.form)
@@ -253,7 +253,7 @@ export default {
     handleUserConfirm(selected) {
       const user = Array.isArray(selected) ? selected[0] : selected
       if (!user) return
-      this.form.accountId = user.id 
+      this.form.accountId = user.id
       this.form.accountName = user.nickname
       this.userSelectorVisible = false
     },
@@ -271,4 +271,4 @@ export default {
 .filter-container {
   margin-bottom: 10px;
 }
-</style> 
+</style>

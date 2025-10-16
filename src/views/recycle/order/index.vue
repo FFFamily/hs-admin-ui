@@ -4,21 +4,21 @@
     <el-form :inline="true" :model="searchForm" class="search-form" @submit.native.prevent>
       <el-form-item label="订单类型">
         <el-select v-model="searchForm.type" placeholder="请选择订单类型">
-          <el-option 
-            v-for="option in orderTypeOptions" 
-            :key="option.value" 
-            :label="option.label" 
-            :value="option.value" 
+          <el-option
+            v-for="option in orderTypeOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
         </el-select>
       </el-form-item>
       <el-form-item label="状态">
         <el-select v-model="searchForm.status" placeholder="请选择状态">
-          <el-option 
-            v-for="option in orderStatusOptions" 
-            :key="option.value" 
-            :label="option.label" 
-            :value="option.value" 
+          <el-option
+            v-for="option in orderStatusOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
         </el-select>
       </el-form-item>
@@ -26,7 +26,7 @@
         <el-input v-model="searchForm.identifyCode" placeholder="请输入订单识别码" />
       </el-form-item>
       <el-form-item label="合作方">
-        <el-input v-model="searchForm.contractPartnerName" readonly @focus="openPartnerSelector" placeholder="请选择合作方" />
+        <el-input v-model="searchForm.contractPartnerName" readonly placeholder="请选择合作方" @focus="openPartnerSelector" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
@@ -39,8 +39,15 @@
       </el-form-item>
     </el-form>
 
-    <el-table v-loading="listLoading" :data="list" border fit highlight-current-row
-      @selection-change="handleSelectionChange" @sort-change="handleSortChange">
+    <el-table
+      v-loading="listLoading"
+      :data="list"
+      border
+      fit
+      highlight-current-row
+      @selection-change="handleSelectionChange"
+      @sort-change="handleSortChange"
+    >
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="订单编号" prop="no" width="180" align="center" show-overflow-tooltip />
       <el-table-column label="合同名称" prop="contractName" width="150" align="center" show-overflow-tooltip />
@@ -63,7 +70,7 @@
       <el-table-column label="合作方" prop="contractPartnerName" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="经办人" prop="processor" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="订单识别码" prop="identifyCode" width="120" align="center" show-overflow-tooltip />
-      <el-table-column label="流转方向" prop="flowDirection" width="100" align="center" v-if="isStorageOrder">
+      <el-table-column v-if="isStorageOrder" label="流转方向" prop="flowDirection" width="100" align="center">
         <template slot-scope="scope">
           <el-tag v-if="scope.row.flowDirection" size="medium">
             {{ getFlowDirectionText(scope.row.flowDirection) }}
@@ -99,16 +106,16 @@
 
       <el-table-column label="操作" width="400" align="center" fixed="right">
         <template slot-scope="scope">
-          <el-button size="mini" type="primary"  @click="handleCreateOrder(scope.row)">
+          <el-button size="mini" type="primary" @click="handleCreateOrder(scope.row)">
             创建订单
           </el-button>
           <el-button size="mini" type="success" @click="handleSettle(scope.row)">
             结算
           </el-button>
-          <el-button size="mini" type="warning"  @click="handleEdit(scope.row)">
+          <el-button size="mini" type="warning" @click="handleEdit(scope.row)">
             编辑
           </el-button>
-          <el-button size="mini" type="danger"  @click="handleDelete(scope.row)">
+          <el-button size="mini" type="danger" @click="handleDelete(scope.row)">
             删除
           </el-button>
         </template>
@@ -116,37 +123,40 @@
     </el-table>
 
     <!-- 分页组件 -->
-    <el-pagination :current-page="pagination.page" :page-sizes="[10, 20, 50, 100]" :page-size="pagination.size"
-      :total="pagination.total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
-      @current-change="handleCurrentChange" class="pagination" />
-
-    <!-- 订单编辑弹窗组件 -->
-    <order-edit 
-      :visible.sync="detailVisible" 
-      :mode="dialogMode" 
-      :order-id="currentOrderId"
-      :identify-code="currentIdentifyCode"
-      @success="handleEditSuccess"
-      @cancel="handleEditCancel" />
+    <el-pagination
+      :current-page="pagination.page"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="pagination.size"
+      :total="pagination.total"
+      layout="total, sizes, prev, pager, next, jumper"
+      class="pagination"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
 
     <!-- 批量走款弹窗组件 -->
-    <batch-fundflow 
-      :visible.sync="batchFundflowVisible" 
+    <batch-fundflow
+      :visible.sync="batchFundflowVisible"
       :selected-orders="selectedRows"
       @success="handleBatchFundflowSuccess"
-      @cancel="handleBatchFundflowCancel" />
+      @cancel="handleBatchFundflowCancel"
+    />
 
     <!-- 批量开票弹窗组件 -->
-    <batch-invoice 
-      :visible.sync="batchInvoiceVisible" 
+    <batch-invoice
+      :visible.sync="batchInvoiceVisible"
       :selected-orders="selectedRows"
       @success="handleBatchInvoiceSuccess"
-      @cancel="handleBatchInvoiceCancel" />
+      @cancel="handleBatchInvoiceCancel"
+    />
 
     <!-- 合作方选择弹窗组件 -->
-    <user-selector :visible.sync="partnerSelectorVisible" title="选择合作方" :multiple="false"
-      @confirm="handlePartnerSelected" />
-
+    <user-selector
+      :visible.sync="partnerSelectorVisible"
+      title="选择合作方"
+      :multiple="false"
+      @confirm="handlePartnerSelected"
+    />
 
     <!-- 结算弹窗 -->
     <el-dialog title="订单结算" :visible.sync="settlementDialogVisible" width="600px" :close-on-click-modal="false">
@@ -169,7 +179,8 @@
             :on-success="handlePDFUpload"
             :on-error="handlePDFUploadError"
             :before-upload="beforePDFUpload"
-            accept=".pdf">
+            accept=".pdf"
+          >
             <el-button size="small" type="primary" icon="el-icon-upload">
               {{ settlementForm.settlementPdfUrl ? '重新上传PDF' : '选择PDF文件' }}
             </el-button>
@@ -178,7 +189,7 @@
             </div>
           </el-upload>
           <div v-if="settlementForm.settlementPdfUrl" class="upload-success">
-            <i class="el-icon-success"></i>
+            <i class="el-icon-success" />
             <span>PDF文件已上传</span>
           </div>
         </el-form-item>
@@ -189,12 +200,13 @@
             :rows="3"
             placeholder="请输入结算备注（可选）"
             maxlength="200"
-            show-word-limit />
+            show-word-limit
+          />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="handleSettlementCancel">取消</el-button>
-        <el-button type="primary" @click="handleSettlementSubmit" :loading="settlementLoading">
+        <el-button type="primary" :loading="settlementLoading" @click="handleSettlementSubmit">
           确认结算
         </el-button>
       </div>
@@ -208,12 +220,11 @@ import { getRecyclePage, deleteRecycle, assignRecycle, approveRecycle, settlemen
 import { getUserPage } from '@/api/user'
 import { parseTime } from '@/utils'
 import UserSelector from '@/components/UserSelector'
-import OrderEdit from './OrderEdit.vue'
 import BatchFundflow from './BatchFundflow.vue'
 import BatchInvoice from './BatchInvoice.vue'
 
-import { 
-  ORDER_TYPE_OPTIONS, 
+import {
+  ORDER_TYPE_OPTIONS,
   ORDER_STATUS_OPTIONS,
   ORDER_TYPE_TAG_TYPE,
   getOrderStatusTagType,
@@ -224,7 +235,7 @@ import {
 
 export default {
   name: 'RecycleOrder',
-  components: { UserSelector, OrderEdit, BatchFundflow, BatchInvoice },
+  components: { UserSelector, BatchFundflow, BatchInvoice },
   data() {
     return {
       list: [],
@@ -242,10 +253,6 @@ export default {
         total: 0
       },
       selectedRows: [],
-      detailVisible: false,
-      dialogMode: 'add', // 'add', 'edit'
-      currentOrderId: null,
-      currentIdentifyCode: '',
       assignPersonVisible: false,
       selectedProcessor: '',
       userList: [],
@@ -287,9 +294,6 @@ export default {
       getFlowDirectionText
     }
   },
-  created() {
-    this.fetchData()
-  },
   watch: {
     'settlementForm.settlementPdfUrl': {
       handler(newVal, oldVal) {
@@ -301,6 +305,9 @@ export default {
       },
       deep: true
     }
+  },
+  created() {
+    this.fetchData()
   },
   methods: {
     // 检查是否有仓储订单
@@ -353,21 +360,20 @@ export default {
       })
     },
 
-
     // 处理PDF文件上传
     handlePDFUpload(response) {
       console.log('上传响应:', response)
-      
+
       if (response && response.code === 200 && response.data) {
         // 根据其他组件的逻辑，后端返回的可能是 fileUrl 或 url
         const fileUrl = response.data.fileUrl || response.data.url
         console.log('后端返回的文件URL:', fileUrl)
         console.log('BASE_URL:', process.env.VUE_APP_BASE_URL)
-        
+
         if (fileUrl) {
           // 确保返回完整的URL
           let fullUrl = fileUrl
-          
+
           // 如果返回的是相对路径，需要拼接完整URL
           if (!fileUrl.startsWith('http')) {
             // 确保路径以 / 开头
@@ -377,7 +383,7 @@ export default {
           } else {
             console.log('URL已经是完整的:', fullUrl)
           }
-          
+
           this.settlementForm.settlementPdfUrl = fullUrl
           console.log('PDF文件上传成功，存储的URL:', this.settlementForm.settlementPdfUrl)
           console.log('settlementForm对象:', JSON.stringify(this.settlementForm, null, 2))
@@ -401,7 +407,7 @@ export default {
       console.log('=== 开始提交结算 ===')
       console.log('当前settlementForm:', JSON.stringify(this.settlementForm, null, 2))
       console.log('当前currentSettleOrder:', this.currentSettleOrder)
-      
+
       if (!this.settlementForm.settlementPdfUrl) {
         this.$message.error('请先上传订单PDF文件')
         return
@@ -414,7 +420,7 @@ export default {
         console.log('从settlementForm获取的URL:', fullPdfUrl)
         console.log('URL类型:', typeof fullPdfUrl)
         console.log('URL是否以http开头:', fullPdfUrl.startsWith('http'))
-        
+
         // 如果URL不是完整的，需要拼接
         if (!fullPdfUrl.startsWith('http')) {
           const path = fullPdfUrl.startsWith('/') ? fullPdfUrl : '/' + fullPdfUrl
@@ -423,10 +429,10 @@ export default {
         } else {
           console.log('URL已经是完整的，无需拼接')
         }
-        
+
         console.log('最终PDF URL:', fullPdfUrl)
         console.log('BASE_URL:', process.env.VUE_APP_BASE_URL)
-        
+
         // 调用结算接口
         const params = {
           orderId: this.currentSettleOrder.id,
@@ -436,7 +442,7 @@ export default {
 
         console.log('结算参数:', JSON.stringify(params, null, 2))
         const response = await settlementOrder(params)
-        
+
         if (response.code === 200) {
           this.$message.success('结算成功')
           this.settlementDialogVisible = false
@@ -517,18 +523,15 @@ export default {
 
     // 新增订单
     handleAdd() {
-      this.dialogMode = 'add'
-      this.currentOrderId = null
-      this.currentIdentifyCode = ''
-      this.detailVisible = true
+      this.$router.push({ name: 'OrderEdit' })
     },
 
     // 创建订单（从现有订单创建）
     handleCreateOrder(row) {
-      this.dialogMode = 'add'
-      this.currentOrderId = null
-      this.currentIdentifyCode = row.identifyCode || ''
-      this.detailVisible = true
+      this.$router.push({
+        name: 'OrderEdit',
+        query: { identifyCode: row.identifyCode || '' }
+      })
     },
 
     // 批量走款
@@ -656,9 +659,7 @@ export default {
 
     // 查看详情
     handleDetail(row) {
-      this.dialogMode = 'edit'
-      this.currentOrderId = row.id
-      this.detailVisible = true
+      this.$router.push({ name: 'OrderEdit', params: { orderId: row.id }})
     },
 
     // 审批订单
@@ -705,9 +706,7 @@ export default {
 
     // 编辑订单
     handleEdit(row) {
-      this.dialogMode = 'edit'
-      this.currentOrderId = row.id
-      this.detailVisible = true
+      this.$router.push({ name: 'OrderEdit', params: { orderId: row.id }})
     },
 
     // 删除订单
@@ -830,16 +829,6 @@ export default {
       return true
     },
 
-    // 编辑成功回调
-    handleEditSuccess() {
-      this.fetchData()
-    },
-
-    // 编辑取消回调
-    handleEditCancel() {
-      // 可以在这里添加取消时的逻辑
-    },
-
     // 金额格式化
     formatAmount(amount) {
       const num = Number(amount) || 0
@@ -878,17 +867,17 @@ export default {
     overflow: hidden;
     display: inline-block;
     width: 100%;
-    
+
     &:hover {
       border-color: #409eff;
     }
   }
-  
+
   .upload-success {
     margin-top: 10px;
     color: #67c23a;
     font-size: 14px;
-    
+
     i {
       margin-right: 5px;
     }
@@ -900,4 +889,4 @@ export default {
   font-size: 12px;
   margin-top: 7px;
 }
-</style> 
+</style>

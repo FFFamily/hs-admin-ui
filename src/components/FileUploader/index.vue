@@ -23,9 +23,9 @@
           <el-button type="primary" icon="el-icon-upload2">
             {{ hasFile ? '重新上传' : '上传文件' }}
           </el-button>
-          <el-button 
-            v-if="hasFile" 
-            type="success" 
+          <el-button
+            v-if="hasFile"
+            type="success"
             icon="el-icon-view"
             @click="handlePreviewFile"
           >
@@ -34,7 +34,7 @@
         </div>
       </template>
       <template v-else>
-        <i class="el-icon-upload"></i>
+        <i class="el-icon-upload" />
         <div class="el-upload__text">
           <span v-if="templateUrl" class="template-link">
             <a :href="templateUrl" target="_blank" @click.stop="downloadTemplate">
@@ -46,7 +46,7 @@
           <em>点击上传</em>
         </div>
       </template>
-      <div v-if="tips" class="el-upload__tip" slot="tip">{{ tips }}</div>
+      <div v-if="tips" slot="tip" class="el-upload__tip">{{ tips }}</div>
     </el-upload>
   </div>
 </template>
@@ -172,7 +172,7 @@ export default {
         this.$message.error(`上传文件大小不能超过 ${this.maxSizeMB}MB!`)
         return false
       }
-      
+
       // 触发 before-upload 事件，允许父组件进行额外验证
       this.$emit('before-upload', file)
       return true
@@ -233,7 +233,7 @@ export default {
         this.$message.warning('没有可预览的文件')
         return
       }
-      
+
       let fileUrl = ''
       if (this.multiple) {
         // 多文件模式，取第一个文件
@@ -242,18 +242,18 @@ export default {
         // 单文件模式
         fileUrl = this.value
       }
-      
+
       if (!fileUrl) {
         this.$message.warning('文件地址为空')
         return
       }
-      
+
       // 构建完整的文件URL
       const fullUrl = this.resolveDisplayUrl(fileUrl)
-      
+
       // 在新窗口中打开PDF文件
       window.open(fullUrl, '_blank')
-      
+
       // 触发预览事件
       this.$emit('preview', { url: fullUrl })
     }
@@ -301,18 +301,18 @@ export default {
   .el-upload {
     display: inline-block;
   }
-  
+
   .el-upload-dragger {
     border: none;
     background: none;
     width: auto;
     height: auto;
   }
-  
+
   .button-group {
     display: flex;
     gap: 10px;
     align-items: center;
   }
 }
-</style> 
+</style>

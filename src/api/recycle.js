@@ -106,4 +106,12 @@ export function getOrdersByIdentifyCode(code) {
     url: `/recycle/order/identifyCode/${code}`,
     method: 'get'
   })
-} 
+}
+
+// 获取订单追溯链
+export function getOrderTrace(orderId) {
+  return request({
+    url: `/recycle/order/trace/${orderId}`,
+    method: 'get'
+  })
+}

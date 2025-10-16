@@ -9,7 +9,7 @@
   >
     <div class="address-selector">
       <!-- 搜索区域 -->
-      <el-form :inline="true" :model="searchForm" ref="searchFormRef">
+      <el-form ref="searchFormRef" :inline="true" :model="searchForm">
         <el-form-item label="用户名称" prop="accountName">
           <el-input
             v-model="searchKeyword"
@@ -18,7 +18,7 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="地址" prop="realAddress">
@@ -29,7 +29,7 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="分类" prop="category">
@@ -37,8 +37,8 @@
             v-model="searchForm.category"
             placeholder="请选择分类"
             clearable
-            @change="handleSearch"
             style="width: 150px;"
+            @change="handleSearch"
           >
             <el-option label="家庭地址" value="家庭地址" />
             <el-option label="工作地址" value="工作地址" />
@@ -49,14 +49,14 @@
 
       <!-- 地址列表 -->
       <el-table
+        v-loading="loading"
         :data="filteredAddressList"
         style="width: 100%"
         highlight-current-row
         border
+        :row-class-name="getRowClassName"
         @selection-change="handleSelectionChange"
         @row-click="handleRowClick"
-        :row-class-name="getRowClassName"
-        v-loading="loading"
       >
         <!-- 多选列 -->
         <el-table-column
@@ -65,10 +65,10 @@
           width="55"
           :selectable="isSelectable"
         />
-        
+
         <!-- 用户名称列 -->
         <el-table-column prop="accountName" label="用户名称" min-width="120" />
-        
+
         <!-- 分类列 -->
         <el-table-column prop="category" label="分类" width="100" align="center">
           <template slot-scope="scope">
@@ -77,19 +77,19 @@
             </el-tag>
           </template>
         </el-table-column>
-        
+
         <!-- 地址列 -->
         <el-table-column prop="realAddress" label="地址" min-width="200" show-overflow-tooltip />
-        
+
         <!-- 备注列 -->
         <el-table-column prop="remark" label="备注" width="150" show-overflow-tooltip />
-        
+
         <!-- 创建时间列 -->
         <el-table-column prop="createTime" label="创建时间" width="180" />
       </el-table>
 
       <!-- 分页 -->
-      <div class="pagination-container" v-if="showPagination">
+      <div v-if="showPagination" class="pagination-container">
         <el-pagination
           background
           layout="total, prev, pager, next, jumper"
@@ -101,7 +101,7 @@
       </div>
 
       <!-- 已选择地址展示 -->
-      <div class="selected-addresses" v-if="multiple && selectedAddresses.length > 0">
+      <div v-if="multiple && selectedAddresses.length > 0" class="selected-addresses">
         <div class="selected-title">
           <span>已选择地址 ({{ selectedAddresses.length }})：</span>
           <el-button type="text" @click="clearSelection">清空选择</el-button>
@@ -111,8 +111,8 @@
             v-for="address in selectedAddresses"
             :key="address.id"
             closable
-            @close="removeAddress(address)"
             style="margin-right: 8px; margin-bottom: 8px;"
+            @close="removeAddress(address)"
           >
             {{ address.accountName }} - {{ address.realAddress }}
           </el-tag>
@@ -122,7 +122,7 @@
 
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleConfirm" :disabled="!canConfirm">
+      <el-button type="primary" :disabled="!canConfirm" @click="handleConfirm">
         {{ confirmText }}
       </el-button>
     </div>
@@ -239,7 +239,7 @@ export default {
           realAddress: this.searchKeyword || undefined,
           category: this.searchForm.category || undefined
         }
-        
+
         const response = await getAddressPage(params)
         if (response && response.data) {
           this.addressList = response.data.records || []
@@ -274,7 +274,7 @@ export default {
     // 行点击处理（单选模式）
     handleRowClick(row, column, event) {
       if (this.multiple) return
-      
+
       // 单选模式，直接选择该行
       this.selectedAddresses = [row]
     },
@@ -340,11 +340,11 @@ export default {
 .address-selector-dialog {
   // 确保地址选择器弹窗在最顶层
   z-index: 3000 !important;
-  
+
   .address-selector {
     .search-container {
       margin-bottom: 20px;
-      
+
       .search-input {
         width: 300px;
       }
@@ -353,22 +353,22 @@ export default {
     .address-list-container {
       max-height: 400px;
       overflow-y: auto;
-      
+
       .selected-row {
         background-color: #e6f7ff !important;
         border-left: 4px solid #1890ff !important;
-        
+
         &:hover {
           background-color: #bae7ff !important;
         }
       }
-      
+
       // 增强选中行的视觉效果
       .el-table__row.selected-row {
         td {
           background-color: #e6f7ff !important;
         }
-        
+
         &:hover td {
           background-color: #bae7ff !important;
         }
@@ -385,7 +385,7 @@ export default {
       padding: 15px;
       background-color: #f8f9fa;
       border-radius: 4px;
-      
+
       .selected-title {
         display: flex;
         justify-content: space-between;
@@ -394,7 +394,7 @@ export default {
         font-weight: 500;
         color: #606266;
       }
-      
+
       .selected-tags {
         .el-tag {
           margin-right: 8px;
@@ -413,13 +413,13 @@ export default {
 :deep(.selected-row) {
   background-color: #e6f7ff !important;
   border-left: 4px solid #1890ff !important;
-  
+
   &:hover {
     background-color: #bae7ff !important;
   }
-  
+
   td {
     background-color: #e6f7ff !important;
   }
 }
-</style> 
+</style>

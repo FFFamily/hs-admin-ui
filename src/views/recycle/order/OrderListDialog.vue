@@ -11,21 +11,21 @@
     <el-form :inline="true" :model="searchForm" class="search-form" @submit.native.prevent>
       <el-form-item label="订单类型">
         <el-select v-model="searchForm.type" placeholder="请选择订单类型" clearable>
-          <el-option 
-            v-for="option in orderTypeOptions" 
-            :key="option.value" 
-            :label="option.label" 
-            :value="option.value" 
+          <el-option
+            v-for="option in orderTypeOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
         </el-select>
       </el-form-item>
       <el-form-item label="状态">
         <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
-          <el-option 
-            v-for="option in orderStatusOptions" 
-            :key="option.value" 
-            :label="option.label" 
-            :value="option.value" 
+          <el-option
+            v-for="option in orderStatusOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
         </el-select>
       </el-form-item>
@@ -39,14 +39,14 @@
     </el-form>
 
     <!-- 订单列表表格 -->
-    <el-table 
-      v-loading="listLoading" 
-      :data="orderList" 
-      border 
-      fit 
+    <el-table
+      v-loading="listLoading"
+      :data="orderList"
+      border
+      fit
       highlight-current-row
-      @sort-change="handleSortChange"
       max-height="400"
+      @sort-change="handleSortChange"
     >
       <el-table-column label="订单编号" prop="no" width="200" align="center" show-overflow-tooltip />
       <el-table-column label="合同名称" prop="contractName" width="180" align="center" show-overflow-tooltip />
@@ -93,24 +93,23 @@
     </el-table>
 
     <!-- 分页组件 -->
-    <el-pagination 
-      :current-page="pagination.page" 
-      :page-sizes="[10, 20, 50, 100]" 
+    <el-pagination
+      :current-page="pagination.page"
+      :page-sizes="[10, 20, 50, 100]"
       :page-size="pagination.size"
-      :total="pagination.total" 
-      layout="total, sizes, prev, pager, next, jumper" 
+      :total="pagination.total"
+      layout="total, sizes, prev, pager, next, jumper"
+      class="pagination"
       @size-change="handleSizeChange"
-      @current-change="handleCurrentChange" 
-      class="pagination" 
+      @current-change="handleCurrentChange"
     />
 
-
     <!-- 订单详情查看弹窗 -->
-    <order-detail-view 
-      :visible.sync="detailVisible" 
+    <order-detail-view
+      :visible.sync="detailVisible"
       :order-data="currentOrder"
       :order-id="currentOrder ? currentOrder.id : null"
-      @close="handleDetailClose" 
+      @close="handleDetailClose"
     />
   </el-dialog>
 </template>
@@ -119,8 +118,8 @@
 import { getRecyclePage, syncOrder, getRecycleDetail } from '@/api/recycle'
 import { parseTime } from '@/utils'
 import OrderDetailView from './OrderDetailView.vue'
-import { 
-  ORDER_TYPE_OPTIONS, 
+import {
+  ORDER_TYPE_OPTIONS,
   ORDER_STATUS_OPTIONS,
   ORDER_TYPE_TAG_TYPE,
   getOrderStatusTagType,
@@ -266,7 +265,7 @@ export default {
         const response = await getRecycleDetail(row.id)
         const sourceOrderData = response.data
         const sourceItems = sourceOrderData.items || []
-        
+
         if (sourceItems.length === 0) {
           this.$message.warning('该订单没有明细数据')
           return

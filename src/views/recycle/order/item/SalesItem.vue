@@ -1,7 +1,6 @@
 <template>
   <div class="sales-item">
 
-
     <!-- 销项订单明细 -->
     <el-divider content-position="left">销项订单明细</el-divider>
     <el-form>
@@ -13,15 +12,28 @@
       </el-form-item>
     </el-form>
 
-    <el-table :data="salesItems" border fit style="width: 100%; margin-bottom: 20px;" v-loading="salesItemsLoading"
-      @selection-change="handleSalesSelectionChange" :show-summary="true" :summary-method="getSalesSummary">
+    <el-table
+      v-loading="salesItemsLoading"
+      :data="salesItems"
+      border
+      fit
+      style="width: 100%; margin-bottom: 20px;"
+      :show-summary="true"
+      :summary-method="getSalesSummary"
+      @selection-change="handleSalesSelectionChange"
+    >
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column prop="goodNo" label="货物编号" width="180" align="center">
         <template slot-scope="scope">
           <div class="good-no-container">
             <el-input v-model="scope.row.goodNo" placeholder="请输入货物编号" :disabled="!scope.row.goodNo" readonly>
-              <el-button type="primary" slot="append" size="mini" icon="el-icon-search"
-                @click="openBusinessScopeSelector(scope.$index)">
+              <el-button
+                slot="append"
+                type="primary"
+                size="mini"
+                icon="el-icon-search"
+                @click="openBusinessScopeSelector(scope.$index)"
+              >
                 搜索
               </el-button>
             </el-input>
@@ -51,21 +63,33 @@
       </el-table-column>
       <el-table-column prop="goodCount" label="货物数量" width="150" align="center">
         <template slot-scope="scope">
-          <el-input-number v-model="scope.row.goodCount" :min="1" :precision="0" controls-position="right"
-            :disabled="!scope.row.goodNo" style="width: 110px;" />
+          <el-input-number
+            v-model="scope.row.goodCount"
+            :min="1"
+            :precision="0"
+            controls-position="right"
+            :disabled="!scope.row.goodNo"
+            style="width: 110px;"
+          />
         </template>
       </el-table-column>
       <el-table-column prop="goodWeight" label="货物重量" width="150" align="center">
         <template slot-scope="scope">
-          <el-input-number  v-model="scope.row.goodWeight" style="width: 110px;"  controls-position="right"  placeholder="请输入货物重量" :disabled="!scope.row.goodNo" />
+          <el-input-number v-model="scope.row.goodWeight" style="width: 110px;" controls-position="right" placeholder="请输入货物重量" :disabled="!scope.row.goodNo" />
         </template>
       </el-table-column>
       <!-- 移除源识别码和销项识别码列，使用订单主识别码 -->
     </el-table>
 
     <!-- 经营范围选择器 -->
-    <BusinessScopeSelector :visible.sync="businessScopeSelectorVisible" title="选择经营范围" :multiple="false"
-      :only-show-enabled="true" @confirm="handleBusinessScopeConfirm" @close="handleBusinessScopeClose" />
+    <BusinessScopeSelector
+      :visible.sync="businessScopeSelectorVisible"
+      title="选择经营范围"
+      :multiple="false"
+      :only-show-enabled="true"
+      @confirm="handleBusinessScopeConfirm"
+      @close="handleBusinessScopeClose"
+    />
   </div>
 </template>
 
@@ -117,7 +141,7 @@ export default {
         goodCount: 0,
         goodWeight: '',
         goodRemark: '',
-        direction: 'out'  // 销项标记
+        direction: 'out' // 销项标记
       })
     },
 
@@ -147,7 +171,7 @@ export default {
           currentRow.goodName = selectedItem.goodName || ''
           currentRow.goodModel = selectedItem.goodModel || ''
           currentRow.goodCount = 1
-          currentRow.direction = 'out'  // 确保销项标记
+          currentRow.direction = 'out' // 确保销项标记
         }
       }
       this.businessScopeSelectorVisible = false
@@ -201,7 +225,7 @@ export default {
           goodCount: item.goodCount,
           goodWeight: item.goodWeight,
           goodRemark: item.goodRemark,
-          direction: 'out'  // 同步到销项时标记为销项
+          direction: 'out' // 同步到销项时标记为销项
         }))
         this.$emit('sync-from-purchase', newSalesItems)
         this.$message.success('从进项明细同步成功')
@@ -222,17 +246,17 @@ export default {
     getSalesSummary(param) {
       const { columns, data } = param
       const sums = []
-      
+
       columns.forEach((column, index) => {
         if (index === 0) {
           // 第一列显示"合计"文字
           sums[index] = '合计'
           return
         }
-        
+
         // 根据列的 property 判断是否需要合计
         const property = column.property
-        
+
         if (property === 'goodCount') {
           // 货物数量列 - 计算合计
           const values = data.map(item => Number(item.goodCount) || 0)
@@ -248,7 +272,7 @@ export default {
           sums[index] = '--'
         }
       })
-      
+
       return sums
     }
   }

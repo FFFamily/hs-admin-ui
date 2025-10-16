@@ -149,6 +149,13 @@ export const constantRoutes = [
         component: () => import('@/views/recycle/order/ApplicationPDF.vue'),
         meta: { title: '业务申请单预览', icon: 'document' },
         hidden: true
+      },
+      {
+        path: 'edit/:orderId?',
+        name: 'OrderEdit',
+        component: () => import('@/views/recycle/order/OrderEdit.vue'),
+        meta: { title: '订单编辑', icon: 'edit' },
+        hidden: true
       }
     ]
   },
@@ -182,6 +189,22 @@ export const constantRoutes = [
         name: 'InventoryReport',
         component: () => import('@/views/report/inventory/index.vue'),
         meta: { title: '库存报表', icon: 'el-icon-box' }
+      }
+    ]
+  },
+  // 系统管理
+  {
+    path: '/system',
+    component: Layout,
+    redirect: '/system/dict',
+    name: 'System',
+    meta: { title: '系统管理', icon: 'el-icon-setting' },
+    children: [
+      {
+        path: 'dict',
+        name: 'SystemDict',
+        component: () => import('@/views/system/dict/index.vue'),
+        meta: { title: '字典管理', icon: 'el-icon-s-grid' }
       }
     ]
   },

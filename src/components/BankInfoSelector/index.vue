@@ -9,15 +9,15 @@
   >
     <div class="bank-info-selector">
       <!-- 搜索区域 -->
-      <el-form :inline="true" :model="searchForm" ref="searchFormRef">
-        <el-form-item label="账户ID" prop="accountId" v-if="!filterAccountId">
+      <el-form ref="searchFormRef" :inline="true" :model="searchForm">
+        <el-form-item v-if="!filterAccountId" label="账户ID" prop="accountId">
           <el-input
             v-model="searchParams.accountId"
             placeholder="请输入账户ID"
             class="search-input"
             clearable
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="开户行" prop="bankName">
@@ -27,7 +27,7 @@
             class="search-input"
             clearable
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="银行卡号" prop="cardNumber">
@@ -37,7 +37,7 @@
             class="search-input"
             clearable
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item>
@@ -51,9 +51,9 @@
         style="width: 100%"
         highlight-current-row
         border
+        :row-class-name="getRowClassName"
         @selection-change="handleSelectionChange"
         @row-click="handleRowClick"
-        :row-class-name="getRowClassName"
       >
         <!-- 多选列 -->
         <el-table-column
@@ -62,19 +62,19 @@
           width="55"
           :selectable="isSelectable"
         />
-        
+
         <!-- 账户ID列 -->
         <el-table-column prop="accountId" label="账户ID" min-width="120" />
-        
+
         <!-- 开户行列 -->
         <el-table-column prop="bankName" label="开户行" min-width="150" />
-        
+
         <!-- 银行卡号列 -->
         <el-table-column prop="cardNumber" label="银行卡号" min-width="180" />
-        
+
         <!-- 联行号列 -->
         <el-table-column prop="bankCode" label="联行号" width="120" />
-        
+
         <!-- 是否默认列 -->
         <el-table-column label="是否默认" width="100" align="center">
           <template slot-scope="scope">
@@ -82,13 +82,13 @@
             <el-tag v-else type="info" size="mini">否</el-tag>
           </template>
         </el-table-column>
-        
+
         <!-- 创建时间列 -->
         <el-table-column prop="createTime" label="创建时间" width="160" align="center" />
       </el-table>
-      
+
       <!-- 分页 -->
-      <div class="pagination-container" v-if="showPagination">
+      <div v-if="showPagination" class="pagination-container">
         <el-pagination
           background
           layout="total, prev, pager, next, jumper"
@@ -100,7 +100,7 @@
       </div>
 
       <!-- 已选择银行信息展示 -->
-      <div class="selected-bank-infos" v-if="multiple && selectedBankInfos.length > 0">
+      <div v-if="multiple && selectedBankInfos.length > 0" class="selected-bank-infos">
         <div class="selected-title">
           <span>已选择银行信息 ({{ selectedBankInfos.length }})：</span>
           <el-button type="text" @click="clearSelection">清空选择</el-button>
@@ -110,8 +110,8 @@
             v-for="bankInfo in selectedBankInfos"
             :key="bankInfo.id"
             closable
-            @close="removeBankInfo(bankInfo)"
             style="margin-right: 8px; margin-bottom: 8px;"
+            @close="removeBankInfo(bankInfo)"
           >
             {{ bankInfo.bankName }} - {{ bankInfo.cardNumber }}
           </el-tag>
@@ -121,7 +121,7 @@
 
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleConfirm" :disabled="!canConfirm">
+      <el-button type="primary" :disabled="!canConfirm" @click="handleConfirm">
         {{ confirmText }}
       </el-button>
     </div>
@@ -253,12 +253,12 @@ export default {
           ...this.searchParams, // 包含搜索参数和过滤条件
           ...this.filters // 合并外部过滤条件
         }
-        
+
         // 如果传入了filterAccountId，则自动添加到搜索参数中
         if (this.filterAccountId) {
           params.accountId = this.filterAccountId
         }
-        
+
         const response = await getBankInfoList(params)
         if (response && response.data) {
           this.bankInfoList = response.data.records || []
@@ -281,12 +281,12 @@ export default {
         pageSize: this.pageSize,
         ...this.filters // 合并外部过滤条件
       }
-      
+
       // 如果传入了filterAccountId，则自动添加到搜索参数中
       if (this.filterAccountId) {
         searchParams.accountId = this.filterAccountId
       }
-      
+
       getBankInfoList(searchParams).then(res => {
         if (res && res.data) {
           this.bankInfoList = res.data.records || []
@@ -313,7 +313,7 @@ export default {
     // 行点击处理（单选模式）
     handleRowClick(row, column, event) {
       if (this.multiple) return
-      
+
       // 单选模式，直接选择该行
       this.selectedBankInfos = [row]
     },
@@ -369,11 +369,11 @@ export default {
 .bank-info-selector-dialog {
   // 确保银行信息选择器弹窗在最顶层
   z-index: 3000 !important;
-  
+
   .bank-info-selector {
     .search-container {
       margin-bottom: 20px;
-      
+
       .search-input {
         width: 200px;
       }
@@ -382,22 +382,22 @@ export default {
     .bank-info-list-container {
       max-height: 400px;
       overflow-y: auto;
-      
+
       .selected-row {
         background-color: #e6f7ff !important;
         border-left: 4px solid #1890ff !important;
-        
+
         &:hover {
           background-color: #bae7ff !important;
         }
       }
-      
+
       // 增强选中行的视觉效果
       .el-table__row.selected-row {
         td {
           background-color: #e6f7ff !important;
         }
-        
+
         &:hover td {
           background-color: #bae7ff !important;
         }
@@ -414,7 +414,7 @@ export default {
       padding: 15px;
       background-color: #f8f9fa;
       border-radius: 4px;
-      
+
       .selected-title {
         display: flex;
         justify-content: space-between;
@@ -423,7 +423,7 @@ export default {
         font-weight: 500;
         color: #606266;
       }
-      
+
       .selected-tags {
         .el-tag {
           margin-right: 8px;
@@ -442,13 +442,13 @@ export default {
 :deep(.selected-row) {
   background-color: #e6f7ff !important;
   border-left: 4px solid #1890ff !important;
-  
+
   &:hover {
     background-color: #bae7ff !important;
   }
-  
+
   td {
     background-color: #e6f7ff !important;
   }
 }
-</style> 
+</style>

@@ -1,4 +1,4 @@
 export const YES_OR_NO = {
-  YES: "1",
-  NO: "0"
+  YES: '1',
+  NO: '0'
 }

@@ -1,6 +1,6 @@
 <template>
   <el-dialog title="批量开票" :visible.sync="visible" width="90%" :close-on-click-modal="false" top="5vh">
-    <el-table :data="invoiceList" border fit style="width: 100%" v-loading="loading">
+    <el-table v-loading="loading" :data="invoiceList" border fit style="width: 100%">
       <el-table-column prop="orderNo" label="订单编号" width="150" align="center" />
       <el-table-column prop="orderType" label="订单类型" width="120" align="center">
         <template slot-scope="scope">
@@ -69,17 +69,17 @@
       </el-table-column>
       <el-table-column prop="invoiceBank" label="开票银行" width="200" align="center">
         <template slot-scope="scope">
-          <el-select 
-            v-model="scope.row.invoiceBank" 
-            placeholder="选择银行账号" 
+          <el-select
+            v-model="scope.row.invoiceBank"
+            placeholder="选择银行账号"
             style="width: 100%;"
-            @change="onBankChange(scope.row)"
             filterable
+            @change="onBankChange(scope.row)"
           >
-            <el-option 
-              v-for="bank in scope.row.partnerBankList" 
+            <el-option
+              v-for="bank in scope.row.partnerBankList"
               :key="bank.cardNumber"
-              :label="`${bank.cardNumber}`" 
+              :label="`${bank.cardNumber}`"
               :value="bank.id"
             />
           </el-select>
@@ -89,13 +89,13 @@
 
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleCancel">取消</el-button>
-      <el-button type="primary" @click="handleInvoice" :loading="invoiceLoading">开票</el-button>
+      <el-button type="primary" :loading="invoiceLoading" @click="handleInvoice">开票</el-button>
     </div>
   </el-dialog>
 </template>
 
 <script>
-import { 
+import {
   ORDER_TYPE_TAG_TYPE,
   getOrderTypeText,
   getOrderStatusTagType,
@@ -166,7 +166,7 @@ export default {
 
           // 检查是否已存在该订单的数据，如果存在则保留用户输入的数据
           const existingRow = this.invoiceList.find(item => item.orderId === order.id)
-          
+
           invoiceList.push({
             orderId: order.id,
             orderNo: order.no,
@@ -199,7 +199,7 @@ export default {
           return []
         }
         const res = await getBankInfoByUserId(accountId)
-        
+
         if (res.data && Array.isArray(res.data)) {
           return res.data
         }
@@ -219,12 +219,12 @@ export default {
     // 根据ID获取银行信息
     getBankInfoById(bankId, partnerBankList) {
       if (!bankId) return null
-      
+
       // 检查合作方银行账号列表
       if (partnerBankList && Array.isArray(partnerBankList)) {
         return partnerBankList.find(bank => bank.id === bankId) || null
       }
-      
+
       return null
     },
 
@@ -243,11 +243,9 @@ export default {
       const hours = String(now.getHours()).padStart(2, '0')
       const minutes = String(now.getMinutes()).padStart(2, '0')
       const seconds = String(now.getSeconds()).padStart(2, '0')
-      
+
       return `INV${year}${month}${day}${hours}${minutes}${seconds}`
     },
-
-
 
     // 格式化金额
     formatAmount(amount) {
@@ -266,22 +264,22 @@ export default {
     handleInvoice() {
       // 验证必填字段
       const invalidRows = []
-      
+
       this.invoiceList.forEach((row, index) => {
         const missingFields = []
-        
+
         if (!row.plannedInvoiceTime || row.plannedInvoiceTime.trim() === '') {
           missingFields.push('计划开票时间')
         }
-        
+
         if (!row.plannedInvoiceAmount || row.plannedInvoiceAmount <= 0) {
           missingFields.push('计划开票金额')
         }
-        
+
         if (!row.invoiceBank || row.invoiceBank === '') {
           missingFields.push('开票银行')
         }
-        
+
         if (missingFields.length > 0) {
           invalidRows.push({
             orderNo: row.orderNo,
@@ -294,7 +292,7 @@ export default {
         const errorMessages = invalidRows.map(row => {
           return `订单 ${row.orderNo}：缺少 ${row.missingFields.join('、')}`
         })
-        
+
         this.$message.error({
           message: errorMessages.join('；'),
           duration: 5000,
@@ -313,7 +311,7 @@ export default {
       //     const remaining = this.getRemaining(row)
       //     return `订单 ${row.orderNo}：计划开票金额 ${row.plannedInvoiceAmount} 超过剩余可开金额 ${remaining}`
       //   })
-        
+
       //   this.$message.error({
       //     message: errorMessages.join('；'),
       //     duration: 5000,
@@ -328,12 +326,12 @@ export default {
         type: 'warning'
       }).then(() => {
         this.invoiceLoading = true
-        
+
         // 准备开票数据
         // 检查是否所有订单都选择了相同的银行
         const firstBankId = this.invoiceList[0]?.invoiceBank
         const allSameBank = this.invoiceList.every(row => row.invoiceBank === firstBankId)
-        
+
         if (!allSameBank) {
           this.$message.error('所有订单必须选择相同的开票银行')
           return
@@ -342,9 +340,9 @@ export default {
         const invoiceData = {
           invoice: {
             invoiceNo: this.generateInvoiceNo(), // 生成发票编号
-            invoiceType: "进项", // 固定为进项发票
+            invoiceType: '进项', // 固定为进项发票
             invoiceBank: this.getBankNameById(firstBankId, this.invoiceList[0].partnerBankList), // 银行名称
-            processor: this.$store.getters.name || "系统管理员" // 获取当前用户名称
+            processor: this.$store.getters.name || '系统管理员' // 获取当前用户名称
           },
           details: this.invoiceList.map(row => ({
             orderNo: row.orderNo,
@@ -406,4 +404,4 @@ export default {
     font-size: 13px;
   }
 }
-</style> 
+</style>

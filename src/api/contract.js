@@ -41,14 +41,14 @@ export function deleteContract(id) {
     url: `/sys/contract/${id}`,
     method: 'delete'
   })
-}   
+}
 
 export function getContractItems(contractId) {
   return request({
     url: `/system/contract-item/list/contract/${contractId}`,
     method: 'get'
   })
-}   
+}
 
 // 获取合同日志列表
 export function getContractLogList(contractId) {
@@ -56,5 +56,4 @@ export function getContractLogList(contractId) {
     url: `/system/contract/log/list/${contractId}`,
     method: 'get'
   })
-
 }

@@ -10,21 +10,21 @@
     <el-form :inline="true" :model="searchForm" class="search-form" @submit.native.prevent>
       <el-form-item label="订单类型">
         <el-select v-model="searchForm.type" placeholder="请选择订单类型" clearable>
-          <el-option 
-            v-for="option in orderTypeOptions" 
-            :key="option.value" 
-            :label="option.label" 
-            :value="option.value" 
+          <el-option
+            v-for="option in orderTypeOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
         </el-select>
       </el-form-item>
       <el-form-item label="状态">
         <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
-          <el-option 
-            v-for="option in orderStatusOptions" 
-            :key="option.value" 
-            :label="option.label" 
-            :value="option.value" 
+          <el-option
+            v-for="option in orderStatusOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
         </el-select>
       </el-form-item>
@@ -44,31 +44,31 @@
     </el-form>
 
     <!-- 订单列表表格 -->
-    <el-table 
-      v-loading="listLoading" 
-      :data="orderList" 
-      border 
-      fit 
+    <el-table
+      v-loading="listLoading"
+      :data="orderList"
+      border
+      fit
       highlight-current-row
+      :row-class-name="getRowClassName"
       @selection-change="handleSelectionChange"
       @row-click="handleRowClick"
-      :row-class-name="getRowClassName"
     >
-      <el-table-column 
-        v-if="multiple" 
-        type="selection" 
-        width="55" 
-        align="center" 
+      <el-table-column
+        v-if="multiple"
+        type="selection"
+        width="55"
+        align="center"
       />
-      <el-table-column 
+      <el-table-column
         v-else
-        type="radio" 
-        width="55" 
+        type="radio"
+        width="55"
         align="center"
       >
         <template slot-scope="scope">
-          <el-radio 
-            v-model="selectedOrderId" 
+          <el-radio
+            v-model="selectedOrderId"
             :label="scope.row.id"
             @change="handleRadioChange(scope.row)"
           >
@@ -76,7 +76,7 @@
           </el-radio>
         </template>
       </el-table-column>
-      
+
       <el-table-column label="订单编号" prop="no" width="180" align="center" show-overflow-tooltip />
       <el-table-column label="合同名称" prop="contractName" width="150" align="center" show-overflow-tooltip />
       <el-table-column label="订单类型" prop="type" width="100" align="center">
@@ -98,7 +98,7 @@
       <el-table-column label="合作方" prop="contractPartnerName" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="经办人" prop="processor" width="120" align="center" show-overflow-tooltip />
       <el-table-column label="订单识别码" prop="identifyCode" width="120" align="center" show-overflow-tooltip />
-      <el-table-column label="流转方向" prop="flowDirection" width="100" align="center" v-if="showFlowDirection">
+      <el-table-column v-if="showFlowDirection" label="流转方向" prop="flowDirection" width="100" align="center">
         <template slot-scope="scope">
           <el-tag v-if="scope.row.flowDirection" size="medium">
             {{ getFlowDirectionText(scope.row.flowDirection) }}
@@ -125,24 +125,24 @@
     </el-table>
 
     <!-- 分页组件 -->
-    <el-pagination 
-      :current-page="pagination.page" 
-      :page-sizes="[10, 20, 50, 100]" 
+    <el-pagination
+      :current-page="pagination.page"
+      :page-sizes="[10, 20, 50, 100]"
       :page-size="pagination.size"
-      :total="pagination.total" 
-      layout="total, sizes, prev, pager, next, jumper" 
+      :total="pagination.total"
+      layout="total, sizes, prev, pager, next, jumper"
+      class="pagination"
       @size-change="handleSizeChange"
-      @current-change="handleCurrentChange" 
-      class="pagination" 
+      @current-change="handleCurrentChange"
     />
 
     <!-- 底部按钮 -->
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleClose">取消</el-button>
-      <el-button 
-        type="primary" 
-        @click="handleConfirm" 
+      <el-button
+        type="primary"
         :disabled="!canConfirm"
+        @click="handleConfirm"
       >
         确定选择
       </el-button>
@@ -153,8 +153,8 @@
 <script>
 import { getRecyclePage } from '@/api/recycle'
 import { parseTime } from '@/utils'
-import { 
-  ORDER_TYPE_OPTIONS, 
+import {
+  ORDER_TYPE_OPTIONS,
   ORDER_STATUS_OPTIONS,
   ORDER_TYPE_TAG_TYPE,
   getOrderStatusTagType,
@@ -382,9 +382,9 @@ export default {
     // 金额格式化
     formatAmount(amount) {
       const num = Number(amount) || 0
-      return num.toLocaleString(undefined, { 
-        minimumFractionDigits: 0, 
-        maximumFractionDigits: 2 
+      return num.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
       })
     },
 
@@ -403,7 +403,7 @@ export default {
 <style lang="scss" scoped>
 .search-form {
   margin-bottom: 20px;
-  
+
   .el-form-item {
     margin-bottom: 10px;
   }

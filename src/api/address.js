@@ -58,4 +58,4 @@ export function setDefaultAddress(addressId) {
     url: `/address/set-default/${addressId}`,
     method: 'put'
   })
-} 
+}

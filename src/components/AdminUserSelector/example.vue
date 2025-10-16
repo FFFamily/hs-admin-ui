@@ -1,7 +1,7 @@
 <template>
   <div class="admin-user-selector-example">
     <h3>后台用户选择器使用示例</h3>
-    
+
     <!-- 单选示例 -->
     <div class="example-section">
       <h4>单选模式</h4>
@@ -83,11 +83,11 @@ export default {
       // 单选相关
       singleSelectorVisible: false,
       selectedSingleUser: null,
-      
+
       // 多选相关
       multipleSelectorVisible: false,
       selectedMultipleUsers: [],
-      
+
       // 禁用用户相关
       disabledSelectorVisible: false,
       selectedDisabledUsers: [],
@@ -134,34 +134,34 @@ export default {
 <style lang="scss" scoped>
 .admin-user-selector-example {
   padding: 20px;
-  
+
   .example-section {
     margin-bottom: 30px;
     padding: 20px;
     border: 1px solid #e4e7ed;
     border-radius: 4px;
-    
+
     h4 {
       margin-top: 0;
       color: #303133;
     }
-    
+
     .selected-info {
       margin-top: 15px;
       padding: 10px;
       background-color: #f5f7fa;
       border-radius: 4px;
-      
+
       p {
         margin: 0 0 10px 0;
         font-weight: 500;
         color: #606266;
       }
-      
+
       ul {
         margin: 0;
         padding-left: 20px;
-        
+
         li {
           margin-bottom: 5px;
           color: #606266;

@@ -39,17 +39,24 @@
     </el-table>
 
     <!-- 分页 -->
-    <el-pagination :current-page="pagination.page" :page-sizes="[10, 20, 50, 100]" :page-size="pagination.size"
-      :total="pagination.total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
-      @current-change="handleCurrentChange" style="margin-top: 20px; text-align: right;" />
+    <el-pagination
+      :current-page="pagination.page"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="pagination.size"
+      :total="pagination.total"
+      layout="total, sizes, prev, pager, next, jumper"
+      style="margin-top: 20px; text-align: right;"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
 
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="700px">
-      <el-form :model="form" :rules="rules" ref="form" label-width="100px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="账号名称" prop="accountName">
           <div style="display: flex; align-items: center;">
             <el-input v-model="form.accountName" placeholder="请选择用户账号" readonly style="flex: 1; margin-right: 10px;">
-              <el-button type="primary" slot="append" @click="showUserSelector">选择用户</el-button>
+              <el-button slot="append" type="primary" @click="showUserSelector">选择用户</el-button>
             </el-input>
 
           </div>
@@ -80,8 +87,13 @@
     </el-dialog>
 
     <!-- 用户选择器 -->
-    <UserSelector :visible.sync="userSelectorVisible" title="选择用户账号" :multiple="false" @confirm="handleUserConfirm"
-      @close="handleUserSelectorClose" />
+    <UserSelector
+      :visible.sync="userSelectorVisible"
+      title="选择用户账号"
+      :multiple="false"
+      @confirm="handleUserConfirm"
+      @close="handleUserSelectorClose"
+    />
   </div>
 </template>
 

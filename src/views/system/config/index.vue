@@ -1,51 +1,62 @@
 <template>
   <el-card>
     <el-row :gutter="15">
-          <el-col :span="6" v-for="(data, index) in form.homeImg" :key="data.url" :offset="0">
-            <el-card 
-              :body-style="{ padding: '0px' }" 
-              :class="{ 'moving-up': movingIndex === index && moveDirection === 'up', 'moving-down': movingIndex === index && moveDirection === 'down' }"
-              class="image-card"
-            >
-              <img :src="data.url" class="image">
-              <div class="input-container">
-                <span class="input-title">
-                  <i class="el-icon-link"></i>
-                  用户点击跳转链接
-                </span>
-                <el-input 
-                  v-model="data.path" 
-                  placeholder="请输入跳转链接，例如：https://example.com" 
-                  size="small" 
-                  class="custom-input"
-                  :class="{ 'is-valid': isValidUrl(data.path), 'is-invalid': data.path && !isValidUrl(data.path) }"
-                  prefix-icon="el-icon-link"
-                  @blur="validateUrl(data.path)"
-                />
-                <div v-if="data.path && !isValidUrl(data.path)" class="input-error">
-                  <i class="el-icon-warning"></i>
-                  请输入有效的URL地址
-                </div>
-              </div>
-              <div style="padding: 14px;">
-                <div class="bottom clearfix">
-                  <el-button size="mini" type="primary" :disabled="index === 0" @click="moveUp(index)">上移</el-button>
-                  <el-button size="mini" type="primary" :disabled="index === form.homeImg.length - 1"
-                    @click="moveDown(index)">下移</el-button>
-                  <el-button size="mini" type="danger" @click="removeImage(index)">删除</el-button>
-                </div>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-        <div class="upload-area">
-          <el-upload class="upload-demo" action="/api/system/file/upload" list-type="picture-card"
-            :show-file-list="false" :on-success="handleUploadSuccess" :before-upload="beforeUpload"
-            :headers="{ 'Token-Key': getToken() }" multiple>
-            <i class="el-icon-plus"></i>
-          </el-upload>
-        </div>
-        <el-button type="primary" @click="handleSave">保存</el-button>
+      <el-col v-for="(data, index) in form.homeImg" :key="data.url" :span="6" :offset="0">
+        <el-card
+          :body-style="{ padding: '0px' }"
+          :class="{ 'moving-up': movingIndex === index && moveDirection === 'up', 'moving-down': movingIndex === index && moveDirection === 'down' }"
+          class="image-card"
+        >
+          <img :src="data.url" class="image">
+          <div class="input-container">
+            <span class="input-title">
+              <i class="el-icon-link" />
+              用户点击跳转链接
+            </span>
+            <el-input
+              v-model="data.path"
+              placeholder="请输入跳转链接，例如：https://example.com"
+              size="small"
+              class="custom-input"
+              :class="{ 'is-valid': isValidUrl(data.path), 'is-invalid': data.path && !isValidUrl(data.path) }"
+              prefix-icon="el-icon-link"
+              @blur="validateUrl(data.path)"
+            />
+            <div v-if="data.path && !isValidUrl(data.path)" class="input-error">
+              <i class="el-icon-warning" />
+              请输入有效的URL地址
+            </div>
+          </div>
+          <div style="padding: 14px;">
+            <div class="bottom clearfix">
+              <el-button size="mini" type="primary" :disabled="index === 0" @click="moveUp(index)">上移</el-button>
+              <el-button
+                size="mini"
+                type="primary"
+                :disabled="index === form.homeImg.length - 1"
+                @click="moveDown(index)"
+              >下移</el-button>
+              <el-button size="mini" type="danger" @click="removeImage(index)">删除</el-button>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+    <div class="upload-area">
+      <el-upload
+        class="upload-demo"
+        action="/api/system/file/upload"
+        list-type="picture-card"
+        :show-file-list="false"
+        :on-success="handleUploadSuccess"
+        :before-upload="beforeUpload"
+        :headers="{ 'Token-Key': getToken() }"
+        multiple
+      >
+        <i class="el-icon-plus" />
+      </el-upload>
+    </div>
+    <el-button type="primary" @click="handleSave">保存</el-button>
   </el-card>
 </template>
 
@@ -121,13 +132,13 @@ export default {
       if (index > 0) {
         this.moveDirection = 'up'
         this.movingIndex = index
-        
+
         // 添加动画延迟，让用户看到动画效果
         setTimeout(() => {
           const temp = this.form.homeImg[index]
           this.form.homeImg[index] = this.form.homeImg[index - 1]
           this.form.homeImg[index - 1] = temp
-          
+
           // 动画结束后清除状态
           setTimeout(() => {
             this.movingIndex = -1
@@ -140,7 +151,7 @@ export default {
       if (index < this.form.homeImg.length - 1) {
         this.moveDirection = 'down'
         this.movingIndex = index
-        
+
         // 添加动画延迟，让用户看到动画效果
         setTimeout(() => {
           const temp = this.form.homeImg[index]
@@ -163,7 +174,7 @@ export default {
       return isImage
     },
     handleSave() {
-      let config = {
+      const config = {
         ...this.form,
         // 拼接成字符串
         homeImg: JSON.stringify(this.form.homeImg),
@@ -388,9 +399,6 @@ export default {
   }
 }
 
-
-
-
 .image-actions {
   position: absolute;
   top: 50%;
@@ -433,11 +441,6 @@ export default {
   color: #999;
   font-size: 12px;
 }
-
-
-
-
-
 
 .time {
   font-size: 13px;

@@ -7,20 +7,20 @@
         <h2>结算单预览</h2>
       </div>
       <div class="header-right">
-        <el-button type="primary" icon="el-icon-download" @click="generatePDF" :loading="generating">
+        <el-button type="primary" icon="el-icon-download" :loading="generating" @click="generatePDF">
           生成PDF
         </el-button>
         <el-button type="warning" icon="el-icon-printer" @click="printPDF">
           打印
         </el-button>
-        <el-button @click="refreshData" icon="el-icon-refresh">
+        <el-button icon="el-icon-refresh" @click="refreshData">
           刷新数据
         </el-button>
       </div>
     </div>
 
     <!-- 结算单预览 -->
-    <div class="preview-container" ref="previewContainer">
+    <div ref="previewContainer" class="preview-container">
       <div class="settlement-preview">
         <!-- 结算单标题 -->
         <div class="settlement-title">
@@ -32,11 +32,11 @@
           <div class="contract-parties">
             <div class="party-item">
               <span class="label">甲方：</span>
-              <span class="value">{{ orderData.partyAName  }}</span>
+              <span class="value">{{ orderData.partyAName }}</span>
             </div>
             <div class="party-item">
               <span class="label">乙方：</span>
-              <span class="value">{{ orderData.partyBName  }}</span>
+              <span class="value">{{ orderData.partyBName }}</span>
             </div>
             <div class="party-item">
               <span class="label">合同编号：</span>
@@ -47,7 +47,7 @@
 
         <!-- 结算说明 -->
         <div class="settlement-description">
-          <p>现就该合同下编号为 <strong>{{ orderData.no  }}</strong> 的订单出具以下业务结算单</p>
+          <p>现就该合同下编号为 <strong>{{ orderData.no }}</strong> 的订单出具以下业务结算单</p>
         </div>
 
         <!-- 订单详细信息 -->
@@ -88,7 +88,7 @@
         <!-- 常规部分 -->
         <div class="regular-section">
           <h2 class="section-title">常规部分</h2>
-          
+
           <!-- 订单明细表格 -->
           <div class="order-details-table">
             <table>
@@ -194,7 +194,7 @@
 <script>
 import { generateSettlementPDF, getRecycleDetail } from '@/api/recycle'
 import { parseTime } from '@/utils'
-import { 
+import {
   getOrderTypeText,
   getOrderStatusText
 } from '@/constants/orderTypes'
@@ -229,17 +229,17 @@ export default {
       if (!this.orderData.items || this.orderData.items.length === 0) {
         return 0
       }
-      
+
       return this.orderData.items.reduce((sum, item) => {
         const unitPrice = Number(item.goodPrice) || 0
         const quantity = Number(item.goodCount) || 0
         const weight = Number(item.goodWeight) || 0
         const ratingCoefficient = Number(item.ratingCoefficient) || 0
-        
+
         // 合作评级调价 = (货物单价 * 数量 * 重量) * 评级系数
         const baseAmount = unitPrice * quantity * weight
         const ratingAdjust = baseAmount * ratingCoefficient
-        
+
         return sum + ratingAdjust
       }, 0)
     },
@@ -248,7 +248,7 @@ export default {
       if (!this.orderData.items || this.orderData.items.length === 0) {
         return 0
       }
-      
+
       return this.orderData.items.reduce((sum, item) => {
         const otherAdjust = Number(item.otherAdjustAmount) || 0
         return sum + otherAdjust
@@ -263,14 +263,14 @@ export default {
       if (!this.orderData.items || this.orderData.items.length === 0) {
         return 'A'
       }
-      
+
       // 计算平均评级系数
       const totalRating = this.orderData.items.reduce((sum, item) => {
         return sum + (Number(item.ratingCoefficient) || 0)
       }, 0)
-      
+
       const avgRating = totalRating / this.orderData.items.length
-      
+
       // 根据评级系数范围确定等级
       if (avgRating >= 0.1) return 'A+'
       if (avgRating >= 0.05) return 'A'
@@ -286,7 +286,7 @@ export default {
   created() {
     // 从路由参数获取订单ID
     this.orderId = this.$route.params.orderId || this.$route.query.orderId
-    
+
     // 如果有orderId，则从API获取订单数据
     if (this.orderId) {
       this.loadOrderData()
@@ -296,11 +296,11 @@ export default {
     // 加载订单数据
     async loadOrderData() {
       if (!this.orderId) return
-      
+
       try {
         const response = await getRecycleDetail(this.orderId)
         this.orderData = response.data || {}
-        
+
         // 如果API返回的数据中没有items，则使用模拟数据
         if (!this.orderData.items || this.orderData.items.length === 0) {
           this.loadMockOrderItems()
@@ -309,7 +309,7 @@ export default {
           this.orderItems = this.orderData.items.map((item, index) => {
             const quantity = Number(item.goodCount) || 0
             const unitPrice = Number(item.goodPrice) || 0
-            
+
             return {
               type: item.goodType || '货物', // 直接使用订单明细中的货物类型
               name: item.goodName || '商品' + (index + 1),
@@ -327,7 +327,7 @@ export default {
         this.loadMockOrderData()
       }
     },
-    
+
     // 加载模拟订单数据（作为备用）
     loadMockOrderData() {
       this.orderData = {
@@ -350,7 +350,7 @@ export default {
       }
       this.loadMockOrderItems()
     },
-    
+
     // 加载模拟订单明细数据
     loadMockOrderItems() {
       // 模拟原始订单明细数据（用于调价计算）
@@ -404,7 +404,7 @@ export default {
       this.orderItems = mockItems.map(item => {
         const quantity = Number(item.goodCount) || 0
         const unitPrice = Number(item.goodPrice) || 0
-        
+
         return {
           type: item.goodName.includes('运输') ? 'transport' : 'goods',
           name: item.goodName,
@@ -426,7 +426,7 @@ export default {
         'service': '服务',
         'other': '其他'
       }
-      
+
       // 如果在预定义映射中找到，使用映射值；否则直接返回原值（货物类型）
       return typeMap[type] || type || '未知'
     },
@@ -440,13 +440,13 @@ export default {
     async generatePDF() {
       try {
         this.generating = true
-        
+
         // 方法1：使用后端API生成PDF
         // await this.generatePDFFromAPI()
-        
+
         // 方法2：使用前端生成PDF（备用方案）
         await this.generatePDFFromFrontend()
-        
+
         this.$message.success('PDF生成成功')
       } catch (error) {
         console.error('PDF生成失败:', error)
@@ -467,7 +467,7 @@ export default {
     async generatePDFFromAPI() {
       try {
         const response = await generateSettlementPDF(this.orderId)
-        
+
         // 创建下载链接
         const blob = new Blob([response.data], { type: 'application/pdf' })
         const url = window.URL.createObjectURL(blob)
@@ -499,17 +499,17 @@ export default {
       ])
 
       const filename = `结算单_${this.orderData.no || this.orderId}_${new Date().getTime()}.pdf`
-      
+
       // 显示加载提示
       const loading = this.showLoading('正在生成PDF...')
 
       try {
         // 添加PDF模式样式
         previewContainer.classList.add('pdf-mode')
-        
+
         // 等待样式应用
         await new Promise(resolve => setTimeout(resolve, 100))
-        
+
         // 创建PDF文档，使用中文字体支持
         const pdf = new jsPDF({
           orientation: 'portrait',
@@ -614,7 +614,7 @@ export default {
       pdf.setFontSize(14)
       pdf.setFont('helvetica', 'bold')
       pdf.text(title, pageWidth / 2, margin + 8, { align: 'center' })
-      
+
       // 添加分隔线
       pdf.setDrawColor(200, 200, 200)
       pdf.line(margin, margin + 15, pageWidth - margin, margin + 15)
@@ -623,7 +623,7 @@ export default {
     // 添加PDF页脚
     addPDFFooter(pdf, currentPage, totalPages, pageWidth, pageHeight, margin) {
       const footerY = pageHeight - margin
-      
+
       // 添加页码
       pdf.setFontSize(10)
       pdf.setFont('helvetica', 'normal')
@@ -633,7 +633,7 @@ export default {
         footerY,
         { align: 'center' }
       )
-      
+
       // 添加生成时间
       const now = new Date()
       const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -659,17 +659,17 @@ export default {
       ])
 
       const filename = `结算单_${this.orderData.no || this.orderId}_${new Date().getTime()}.pdf`
-      
+
       // 显示加载提示
       const loading = this.showLoading('正在生成简化版PDF...')
 
       try {
         // 添加PDF模式样式
         previewContainer.classList.add('pdf-mode')
-        
+
         // 等待样式应用
         await new Promise(resolve => setTimeout(resolve, 100))
-        
+
         // 创建PDF文档
         const pdf = new jsPDF({
           orientation: 'portrait',
@@ -690,31 +690,31 @@ export default {
         const pageWidth = pdf.internal.pageSize.getWidth()
         const pageHeight = pdf.internal.pageSize.getHeight()
         const margin = 10
-        
+
         // 计算缩放比例
         const imgWidth = pageWidth - (margin * 2)
         const imgHeight = (canvas.height * imgWidth) / canvas.width
-        
+
         // 如果内容超过一页，需要分页
         if (imgHeight > pageHeight - (margin * 2)) {
           const pages = Math.ceil(imgHeight / (pageHeight - (margin * 2)))
-          
+
           for (let i = 0; i < pages; i++) {
             if (i > 0) {
               pdf.addPage()
             }
-            
+
             const sourceY = i * (pageHeight - (margin * 2)) * (canvas.height / imgHeight)
             const sourceHeight = Math.min((pageHeight - (margin * 2)) * (canvas.height / imgHeight), canvas.height - sourceY)
-            
+
             // 创建临时canvas
             const tempCanvas = document.createElement('canvas')
             const tempCtx = tempCanvas.getContext('2d')
             tempCanvas.width = canvas.width
             tempCanvas.height = sourceHeight
-            
+
             tempCtx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight)
-            
+
             const imgData = tempCanvas.toDataURL('image/jpeg', 0.8)
             pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, (sourceHeight * imgWidth) / canvas.width)
           }
@@ -1098,7 +1098,7 @@ export default {
 
       printWindow.document.close()
       printWindow.focus()
-      
+
       // 等待内容加载完成后打印
       printWindow.onload = () => {
         printWindow.print()
@@ -1163,46 +1163,46 @@ export default {
     amountToChinese(amount) {
       const num = Number(amount) || 0
       if (num === 0) return '零元整'
-      
+
       const digits = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖']
       const units = ['', '拾', '佰', '仟']
       const bigUnits = ['', '万', '亿']
-      
+
       const integerPart = Math.floor(num)
       const decimalPart = Math.round((num - integerPart) * 100)
-      
+
       let result = ''
-      
+
       // 处理整数部分
       if (integerPart > 0) {
         const intStr = integerPart.toString()
         const len = intStr.length
-        
+
         for (let i = 0; i < len; i++) {
           const digit = parseInt(intStr[i])
           const unitIndex = len - 1 - i
           const bigUnitIndex = Math.floor(unitIndex / 4)
           const smallUnitIndex = unitIndex % 4
-          
+
           if (digit !== 0) {
             result += digits[digit] + units[smallUnitIndex]
           } else if (result && !result.endsWith('零')) {
             result += '零'
           }
-          
+
           if (smallUnitIndex === 0 && bigUnitIndex > 0 && unitIndex > 0) {
             result += bigUnits[bigUnitIndex]
           }
         }
-        
+
         result += '元'
       }
-      
+
       // 处理小数部分
       if (decimalPart > 0) {
         const jiao = Math.floor(decimalPart / 10)
         const fen = decimalPart % 10
-        
+
         if (jiao > 0) {
           result += digits[jiao] + '角'
         }
@@ -1212,7 +1212,7 @@ export default {
       } else {
         result += '整'
       }
-      
+
       return result
     }
   }
@@ -1263,29 +1263,29 @@ export default {
       border-radius: 0;
       box-shadow: none;
       background: white;
-      
+
       .settlement-preview {
         padding: 20px;
         font-size: 11px;
-        
+
         .settlement-title h1 {
           font-size: 24px;
         }
-        
+
         .section-title {
           font-size: 16px;
         }
-        
+
         table {
           font-size: 10px;
-          
+
           th, td {
             padding: 6px;
           }
         }
       }
     }
-    
+
     .settlement-preview {
       padding: 40px;
       font-family: 'SimSun', 'Microsoft YaHei', 'PingFang SC', serif;
@@ -1621,4 +1621,4 @@ export default {
     }
   }
 }
-</style> 
+</style>

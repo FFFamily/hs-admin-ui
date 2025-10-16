@@ -5,7 +5,7 @@
       <el-form-item label="货物类型">
         <el-input v-model="searchForm.goodType" placeholder="请输入货物类型" />
       </el-form-item>
-      <el-form-item label="货物名称"> 
+      <el-form-item label="货物名称">
         <el-input v-model="searchForm.goodName" placeholder="请输入货物名称" />
       </el-form-item>
       <el-form-item>
@@ -23,8 +23,8 @@
       border
       fit
       highlight-current-row
-      @selection-change="handleSelectionChange"
       style="margin-top: 20px;"
+      @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" prop="no" width="80" align="center" />
@@ -41,38 +41,38 @@
       </el-table-column>
       <el-table-column label="操作" align="center">
         <template slot-scope="scope">
-          <el-button pageSize="mini" @click="handleUp(scope.row)">上移</el-button>
-          <el-button pageSize="mini" @click="handleDown(scope.row)">下移</el-button>
-          <el-button pageSize="mini" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button pageSize="mini" @click="handleView(scope.row)">{{ scope.row.isShow === 'Y' ? '隐藏' : '显示' }}</el-button>
-          <el-button pageSize="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+          <el-button page-size="mini" @click="handleUp(scope.row)">上移</el-button>
+          <el-button page-size="mini" @click="handleDown(scope.row)">下移</el-button>
+          <el-button page-size="mini" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button page-size="mini" @click="handleView(scope.row)">{{ scope.row.isShow === 'Y' ? '隐藏' : '显示' }}</el-button>
+          <el-button page-size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <!-- 分页组件 -->
     <el-pagination
-      :current-pageNum="pagination.pageNum"
-      :pageNum-sizes="[10, 20, 50, 100]"
-      :pageNum-pageSize="pagination.pageSize"
+      :current-page-num="pagination.pageNum"
+      :page-num-sizes="[10, 20, 50, 100]"
+      :page-num-page-size="pagination.pageSize"
       :total="pagination.total"
       layout="total, sizes, prev, pager, next, jumper"
+      style="margin-top: 20px; text-align: right;"
       @pageSize-change="handleSizeChange"
       @current-change="handleCurrentChange"
-      style="margin-top: 20px; text-align: right;"
     />
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog 
-      :title="dialogTitle" 
-      :visible.sync="dialogVisible" 
+    <el-dialog
+      :title="dialogTitle"
+      :visible.sync="dialogVisible"
       width="600px"
       :close-on-click-modal="false"
     >
-      <el-form 
-        ref="form" 
-        :model="form" 
-        :rules="rules" 
+      <el-form
+        ref="form"
+        :model="form"
+        :rules="rules"
         label-width="100px"
         @submit.native.prevent
       >
@@ -92,10 +92,10 @@
           <el-input v-model="form.goodRemark" placeholder="请输入货物备注" />
         </el-form-item>
         <el-form-item label="公示价格" prop="publicPrice">
-          <el-input-number 
-            v-model="form.publicPrice" 
-            :precision="2" 
-            :min="0" 
+          <el-input-number
+            v-model="form.publicPrice"
+            :precision="2"
+            :min="0"
             :step="0.01"
             style="width: 100%"
             placeholder="请输入公示价格"
@@ -104,7 +104,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
       </div>
     </el-dialog>
 
@@ -118,10 +118,10 @@
 </template>
 
 <script>
-import { 
-  getBusinessScopePage, 
-  createBusinessScope, 
-  updateBusinessScope, 
+import {
+  getBusinessScopePage,
+  createBusinessScope,
+  updateBusinessScope,
   deleteBusinessScope,
   batchDeleteBusinessScope,
   updateBusinessScopeVisible,
@@ -140,29 +140,29 @@ export default {
       // 列表数据
       list: [],
       listLoading: false,
-      
+
       // 搜索表单
       searchForm: {
         goodType: '',
         goodName: '',
         goodModel: ''
       },
-      
+
       // 分页
       pagination: {
         pageNum: 1,
         pageSize: 10,
         total: 0
       },
-      
+
       // 选中的行
       selectedIds: [],
-      
+
       // 弹窗相关
       dialogVisible: false,
       dialogTitle: '',
       submitLoading: false,
-      
+
       // 表单数据
       form: {
         id: null,
@@ -171,7 +171,7 @@ export default {
         goodModel: '',
         publicPrice: 0
       },
-      
+
       // 表单验证规则
       rules: {
         no: [
@@ -190,16 +190,16 @@ export default {
           { required: true, message: '请输入货物价格', trigger: 'blur' }
         ]
       },
-      
+
       // 选择器相关
       showSelector: false
     }
   },
-  
+
   created() {
     this.fetchData()
   },
-  
+
   methods: {
     // 获取数据
     fetchData() {
@@ -210,7 +210,7 @@ export default {
         pageNum: this.pagination.pageNum,
         pageSize: this.pagination.pageSize
       }
-      
+
       getBusinessScopePage(params).then(response => {
         this.list = response.data.records || response.data || []
         this.pagination.total = response.data.total || 0
@@ -242,7 +242,7 @@ export default {
       this.pagination.pageNum = 1
       this.fetchData()
     },
-    
+
     // 重置搜索
     handleReset() {
       this.searchForm = {
@@ -253,7 +253,7 @@ export default {
       this.pagination.pageNum = 1
       this.fetchData()
     },
-    
+
     // 新增
     handleAdd() {
       this.dialogTitle = '新增经营范围'
@@ -269,7 +269,7 @@ export default {
         this.$refs.form && this.$refs.form.clearValidate()
       })
     },
-    
+
     // 编辑
     handleEdit(row) {
       this.dialogTitle = '编辑经营范围'
@@ -279,18 +279,18 @@ export default {
         this.$refs.form && this.$refs.form.clearValidate()
       })
     },
-    
+
     // 提交表单
     handleSubmit() {
       this.$refs.form.validate((valid) => {
         if (valid) {
           this.submitLoading = true
           const submitData = { ...this.form }
-          
-          const request = this.form.id 
+
+          const request = this.form.id
             ? updateBusinessScope(this.form.id, submitData)
             : createBusinessScope(submitData)
-            
+
           request.then(() => {
             this.$message.success(this.form.id ? '更新成功' : '新增成功')
             this.dialogVisible = false
@@ -303,7 +303,7 @@ export default {
         }
       })
     },
-    
+
     // 删除
     handleDelete(row) {
       this.$confirm('确定要删除该经营范围吗？', '提示', { type: 'warning' })
@@ -317,7 +317,7 @@ export default {
         })
         .catch(() => {})
     },
-    
+
     // 批量删除
     handleBatchDelete() {
       this.$confirm(`确定要删除选中的 ${this.selectedIds.length} 条记录吗？`, '提示', { type: 'warning' })
@@ -332,25 +332,25 @@ export default {
         })
         .catch(() => {})
     },
-    
+
     // 选择变化
     handleSelectionChange(selection) {
       this.selectedIds = selection.map(item => item.id)
     },
-    
+
     // 分页大小变化
     handleSizeChange(val) {
       this.pagination.pageSize = val
       this.pagination.pageNum = 1
       this.fetchData()
     },
-    
+
     // 当前页变化
     handleCurrentChange(val) {
       this.pagination.pageNum = val
       this.fetchData()
     },
-    
+
     // 选择器确认
     handleSelectorConfirm(selectedItems) {
       this.$message.success(`成功选择 ${selectedItems.length} 项经营范围`)
@@ -383,4 +383,4 @@ export default {
 .dialog-footer {
   text-align: right;
 }
-</style> 
+</style>

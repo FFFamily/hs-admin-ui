@@ -8,7 +8,7 @@
   >
     <div class="lease-order-selector">
       <!-- 搜索区域 -->
-      <el-form :inline="true" :model="searchForm" ref="searchFormRef">
+      <el-form ref="searchFormRef" :inline="true" :model="searchForm">
         <el-form-item label="订单编号">
           <el-input
             v-model="searchForm.orderCode"
@@ -17,7 +17,7 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="用户名称">
@@ -28,7 +28,7 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="订单状态">
@@ -44,14 +44,14 @@
 
       <!-- 租赁订单列表 -->
       <el-table
+        v-loading="loading"
         :data="filteredOrderList"
         style="width: 100%"
         highlight-current-row
         border
-        v-loading="loading"
+        :row-class-name="getRowClassName"
         @selection-change="handleSelectionChange"
         @row-click="handleRowClick"
-        :row-class-name="getRowClassName"
       >
         <!-- 多选列 -->
         <el-table-column
@@ -60,13 +60,13 @@
           width="55"
           :selectable="isSelectable"
         />
-        
+
         <!-- 订单编号列 -->
         <el-table-column prop="orderCode" label="订单编号" min-width="120" />
-        
+
         <!-- 用户名称列 -->
         <el-table-column prop="userName" label="用户名称" min-width="120" />
-        
+
         <!-- 订单状态列 -->
         <el-table-column prop="status" label="订单状态" width="100" align="center">
           <template slot-scope="scope">
@@ -75,20 +75,20 @@
             </el-tag>
           </template>
         </el-table-column>
-        
+
         <!-- 订单金额列 -->
         <el-table-column prop="totalAmount" label="订单金额" width="120" align="right">
           <template slot-scope="scope">
             ¥{{ scope.row.totalAmount || 0 }}
           </template>
         </el-table-column>
-        
+
         <!-- 创建时间列 -->
         <el-table-column prop="createTime" label="创建时间" width="160" />
       </el-table>
 
       <!-- 分页 -->
-      <div class="pagination-container" v-if="showPagination">
+      <div v-if="showPagination" class="pagination-container">
         <el-pagination
           background
           layout="total, prev, pager, next, jumper"
@@ -100,7 +100,7 @@
       </div>
 
       <!-- 已选择订单展示 -->
-      <div class="selected-orders" v-if="multiple && selectedOrders.length > 0">
+      <div v-if="multiple && selectedOrders.length > 0" class="selected-orders">
         <div class="selected-title">
           <span>已选择订单 ({{ selectedOrders.length }})：</span>
           <el-button type="text" @click="clearSelection">清空选择</el-button>
@@ -110,8 +110,8 @@
             v-for="order in selectedOrders"
             :key="order.id"
             closable
-            @close="removeOrder(order)"
             style="margin-right: 8px; margin-bottom: 8px;"
+            @close="removeOrder(order)"
           >
             {{ order.orderCode }} - {{ order.userName }}
           </el-tag>
@@ -121,7 +121,7 @@
 
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleConfirm" :disabled="!canConfirm">
+      <el-button type="primary" :disabled="!canConfirm" @click="handleConfirm">
         {{ confirmText }}
       </el-button>
     </div>
@@ -247,16 +247,16 @@ export default {
           userName: this.searchForm.userName || undefined,
           status: this.searchForm.status || undefined
         }
-        
+
         const response = await getLeaseOrderListPage(params)
         if (response && response.data) {
           let orders = response.data.records || []
-          
+
           // 如果设置了状态过滤，则过滤订单
           if (this.statusFilter && this.statusFilter.length > 0) {
             orders = orders.filter(order => this.statusFilter.includes(order.status))
           }
-          
+
           this.orderList = orders
           this.total = response.data.total || 0
         }
@@ -289,7 +289,7 @@ export default {
     // 行点击处理（单选模式）
     handleRowClick(row, column, event) {
       if (this.multiple) return
-      
+
       // 单选模式，直接选择该行
       this.selectedOrders = [row]
     },
@@ -370,7 +370,7 @@ export default {
   .lease-order-selector {
     .search-container {
       margin-bottom: 20px;
-      
+
       .search-input {
         width: 250px;
       }
@@ -379,7 +379,7 @@ export default {
     .selected-row {
       background-color: #e6f7ff !important;
       border-left: 4px solid #1890ff !important;
-      
+
       &:hover {
         background-color: #bae7ff !important;
       }
@@ -395,7 +395,7 @@ export default {
       padding: 15px;
       background-color: #f8f9fa;
       border-radius: 4px;
-      
+
       .selected-title {
         display: flex;
         justify-content: space-between;
@@ -404,7 +404,7 @@ export default {
         font-weight: 500;
         color: #606266;
       }
-      
+
       .selected-tags {
         .el-tag {
           margin-right: 8px;
@@ -423,13 +423,13 @@ export default {
 :deep(.selected-row) {
   background-color: #e6f7ff !important;
   border-left: 4px solid #1890ff !important;
-  
+
   &:hover {
     background-color: #bae7ff !important;
   }
-  
+
   td {
     background-color: #e6f7ff !important;
   }
 }
-</style> 
+</style>

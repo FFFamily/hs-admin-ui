@@ -100,7 +100,7 @@ export default {
       this.dialogVisible = true
     },
     async handleDelete(row) {
-      this.$confirm('确定要删除该角色吗？', '提示', { type: 'warning' }).then(async () => {
+      this.$confirm('确定要删除该角色吗？', '提示', { type: 'warning' }).then(async() => {
         try {
           await deleteAdminRole(row.id)
           this.$message.success('删除成功')
@@ -136,4 +136,4 @@ export default {
 .filter-container {
   margin-bottom: 10px;
 }
-</style> 
+</style>

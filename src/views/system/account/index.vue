@@ -21,7 +21,7 @@
         </el-table-column>
         <el-table-column label="纳税人识别号" prop="taxNumber" width="180" align="center" />
         <el-table-column prop="password" label="密码" width="200" />
-        <el-table-column label="身份" prop="useType" width="100" align="center" >
+        <el-table-column label="身份" prop="useType" width="100" align="center">
           <template slot-scope="scope">
             <span>{{ getUseType(scope.row.useType) }}</span>
           </template>
@@ -31,8 +31,12 @@
         <el-table-column label="评级系数" prop="scoreFactor" width="60" align="center" />
         <el-table-column prop="status" label="状态" width="100">
           <template slot-scope="scope">
-            <el-switch v-model="scope.row.status" active-value='use' inactive-value='disable'
-              @change="handleStatusChange(scope.row)" />
+            <el-switch
+              v-model="scope.row.status"
+              active-value="use"
+              inactive-value="disable"
+              @change="handleStatusChange(scope.row)"
+            />
           </template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="145">
@@ -43,18 +47,31 @@
         </el-table-column>
       </el-table>
       <div style="margin-top: 20px; text-align: right;">
-        <el-pagination background layout="total, prev, pager, next, jumper" :total="total" :page-size="pageSize"
-          :current-page.sync="page" @current-change="fetchList" />
+        <el-pagination
+          background
+          layout="total, prev, pager, next, jumper"
+          :total="total"
+          :page-size="pageSize"
+          :current-page.sync="page"
+          @current-change="fetchList"
+        />
       </div>
     </el-card>
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" width="500px" :visible.sync="dialogVisible">
-      <el-form :model="form" :rules="rules" ref="form" label-width="100px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="账号类型" prop="accountTypeId">
-          <el-select v-model="form.accountTypeId" placeholder="请选择账号类型"
-             @change="handleAccountTypeChange">
-            <el-option v-for="accountType in accountTypes" :key="accountType.id" :label="accountType.typeName"
-              :value="accountType.id" />
+          <el-select
+            v-model="form.accountTypeId"
+            placeholder="请选择账号类型"
+            @change="handleAccountTypeChange"
+          >
+            <el-option
+              v-for="accountType in accountTypes"
+              :key="accountType.id"
+              :label="accountType.typeName"
+              :value="accountType.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="账号名称" prop="nickname">
@@ -78,7 +95,7 @@
           <el-input v-model="form.scoreFactor" />
         </el-form-item>
         <el-form-item label="编号(账号)" prop="username">
-          <el-input disabled v-model="form.username" placeholder="专责用户类型后，自动按序生成账号编号" />
+          <el-input v-model="form.username" disabled placeholder="专责用户类型后，自动按序生成账号编号" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -135,10 +152,10 @@ export default {
         // type: [{ required: true, message: '请选择用户类型', trigger: 'change' }],
         accountTypeId: [{ required: true, message: '请选择用户类型', trigger: 'change' }],
         username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-        password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+        password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
       },
       updateRules: {
-        ...this.rules,
+        ...this.rules
       }
     }
   },
@@ -257,7 +274,7 @@ export default {
     },
     // 切换用户类型时
     handleAccountTypeChange() {
-      generateAccountUsername(this.form.id,this.form.accountTypeId).then(res => {
+      generateAccountUsername(this.form.id, this.form.accountTypeId).then(res => {
         this.form.username = res.data
       })
     },

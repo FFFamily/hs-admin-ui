@@ -1,3 +1,3 @@
 import InvoiceTitleSelector from './index.vue'
 
-export default InvoiceTitleSelector 
+export default InvoiceTitleSelector

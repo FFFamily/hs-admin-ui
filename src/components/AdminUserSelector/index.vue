@@ -9,7 +9,7 @@
   >
     <div class="admin-user-selector">
       <!-- 搜索区域 -->
-      <el-form :inline="true" :model="searchForm" ref="searchFormRef">
+      <el-form ref="searchFormRef" :inline="true" :model="searchForm">
         <el-form-item label="登录账号" prop="username">
           <el-input
             v-model="searchKeyword"
@@ -18,7 +18,7 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="用户昵称" prop="nickname">
@@ -29,7 +29,7 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="手机号" prop="phone">
@@ -40,21 +40,21 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
       </el-form>
 
       <!-- 后台用户列表 -->
       <el-table
+        v-loading="loading"
         :data="filteredAdminUserList"
         style="width: 100%"
         highlight-current-row
         border
+        :row-class-name="getRowClassName"
         @selection-change="handleSelectionChange"
         @row-click="handleRowClick"
-        :row-class-name="getRowClassName"
-        v-loading="loading"
       >
         <!-- 多选列 -->
         <el-table-column
@@ -63,16 +63,16 @@
           width="55"
           :selectable="isSelectable"
         />
-        
+
         <!-- 登录账号列 -->
         <el-table-column prop="username" label="登录账号" min-width="120" />
-        
+
         <!-- 用户昵称列 -->
         <el-table-column prop="nickname" label="用户昵称" min-width="120" />
-        
+
         <!-- 手机号列 -->
         <el-table-column prop="phone" label="手机号" min-width="120" />
-        
+
         <!-- 状态列 -->
         <el-table-column prop="status" label="状态" min-width="100">
           <template slot-scope="scope">
@@ -81,7 +81,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        
+
         <!-- 头像列 -->
         <el-table-column label="头像" width="80">
           <template slot-scope="scope">
@@ -92,7 +92,7 @@
       </el-table>
 
       <!-- 分页 -->
-      <div class="pagination-container" v-if="showPagination">
+      <div v-if="showPagination" class="pagination-container">
         <el-pagination
           background
           layout="total, prev, pager, next, jumper"
@@ -104,7 +104,7 @@
       </div>
 
       <!-- 已选择后台用户展示 -->
-      <div class="selected-admin-users" v-if="multiple && selectedAdminUsers.length > 0">
+      <div v-if="multiple && selectedAdminUsers.length > 0" class="selected-admin-users">
         <div class="selected-title">
           <span>已选择后台用户 ({{ selectedAdminUsers.length }})：</span>
           <el-button type="text" @click="clearSelection">清空选择</el-button>
@@ -114,8 +114,8 @@
             v-for="adminUser in selectedAdminUsers"
             :key="adminUser.id"
             closable
-            @close="removeAdminUser(adminUser)"
             style="margin-right: 8px; margin-bottom: 8px;"
+            @close="removeAdminUser(adminUser)"
           >
             {{ adminUser.nickname }} - {{ adminUser.username }}
           </el-tag>
@@ -125,7 +125,7 @@
 
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleConfirm" :disabled="!canConfirm">
+      <el-button type="primary" :disabled="!canConfirm" @click="handleConfirm">
         {{ confirmText }}
       </el-button>
     </div>
@@ -236,7 +236,7 @@ export default {
           pageNum: this.currentPage,
           pageSize: this.pageSize
         }
-        
+
         const response = await getAdminUserPage(params)
         if (response && response.data) {
           this.adminUserList = response.data.records || response.data || []
@@ -257,9 +257,9 @@ export default {
         this.filteredAdminUserList = [...this.adminUserList]
         return
       }
-      
+
       const keyword = this.searchKeyword.toLowerCase()
-      this.filteredAdminUserList = this.adminUserList.filter(adminUser => 
+      this.filteredAdminUserList = this.adminUserList.filter(adminUser =>
         (adminUser.username && adminUser.username.toLowerCase().includes(keyword)) ||
         (adminUser.nickname && adminUser.nickname.toLowerCase().includes(keyword)) ||
         (adminUser.phone && adminUser.phone.includes(keyword))
@@ -280,7 +280,7 @@ export default {
     // 行点击处理（单选模式）
     handleRowClick(row, column, event) {
       if (this.multiple) return
-      
+
       // 单选模式，直接选择该行
       this.selectedAdminUsers = [row]
     },
@@ -336,11 +336,11 @@ export default {
 .admin-user-selector-dialog {
   // 确保后台用户选择器弹窗在最顶层
   z-index: 3000 !important;
-  
+
   .admin-user-selector {
     .search-container {
       margin-bottom: 20px;
-      
+
       .search-input {
         width: 300px;
       }
@@ -349,22 +349,22 @@ export default {
     .user-list-container {
       max-height: 400px;
       overflow-y: auto;
-      
+
       .selected-row {
         background-color: #e6f7ff !important;
         border-left: 4px solid #1890ff !important;
-        
+
         &:hover {
           background-color: #bae7ff !important;
         }
       }
-      
+
       // 增强选中行的视觉效果
       .el-table__row.selected-row {
         td {
           background-color: #e6f7ff !important;
         }
-        
+
         &:hover td {
           background-color: #bae7ff !important;
         }
@@ -381,7 +381,7 @@ export default {
       padding: 15px;
       background-color: #f8f9fa;
       border-radius: 4px;
-      
+
       .selected-title {
         display: flex;
         justify-content: space-between;
@@ -390,7 +390,7 @@ export default {
         font-weight: 500;
         color: #606266;
       }
-      
+
       .selected-tags {
         .el-tag {
           margin-right: 8px;
@@ -409,11 +409,11 @@ export default {
 :deep(.selected-row) {
   background-color: #e6f7ff !important;
   border-left: 4px solid #1890ff !important;
-  
+
   &:hover {
     background-color: #bae7ff !important;
   }
-  
+
   td {
     background-color: #e6f7ff !important;
   }

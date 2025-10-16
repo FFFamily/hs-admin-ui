@@ -10,11 +10,11 @@
       </el-form-item>
       <el-form-item label="流转步骤">
         <el-select v-model="searchForm.flowStep" placeholder="请选择流转步骤">
-          <el-option 
-            v-for="option in flowStepOptions" 
-            :key="option.value" 
-            :label="option.label" 
-            :value="option.value" 
+          <el-option
+            v-for="option in flowStepOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
         </el-select>
       </el-form-item>
@@ -25,13 +25,13 @@
     </el-form>
 
     <!-- 库存列表 -->
-    <el-table 
-      :data="inventoryList" 
-      border 
+    <el-table
       v-loading="loading"
-      @selection-change="handleSelectionChange"
+      :data="inventoryList"
+      border
       :show-summary="true"
       :summary-method="getSummaryMethod"
+      @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column prop="identifyCode" label="识别码" width="180" align="center">
@@ -72,9 +72,9 @@
       </el-table-column>
       <el-table-column label="操作" width="100" align="center" fixed="right">
         <template slot-scope="scope">
-          <el-button 
-            type="text" 
-            size="small" 
+          <el-button
+            type="text"
+            size="small"
             @click="viewTraceability(scope.row)"
           >
             查看追溯
@@ -85,23 +85,23 @@
 
     <!-- 分页 -->
     <el-pagination
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
       :current-page="pagination.page"
       :page-sizes="[10, 20, 50, 100]"
       :page-size="pagination.size"
       layout="total, sizes, prev, pager, next, jumper"
       :total="pagination.total"
       style="margin-top: 20px; text-align: right;"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
     />
 
     <!-- 底部操作按钮 -->
     <div class="footer-actions">
       <el-button @click="handleCancel">取消</el-button>
-      <el-button 
-        type="primary" 
-        @click="handleConfirm"
+      <el-button
+        type="primary"
         :disabled="selectedItems.length === 0"
+        @click="handleConfirm"
       >
         确定选择 ({{ selectedItems.length }})
       </el-button>
@@ -111,7 +111,7 @@
 
 <script>
 import { parseTime } from '@/utils'
-import { 
+import {
   FLOW_STEP_OPTIONS,
   getFlowStepText,
   getGoodsStatusText
@@ -347,7 +347,7 @@ export default {
     text-align: right;
     padding-top: 20px;
     border-top: 1px solid #ebeef5;
-    
+
     .el-button {
       margin-left: 10px;
     }

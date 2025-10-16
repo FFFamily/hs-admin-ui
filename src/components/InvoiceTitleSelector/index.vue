@@ -8,7 +8,7 @@
   >
     <div class="invoice-title-selector">
       <!-- 搜索区域 -->
-      <el-form :inline="true" :model="searchForm" ref="searchFormRef">
+      <el-form ref="searchFormRef" :inline="true" :model="searchForm">
         <el-form-item label="发票抬头名称" prop="title">
           <el-input
             v-model="searchKeyword"
@@ -17,7 +17,7 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
         <el-form-item label="纳税人识别号" prop="taxNumber">
@@ -28,21 +28,21 @@
             clearable
             @input="handleSearch"
           >
-            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+            <i slot="prefix" class="el-input__icon el-icon-search" />
           </el-input>
         </el-form-item>
       </el-form>
 
       <!-- 发票抬头列表 -->
       <el-table
+        v-loading="loading"
         :data="filteredInvoiceTitleList"
         style="width: 100%"
         highlight-current-row
         border
+        :row-class-name="getRowClassName"
         @selection-change="handleSelectionChange"
         @row-click="handleRowClick"
-        :row-class-name="getRowClassName"
-        v-loading="loading"
       >
         <!-- 多选列 -->
         <el-table-column
@@ -51,22 +51,22 @@
           width="55"
           :selectable="isSelectable"
         />
-        
+
         <!-- 发票抬头名称列 -->
         <el-table-column prop="title" label="发票抬头名称" min-width="180" />
-        
+
         <!-- 纳税人识别号列 -->
         <el-table-column prop="taxNumber" label="纳税人识别号" min-width="180" />
-        
+
         <!-- 注册地址列 -->
         <el-table-column prop="registeredAddress" label="注册地址" min-width="200" />
-        
+
         <!-- 联系电话列 -->
         <el-table-column prop="phone" label="联系电话" width="150" />
-        
+
         <!-- 开户行列 -->
         <el-table-column prop="bankName" label="开户行" min-width="150" />
-        
+
         <!-- 默认开票信息列 -->
         <el-table-column prop="isDefault" label="默认开票信息" width="120" align="center">
           <template slot-scope="scope">
@@ -78,7 +78,7 @@
       </el-table>
 
       <!-- 分页 -->
-      <div class="pagination-container" v-if="showPagination">
+      <div v-if="showPagination" class="pagination-container">
         <el-pagination
           background
           layout="total, prev, pager, next, jumper"
@@ -90,7 +90,7 @@
       </div>
 
       <!-- 已选择发票抬头展示 -->
-      <div class="selected-invoice-titles" v-if="multiple && selectedInvoiceTitles.length > 0">
+      <div v-if="multiple && selectedInvoiceTitles.length > 0" class="selected-invoice-titles">
         <div class="selected-title">
           <span>已选择发票抬头 ({{ selectedInvoiceTitles.length }})：</span>
           <el-button type="text" @click="clearSelection">清空选择</el-button>
@@ -100,8 +100,8 @@
             v-for="invoiceTitle in selectedInvoiceTitles"
             :key="invoiceTitle.id"
             closable
-            @close="removeInvoiceTitle(invoiceTitle)"
             style="margin-right: 8px; margin-bottom: 8px;"
+            @close="removeInvoiceTitle(invoiceTitle)"
           >
             {{ invoiceTitle.title }} - {{ invoiceTitle.taxNumber }}
           </el-tag>
@@ -111,7 +111,7 @@
 
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleConfirm" :disabled="!canConfirm">
+      <el-button type="primary" :disabled="!canConfirm" @click="handleConfirm">
         {{ confirmText }}
       </el-button>
     </div>
@@ -229,12 +229,12 @@ export default {
           page: this.currentPage,
           size: this.pageSize
         }
-        
+
         // 如果有账户ID过滤条件
         if (this.accountId) {
           params.accountId = this.accountId
         }
-        
+
         const response = await getInvoiceTitlePage(params)
         if (response && response.data) {
           this.invoiceTitleList = response.data.records || response.data || []
@@ -255,16 +255,16 @@ export default {
         this.filteredInvoiceTitleList = [...this.invoiceTitleList]
         return
       }
-      
+
       const titleKeyword = this.searchKeyword.toLowerCase()
       const taxNumberKeyword = this.searchTaxNumber.toLowerCase()
-      
+
       this.filteredInvoiceTitleList = this.invoiceTitleList.filter(invoiceTitle => {
-        const titleMatch = !titleKeyword || 
+        const titleMatch = !titleKeyword ||
           (invoiceTitle.title && invoiceTitle.title.toLowerCase().includes(titleKeyword))
-        const taxNumberMatch = !taxNumberKeyword || 
+        const taxNumberMatch = !taxNumberKeyword ||
           (invoiceTitle.taxNumber && invoiceTitle.taxNumber.toLowerCase().includes(taxNumberKeyword))
-        
+
         return titleMatch && taxNumberMatch
       })
     },
@@ -283,7 +283,7 @@ export default {
     // 行点击处理（单选模式）
     handleRowClick(row, column, event) {
       if (this.multiple) return
-      
+
       // 单选模式，直接选择该行
       this.selectedInvoiceTitles = [row]
     },
@@ -339,11 +339,11 @@ export default {
 .invoice-title-selector-dialog {
   // 确保发票抬头选择器弹窗在最顶层
   z-index: 3000 !important;
-  
+
   .invoice-title-selector {
     .search-container {
       margin-bottom: 20px;
-      
+
       .search-input {
         width: 300px;
       }
@@ -352,22 +352,22 @@ export default {
     .invoice-title-list-container {
       max-height: 400px;
       overflow-y: auto;
-      
+
       .selected-row {
         background-color: #e6f7ff !important;
         border-left: 4px solid #1890ff !important;
-        
+
         &:hover {
           background-color: #bae7ff !important;
         }
       }
-      
+
       // 增强选中行的视觉效果
       .el-table__row.selected-row {
         td {
           background-color: #e6f7ff !important;
         }
-        
+
         &:hover td {
           background-color: #bae7ff !important;
         }
@@ -384,7 +384,7 @@ export default {
       padding: 15px;
       background-color: #f8f9fa;
       border-radius: 4px;
-      
+
       .selected-title {
         display: flex;
         justify-content: space-between;
@@ -393,7 +393,7 @@ export default {
         font-weight: 500;
         color: #606266;
       }
-      
+
       .selected-tags {
         .el-tag {
           margin-right: 8px;
@@ -412,13 +412,13 @@ export default {
 :deep(.selected-row) {
   background-color: #e6f7ff !important;
   border-left: 4px solid #1890ff !important;
-  
+
   &:hover {
     background-color: #bae7ff !important;
   }
-  
+
   td {
     background-color: #e6f7ff !important;
   }
 }
-</style> 
+</style>

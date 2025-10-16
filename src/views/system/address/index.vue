@@ -2,51 +2,62 @@
   <div class="app-container">
     <!-- 搜索区域 -->
 
-      <el-form :model="searchForm" :inline="true" class="search-form">
-        <el-form-item label="账号名称">
-          <el-input v-model="searchForm.accountName" placeholder="请输入用户名称" clearable style="width: 200px;" />
-        </el-form-item>
-        <el-form-item label="地址">
-          <el-input v-model="searchForm.realAddress" placeholder="请输入地址" clearable style="width: 200px;" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
-          <el-button type="primary" @click="handleAdd">新增地址</el-button>
-        </el-form-item>
-      </el-form>
+    <el-form :model="searchForm" :inline="true" class="search-form">
+      <el-form-item label="账号名称">
+        <el-input v-model="searchForm.accountName" placeholder="请输入用户名称" clearable style="width: 200px;" />
+      </el-form-item>
+      <el-form-item label="地址">
+        <el-input v-model="searchForm.realAddress" placeholder="请输入地址" clearable style="width: 200px;" />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="handleSearch">搜索</el-button>
+        <el-button @click="handleReset">重置</el-button>
+        <el-button type="primary" @click="handleAdd">新增地址</el-button>
+      </el-form-item>
+    </el-form>
 
     <!-- 数据表格 -->
 
-      <el-table v-loading="loading" :data="tableData" border style="width: 100%"
-        @selection-change="handleSelectionChange">
-        <el-table-column type="selection" width="55" />
-        <el-table-column label="用户名称" prop="accountName" width="120" />
-        <el-table-column label="分类" prop="category" width="100" />
-        <el-table-column label="地址" prop="realAddress" min-width="200" show-overflow-tooltip />
-        <el-table-column label="是否默认" prop="isDefault" width="100" align="center">
-          <template slot-scope="scope">
-            <el-tag :type="scope.row.isDefault === '1' ? 'success' : 'info'" size="mini">
-              {{ scope.row.isDefault === '1' ? '是' : '否' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="备注" prop="remark" width="150" show-overflow-tooltip />
-        <el-table-column label="创建时间" prop="createTime" width="180" />
-        <el-table-column label="操作" width="280" fixed="right">
-          <template slot-scope="scope">
-            <el-button size="mini" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button size="mini" type="success" @click="handleSetDefault(scope.row)" :disabled="scope.row.isDefault === '1'">设为默认</el-button>
-            <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+    <el-table
+      v-loading="loading"
+      :data="tableData"
+      border
+      style="width: 100%"
+      @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" width="55" />
+      <el-table-column label="用户名称" prop="accountName" width="120" />
+      <el-table-column label="分类" prop="category" width="100" />
+      <el-table-column label="地址" prop="realAddress" min-width="200" show-overflow-tooltip />
+      <el-table-column label="是否默认" prop="isDefault" width="100" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.isDefault === '1' ? 'success' : 'info'" size="mini">
+            {{ scope.row.isDefault === '1' ? '是' : '否' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="备注" prop="remark" width="150" show-overflow-tooltip />
+      <el-table-column label="创建时间" prop="createTime" width="180" />
+      <el-table-column label="操作" width="280" fixed="right">
+        <template slot-scope="scope">
+          <el-button size="mini" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button size="mini" type="success" :disabled="scope.row.isDefault === '1'" @click="handleSetDefault(scope.row)">设为默认</el-button>
+          <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
 
-      <!-- 分页 -->
-      <el-pagination :current-page="pagination.page" :page-sizes="[10, 20, 50, 100]" :page-size="pagination.size"
-        :total="pagination.total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
-        @current-change="handleCurrentChange" style="margin-top: 20px; text-align: right;" />
-    
+    <!-- 分页 -->
+    <el-pagination
+      :current-page="pagination.page"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="pagination.size"
+      :total="pagination.total"
+      layout="total, sizes, prev, pager, next, jumper"
+      style="margin-top: 20px; text-align: right;"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
 
     <!-- 新增/编辑对话框 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px" :before-close="handleDialogClose">
@@ -67,12 +78,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="城市" prop="city">
-          <el-select v-model="form.city" placeholder="请选择城市" style="width: 100%;" @change="handleCityChange" :disabled="!form.province">
+          <el-select v-model="form.city" placeholder="请选择城市" style="width: 100%;" :disabled="!form.province" @change="handleCityChange">
             <el-option v-for="city in cityList" :key="city.code" :label="city.name" :value="city.name" />
           </el-select>
         </el-form-item>
         <el-form-item label="区县" prop="district">
-          <el-select v-model="form.district" placeholder="请选择区县" style="width: 100%;" @change="handleDistrictChange" :disabled="!form.city">
+          <el-select v-model="form.district" placeholder="请选择区县" style="width: 100%;" :disabled="!form.city" @change="handleDistrictChange">
             <el-option v-for="district in districtList" :key="district.code" :label="district.name" :value="district.name" />
           </el-select>
         </el-form-item>
@@ -88,13 +99,13 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="handleDialogClose">取 消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确 定</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确 定</el-button>
       </div>
     </el-dialog>
 
     <!-- 用户选择器 -->
     <UserSelector :visible.sync="userSelectorVisible" title="选择用户" :multiple="false" @confirm="handleUserSelected" />
-    
+
     <!-- 地址选择器示例 -->
     <AddressSelector :visible.sync="addressSelectorVisible" title="选择地址" :multiple="false" @confirm="handleAddressSelected" />
   </div>
@@ -433,7 +444,7 @@ export default {
       this.form.district = ''
       this.cityList = []
       this.districtList = []
-      
+
       // 加载城市列表
       if (provinceName) {
         const province = this.provinceList.find(p => p.name === provinceName)
@@ -441,7 +452,7 @@ export default {
           await this.loadCityList(province.code)
         }
       }
-      
+
       // 更新完整地址
       this.updateFullAddress()
     },
@@ -462,7 +473,7 @@ export default {
       // 清空区县选择
       this.form.district = ''
       this.districtList = []
-      
+
       // 加载区县列表
       if (cityName) {
         const city = this.cityList.find(c => c.name === cityName)
@@ -470,7 +481,7 @@ export default {
           await this.loadDistrictList(city.code)
         }
       }
-      
+
       // 更新完整地址
       this.updateFullAddress()
     },
@@ -501,7 +512,7 @@ export default {
     // 更新完整地址
     updateFullAddress() {
       const addressParts = []
-      
+
       if (this.form.province) {
         addressParts.push(this.form.province)
       }
@@ -514,7 +525,7 @@ export default {
       if (this.form.detailAddress) {
         addressParts.push(this.form.detailAddress)
       }
-      
+
       this.form.realAddress = addressParts.join('')
     }
   }
