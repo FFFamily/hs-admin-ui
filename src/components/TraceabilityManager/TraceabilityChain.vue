@@ -1,95 +1,128 @@
 <template>
   <div class="traceability-chain">
-    <!-- <div class="chain-header">
-      <el-input 
-        v-model="searchIdentifyCode" 
-        placeholder="请输入识别码查询追溯链"
-        style="width: 300px;"
-      >
-        <el-button slot="append" icon="el-icon-search" @click="loadTraceabilityChain" />
-      </el-input>
-      <el-button type="primary" @click="exportTraceabilityData">导出追溯数据</el-button>
-    </div> -->
-
     <div class="chain-content" v-loading="loading">
       <!-- 追溯链时间轴 -->
-      <el-timeline v-if="traceabilityData.length > 0">
-        <el-timeline-item 
-          v-for="(item, index) in traceabilityData" 
-          :key="index"
-          :timestamp="formatDateTime(item.createTime)"
-          :type="getTimelineType(item.flowStep)"
-          :icon="getTimelineIcon(item.flowStep)"
-          placement="top"
-        >
-          <el-card class="timeline-card" shadow="hover">
+      <el-timeline v-if="traceabilityData.length > 0 && traceabilityData">
+        <el-timeline-item v-for="(nodeOrders, nodeIndex) in traceabilityData" :key="nodeIndex" placement="top">
+          <el-card class="timeline-card" shadow="hover" v-if="nodeOrders && nodeOrders.length > 0">
             <div class="card-header">
               <div class="step-info">
-                <el-tag :type="getFlowStepTagType(item.flowStep)" size="medium">
-                  {{ getFlowStepText(item.flowStep) }}
-                </el-tag>
-                <span class="identify-code">{{ item.identifyCode }}</span>
+                <span class="node-title">节点 {{ nodeIndex + 1 }}</span>
+                <el-tag size="small" type="info">{{ nodeOrders.length }} 个订单</el-tag>
               </div>
             </div>
-            
-            <div class="card-content">
-              <!-- 货物信息 -->
-              <div class="goods-section" v-if="item.goods && item.goods.length > 0">
-                <h4>货物信息</h4>
-                <el-table :data="item.goods" size="small" border>
-                  <el-table-column prop="goodNo" label="货物编号" width="150" />
-                  <el-table-column prop="goodName" label="货物名称" min-width="200" />
-                </el-table>
-              </div>
 
-              <!-- 源识别码信息 -->
-              <div class="source-section" v-if="item.sourceCodes && item.sourceCodes.length > 0">
-                <h4>源识别码</h4>
-                <div class="source-codes">
-                  <el-tag 
-                    v-for="(source, idx) in item.sourceCodes" 
-                    :key="idx"
-                    class="source-tag"
-                    @click="jumpToSourceCode(source.identifyCode)"
-                  >
-                    {{ source.identifyCode }}
-                    <span class="change-reason">({{ getChangeReasonText(source.changeReason) }})</span>
-                  </el-tag>
-                </div>
-              </div>
+            <div class="card-content">
+              <!-- 该节点下的所有订单 -->
+              <el-collapse v-if="nodeOrders.length > 1" accordion>
+                <template v-for="(order, orderIndex) in nodeOrders">
+                  <el-collapse-item 
+                    v-if="order && order.context" 
+                    :key="orderIndex" 
+                    :name="String(orderIndex)">
+                    <template slot="title">
+                      <div class="order-title">
+                        <el-tag :type="getFlowStepTagType(order.context.type)" size="small">
+                          {{ getOrderTypeText(order.context.type) }}
+                        </el-tag>
+                        <span class="order-no">{{ order.context.identifyCode }}</span>
+                      </div>
+                    </template>
+                    <el-form label-width="80px" size="small" class="order-info-form">
+                      <el-row :gutter="20">
+                        <el-col :span="12">
+                          <el-form-item label="订单ID">
+                            <span>{{ order.orderId || '--' }}</span>
+                          </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                          <el-form-item label="订单编号">
+                            <span>{{ order.context.no || '--' }}</span>
+                          </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                          <el-form-item label="订单类型">
+                            <el-tag :type="getFlowStepTagType(order.context.type)" size="small">
+                              {{ getOrderTypeText(order.context.type) }}
+                            </el-tag>
+                          </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                          <el-form-item label="识别码">
+                            <span>{{ order.context.identifyCode || '--' }}</span>
+                          </el-form-item>
+                        </el-col>
+                      </el-row>
+                    </el-form>
+                  </el-collapse-item>
+                </template>
+              </el-collapse>
+
+              <!-- 单个订单也使用折叠面板展示 -->
+              <el-collapse v-else-if="nodeOrders.length === 1 && nodeOrders[0] && nodeOrders[0].context" accordion>
+                <el-collapse-item name="0">
+                  <template slot="title">
+                    <div class="order-title">
+                      <el-tag :type="getFlowStepTagType(nodeOrders[0].context.type)" size="small">
+                        {{ getOrderTypeText(nodeOrders[0].context.type) }}
+                      </el-tag>
+                      <span class="order-no">{{ nodeOrders[0].context.identifyCode }}</span>
+                    </div>
+                  </template>
+                  <el-form label-width="80px" size="small" class="order-info-form">
+                    <el-row :gutter="20">
+                      <el-col :span="12">
+                        <el-form-item label="订单ID">
+                          <span>{{ nodeOrders[0].orderId || '--' }}</span>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :span="12">
+                        <el-form-item label="订单编号">
+                          <span>{{ nodeOrders[0].context.no || '--' }}</span>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :span="12">
+                        <el-form-item label="订单类型">
+                          <el-tag :type="getFlowStepTagType(nodeOrders[0].context.type)" size="small">
+                            {{ getOrderTypeText(nodeOrders[0].context.type) }}
+                          </el-tag>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :span="12">
+                        <el-form-item label="识别码">
+                          <span>{{ nodeOrders[0].context.identifyCode || '--' }}</span>
+                        </el-form-item>
+                      </el-col>
+                    </el-row>
+                  </el-form>
+                </el-collapse-item>
+              </el-collapse>
             </div>
           </el-card>
         </el-timeline-item>
       </el-timeline>
 
       <!-- 空状态 -->
-      <el-empty 
-        v-else-if="!loading" 
-        description="暂无追溯数据"
-        :image-size="100"
-      />
+      <el-empty v-else-if="!loading" description="暂无追溯数据" :image-size="100" />
     </div>
 
     <!-- 关系图谱 -->
     <el-divider content-position="left">关系图谱</el-divider>
-    <div v-if="traceabilityData.length > 0">
-      <relationship-graph :traceability-data="traceabilityData" />
+    <div v-if="graphData && Object.keys(graphData).length > 0">
+      <relationship-graph :graph-data="graphData" />
     </div>
-    <el-empty 
-      v-else 
-      description="暂无数据生成关系图谱"
-      :image-size="100"
-    />
+    <el-empty v-else description="暂无数据生成关系图谱" :image-size="100" />
   </div>
 </template>
 
 <script>
 import { parseTime } from '@/utils'
-import { 
-  getFlowStepText, 
+import {
+  getFlowStepText,
   getChangeReasonText,
   getGoodsStatusText
 } from '@/constants/traceability'
+import { getTraceabilityChain } from '@/api/traceability'
 import RelationshipGraph from './RelationshipGraph.vue'
 
 export default {
@@ -101,35 +134,72 @@ export default {
     identifyCode: {
       type: String,
       default: ''
+    },
+    orderId: {
+      type: [String, Number],
+      default: ''
     }
   },
   data() {
     return {
       searchIdentifyCode: '',
       traceabilityData: [],
+      graphData: {},
       loading: false
     }
   },
   mounted() {
-    if (this.identifyCode) {
-      this.searchIdentifyCode = this.identifyCode
-      this.loadTraceabilityChain()
+    // 自动加载追溯链数据
+    this.autoLoadTraceabilityChain()
+  },
+  watch: {
+    orderId(newVal) {
+      if (newVal) {
+        this.loadTraceabilityChain()
+      }
+    },
+    identifyCode(newVal) {
+      if (newVal && !this.orderId) {
+        this.searchIdentifyCode = newVal
+      }
     }
   },
   methods: {
+    // 自动加载追溯链数据
+    autoLoadTraceabilityChain() {
+      if (this.orderId) {
+        // 优先使用订单ID加载
+        this.loadTraceabilityChain()
+      } else if (this.identifyCode) {
+        // 设置识别码（暂不自动加载，等用户点击按钮）
+        this.searchIdentifyCode = this.identifyCode
+      }
+    },
+
     // 加载追溯链数据
     async loadTraceabilityChain() {
-      if (!this.searchIdentifyCode) {
-        this.$message.warning('请输入识别码')
+      // 优先使用传入的 orderId，否则使用 searchIdentifyCode
+      const queryParam = this.orderId || this.searchIdentifyCode
+
+      if (!queryParam) {
+        this.$message.warning('请提供订单ID')
         return
       }
 
       this.loading = true
       try {
-        // 模拟API调用
-        const response = await this.mockTraceabilityAPI(this.searchIdentifyCode)
-        this.traceabilityData = response.data || []
-        
+        // 使用真实API调用，传入订单ID
+        const response = await getTraceabilityChain(queryParam)
+
+        // 新数据结构
+        // response.data 格式：{ graph: {...}, paths: [...] }
+        this.graphData = response.data.graph || {}
+        this.traceabilityData = response.data.paths || []
+
+        // 调试：打印数据结构
+        console.log('追溯链数据:', this.traceabilityData)
+        console.log('关系图数据:', this.graphData)
+
         if (this.traceabilityData.length === 0) {
           this.$message.info('未找到相关追溯数据')
         }
@@ -139,95 +209,6 @@ export default {
       } finally {
         this.loading = false
       }
-    },
-
-    // 模拟追溯API（实际项目中替换为真实API）
-    async mockTraceabilityAPI(identifyCode) {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            data: [
-              {
-                identifyCode: 'PUR20241011ABC123',
-                flowStep: 'purchase',
-                createTime: '2024-10-01 09:00:00',
-                operationTime: '2024-10-01 09:30:00',
-                processor: '张三',
-                location: '采购部门',
-                orderId: 'ORD001',
-                goods: [
-                  {
-                    goodNo: 'G001',
-                    goodName: 'PVC原料',
-                    goodCount: 1000,
-                    goodWeight: '500kg',
-                    goodStatus: 'completed'
-                  }
-                ],
-                sourceCodes: [],
-                remark: '初次采购'
-              },
-              {
-                identifyCode: 'TRA20241011DEF456',
-                flowStep: 'transport',
-                createTime: '2024-10-02 10:00:00',
-                operationTime: '2024-10-02 14:00:00',
-                processor: '李四',
-                location: '运输途中',
-                orderId: 'ORD002',
-                goods: [
-                  {
-                    goodNo: 'G001',
-                    goodName: 'PVC原料',
-                    goodCount: 1000,
-                    goodWeight: '500kg',
-                    goodStatus: 'in_transit'
-                  }
-                ],
-                sourceCodes: [
-                  {
-                    identifyCode: 'PUR20241011ABC123',
-                    changeReason: 'initial'
-                  }
-                ],
-                remark: '运输至加工厂'
-              },
-              {
-                identifyCode: 'PRO20241011GHI789',
-                flowStep: 'process',
-                createTime: '2024-10-03 08:00:00',
-                operationTime: '2024-10-03 16:00:00',
-                processor: '王五',
-                location: '加工车间A',
-                orderId: 'ORD003',
-                goods: [
-                  {
-                    goodNo: 'G002',
-                    goodName: 'PVC透明片',
-                    goodCount: 800,
-                    goodWeight: '400kg',
-                    goodStatus: 'processing'
-                  },
-                  {
-                    goodNo: 'G003',
-                    goodName: 'PVC绿色片',
-                    goodCount: 200,
-                    goodWeight: '100kg',
-                    goodStatus: 'processing'
-                  }
-                ],
-                sourceCodes: [
-                  {
-                    identifyCode: 'TRA20241011DEF456',
-                    changeReason: 'category_change'
-                  }
-                ],
-                remark: '加工分拣为透明和绿色两种'
-              }
-            ]
-          })
-        }, 1000)
-      })
     },
 
     // 获取时间轴类型
@@ -266,6 +247,19 @@ export default {
       return typeMap[step] || 'info'
     },
 
+    // 获取订单类型文本
+    getOrderTypeText(type) {
+      const textMap = {
+        'purchase': '采购订单',
+        'transport': '运输订单',
+        'process': '加工订单',
+        'sales': '销售订单',
+        'storage': '仓储订单',
+        'other': '其他订单'
+      }
+      return textMap[type] || '未知类型'
+    },
+
     // 获取货物状态标签类型
     getGoodsStatusTagType(status) {
       const typeMap = {
@@ -278,15 +272,22 @@ export default {
       return typeMap[status] || 'info'
     },
 
-    // 跳转到源识别码
-    jumpToSourceCode(sourceCode) {
-      this.searchIdentifyCode = sourceCode
-      this.loadTraceabilityChain()
+    // 跳转到订单
+    jumpToOrder(orderId) {
+      this.$message.info(`订单ID: ${orderId}`)
+      // 可以实现跳转到订单详情
     },
 
-    // 查看订单详情
-    viewOrderDetail(item) {
-      this.$emit('view-order', item.orderId)
+    // 获取节点的时间轴类型（基于第一个订单）
+    getNodeTimelineType(nodeOrders) {
+      if (!nodeOrders || nodeOrders.length === 0 || !nodeOrders[0] || !nodeOrders[0].context) return 'info'
+      return this.getTimelineType(nodeOrders[0].context.type)
+    },
+
+    // 获取节点的时间轴图标（基于第一个订单）
+    getNodeTimelineIcon(nodeOrders) {
+      if (!nodeOrders || nodeOrders.length === 0 || !nodeOrders[0] || !nodeOrders[0].context) return 'el-icon-info'
+      return this.getTimelineIcon(nodeOrders[0].context.type)
     },
 
     // 导出追溯数据
@@ -295,7 +296,7 @@ export default {
         this.$message.warning('暂无数据可导出')
         return
       }
-      
+
       // 实现导出逻辑
       this.$message.success('导出功能开发中...')
     },
@@ -332,18 +333,18 @@ export default {
 
   .timeline-card {
     margin-bottom: 10px;
-    
+
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 15px;
-      
+
       .step-info {
         display: flex;
         align-items: center;
         gap: 10px;
-        
+
         .identify-code {
           font-family: monospace;
           font-weight: bold;
@@ -353,11 +354,12 @@ export default {
     }
 
     .card-content {
+
       .goods-section,
       .source-section,
       .operation-section {
         margin-bottom: 15px;
-        
+
         h4 {
           margin: 0 0 10px 0;
           color: #303133;
@@ -370,12 +372,12 @@ export default {
           margin-right: 8px;
           margin-bottom: 8px;
           cursor: pointer;
-          
+
           .change-reason {
             font-size: 12px;
             opacity: 0.8;
           }
-          
+
           &:hover {
             opacity: 0.8;
           }
@@ -391,10 +393,48 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     .graph-placeholder {
       text-align: center;
       color: #909399;
+    }
+  }
+
+  .order-no {
+    margin-left: 10px;
+  }
+
+  .node-title {
+    font-weight: bold;
+    font-size: 14px;
+    color: #303133;
+  }
+
+  .order-title {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+}
+
+// 订单信息表单样式
+.order-info-form {
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+
+  ::v-deep .el-form-item {
+    margin-bottom: 10px;
+
+    .el-form-item__label {
+      font-weight: 600;
+      color: #606266;
+    }
+
+    .el-form-item__content {
+      span {
+        color: #303133;
+      }
     }
   }
 }

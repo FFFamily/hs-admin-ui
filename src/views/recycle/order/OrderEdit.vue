@@ -251,6 +251,7 @@
         v-model="detailData.sourceCodes"
         :order-type="detailData.type"
         :can-edit-identify-code="true"
+        :current-order-id="detailData.id"
       />
 
       <!-- 订单明细 - 用户手动选择进项或销项 -->

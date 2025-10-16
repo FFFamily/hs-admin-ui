@@ -134,6 +134,7 @@
     >
       <traceability-chain 
         :identify-code="localIdentifyCode"
+        :order-id="currentOrderId"
         v-if="traceabilityDialogVisible"
       />
     </el-dialog>
@@ -234,6 +235,11 @@ export default {
     canEditIdentifyCode: {
       type: Boolean,
       default: true
+    },
+    // 当前订单ID（用于追溯链查询）
+    currentOrderId: {
+      type: [String, Number],
+      default: ''
     }
   },
   data() {

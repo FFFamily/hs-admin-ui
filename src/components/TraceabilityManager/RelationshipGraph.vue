@@ -63,43 +63,32 @@
       append-to-body
     >
       <div v-if="selectedNode">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="识别码">{{ selectedNode.identifyCode }}</el-descriptions-item>
-          <el-descriptions-item label="订单类型">
-            <el-tag :type="getFlowStepTagType(selectedNode.flowStep)">
-              {{ getFlowStepText(selectedNode.flowStep) }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="操作人">{{ selectedNode.processor || '--' }}</el-descriptions-item>
-          <el-descriptions-item label="操作时间">{{ formatDateTime(selectedNode.operationTime) }}</el-descriptions-item>
-          <el-descriptions-item label="地点">{{ selectedNode.location || '--' }}</el-descriptions-item>
-          <el-descriptions-item label="备注" :span="2">{{ selectedNode.remark || '--' }}</el-descriptions-item>
-        </el-descriptions>
-        
-        <!-- 货物信息 -->
-        <el-divider content-position="left">货物信息</el-divider>
-        <el-table :data="selectedNode.goods" size="small" border>
-          <el-table-column prop="goodNo" label="货物编号" width="120" />
-          <el-table-column prop="goodName" label="货物名称" min-width="150" />
-          <el-table-column prop="goodCount" label="数量" width="80" align="center" />
-          <el-table-column prop="goodWeight" label="重量" width="100" align="center" />
-        </el-table>
-        
-        <!-- 源识别码信息 -->
-        <div v-if="selectedNode.sourceCodes && selectedNode.sourceCodes.length > 0">
-          <el-divider content-position="left">源识别码</el-divider>
-          <div class="source-codes">
-            <el-tag 
-              v-for="(source, idx) in selectedNode.sourceCodes" 
-              :key="idx"
-              class="source-tag"
-              @click="jumpToSourceNode(source.identifyCode)"
-            >
-              {{ source.identifyCode }}
-              <span class="change-reason">({{ getChangeReasonText(source.changeReason) }})</span>
-            </el-tag>
-          </div>
-        </div>
+        <el-form label-width="100px" size="small" class="node-detail-form">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="订单ID">
+                <span>{{ selectedNode.orderId }}</span>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="订单编号">
+                <span>{{ selectedNode.orderNo }}</span>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="识别码">
+                <span>{{ selectedNode.identifyCode }}</span>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="订单类型">
+                <el-tag :type="getFlowStepTagType(selectedNode.orderType)">
+                  {{ getOrderTypeText(selectedNode.orderType) }}
+                </el-tag>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
       </div>
     </el-dialog>
   </div>
@@ -116,9 +105,9 @@ import {
 export default {
   name: 'RelationshipGraph',
   props: {
-    traceabilityData: {
-      type: Array,
-      default: () => []
+    graphData: {
+      type: Object,
+      default: () => ({})
     }
   },
   data() {
@@ -148,7 +137,7 @@ export default {
     }
   },
   watch: {
-    traceabilityData: {
+    graphData: {
       handler() {
         this.updateChart()
       },
@@ -169,7 +158,7 @@ export default {
 
     // 更新图表
     updateChart() {
-      if (!this.chart || !this.traceabilityData.length) return
+      if (!this.chart || !this.graphData || Object.keys(this.graphData).length === 0) return
       
       this.loading = true
       
@@ -192,20 +181,18 @@ export default {
                 const data = params.data
                 return `
                   <div style="padding: 8px;">
-                    <div style="font-weight: bold; margin-bottom: 5px;">${data.name}</div>
-                    <div>类型: ${this.getFlowStepText(data.category)}</div>
-                    <div>时间: ${this.formatDateTime(data.createTime)}</div>
-                    <div>操作人: ${data.processor || '--'}</div>
-                    <div>地点: ${data.location || '--'}</div>
+                    <div style="font-weight: bold; margin-bottom: 5px;">订单编号: ${data.orderNo}</div>
+                    <div>订单ID: ${data.orderId}</div>
+                    <div>类型: ${this.getOrderTypeText(data.orderType)}</div>
+                    <div>识别码: ${data.identifyCode}</div>
                   </div>
                 `
               } else if (params.dataType === 'edge') {
                 return `
                   <div style="padding: 8px;">
-                    <div style="font-weight: bold;">关系连接</div>
-                    <div>从: ${params.data.source}</div>
-                    <div>到: ${params.data.target}</div>
-                    <div>关系: ${this.getRelationText(params.data.relation)}</div>
+                    <div style="font-weight: bold;">依赖关系</div>
+                    <div>从: ${params.data.sourceName}</div>
+                    <div>到: ${params.data.targetName}</div>
                   </div>
                 `
               }
@@ -223,11 +210,11 @@ export default {
               position: 'inside',
               formatter: (params) => {
                 const data = params.data
-                const stepText = this.getFlowStepText(data.category)
-                const code = data.name
-                // 显示订单类型和识别码（截断）
-                const shortCode = code.length > 15 ? code.substring(0, 15) + '...' : code
-                return `${stepText}\n${shortCode}`
+                const typeText = this.getOrderTypeText(data.orderType)
+                const orderNo = data.orderNo
+                // 显示订单类型和订单编号（截断）
+                const shortNo = orderNo.length > 12 ? orderNo.substring(0, 12) + '...' : orderNo
+                return `${typeText}\n${shortNo}`
               },
               fontSize: 11,
               fontWeight: 'bold',
@@ -289,46 +276,101 @@ export default {
       const links = []
       const nodeMap = new Map()
       
-      // 创建节点
-      this.traceabilityData.forEach((item, index) => {
-        const totalGoodsCount = item.goods ? item.goods.reduce((sum, good) => sum + (good.goodCount || 0), 0) : 0
+      // 遍历 graph 对象创建节点和连接线
+      Object.keys(this.graphData).forEach(orderId => {
+        const sourceOrders = this.graphData[orderId]
         
-        const node = {
-          id: item.identifyCode,
-          name: item.identifyCode,
-          category: item.flowStep,
-          value: totalGoodsCount,
-          goodsCount: totalGoodsCount,
-          itemStyle: {
-            color: this.nodeColors[item.flowStep] || '#909399'
-          },
-          // 保存完整的原始数据用于详情展示
-          ...item
+        // 为当前订单创建节点（如果还没创建）
+        if (!nodeMap.has(orderId)) {
+          // 从 sourceOrders 或其他地方获取当前订单信息
+          // 如果当前订单有源订单，从第一个源订单的关系中可能能找到当前订单信息
+          // 否则需要从其他订单的 sourceOrders 中查找
+          let currentOrderInfo = this.findOrderInfo(orderId)
+          
+          if (currentOrderInfo) {
+            const node = {
+              id: orderId,
+              name: currentOrderInfo.no,
+              orderId: orderId,
+              orderNo: currentOrderInfo.no,
+              orderType: currentOrderInfo.type,
+              identifyCode: currentOrderInfo.identifyCode,
+              category: currentOrderInfo.type,
+              itemStyle: {
+                color: this.nodeColors[currentOrderInfo.type] || '#909399'
+              }
+            }
+            nodes.push(node)
+            nodeMap.set(orderId, node)
+          }
         }
         
-        nodes.push(node)
-        nodeMap.set(item.identifyCode, node)
-      })
-      
-      // 创建连接线
-      this.traceabilityData.forEach(item => {
-        if (item.sourceCodes && item.sourceCodes.length > 0) {
-          item.sourceCodes.forEach(source => {
-            if (nodeMap.has(source.identifyCode)) {
-              links.push({
-                source: source.identifyCode,
-                target: item.identifyCode,
-                relation: source.changeReason || 'flow',
-                lineStyle: {
-                  color: this.getRelationColor(source.changeReason)
+        // 创建源订单节点和连接线
+        if (sourceOrders && sourceOrders.length > 0) {
+          sourceOrders.forEach(sourceOrder => {
+            const sourceOrderId = sourceOrder.orderId
+            const sourceContext = sourceOrder.context
+            
+            // 创建源订单节点（如果还没创建）
+            if (!nodeMap.has(sourceOrderId)) {
+              const sourceNode = {
+                id: sourceOrderId,
+                name: sourceContext.no,
+                orderId: sourceOrderId,
+                orderNo: sourceContext.no,
+                orderType: sourceContext.type,
+                identifyCode: sourceContext.identifyCode,
+                category: sourceContext.type,
+                itemStyle: {
+                  color: this.nodeColors[sourceContext.type] || '#909399'
                 }
-              })
+              }
+              nodes.push(sourceNode)
+              nodeMap.set(sourceOrderId, sourceNode)
             }
+            
+            // 创建连接线：从源订单指向当前订单
+            links.push({
+              source: sourceOrderId,
+              target: orderId,
+              sourceName: sourceContext.no,
+              targetName: nodeMap.get(orderId)?.orderNo || orderId,
+              lineStyle: {
+                color: this.nodeColors[sourceContext.type] || '#909399'
+              }
+            })
           })
         }
       })
       
       return { nodes, links }
+    },
+    
+    // 查找订单信息
+    findOrderInfo(orderId) {
+      // 遍历所有订单的源订单列表，查找目标订单信息
+      for (const [currentOrderId, sourceOrders] of Object.entries(this.graphData)) {
+        if (currentOrderId === orderId) {
+          // 如果有源订单，可能需要从其他地方获取当前订单信息
+          // 这里先从其他订单的源订单中查找
+          for (const [_, sources] of Object.entries(this.graphData)) {
+            const found = sources.find(s => s.orderId === orderId)
+            if (found) {
+              return found.context
+            }
+          }
+        }
+        
+        // 在源订单列表中查找
+        const found = sourceOrders.find(s => s.orderId === orderId)
+        if (found) {
+          return found.context
+        }
+      }
+      
+      // 如果是叶子节点（没有被其他节点引用），可能在 graph 的 key 中
+      // 需要额外处理，这里返回 null，调用者需要处理
+      return null
     },
 
     // 获取分类配置
@@ -376,14 +418,9 @@ export default {
     },
 
     // 跳转到源节点
-    jumpToSourceNode(identifyCode) {
+    jumpToSourceNode(orderId) {
       this.nodeDetailVisible = false
-      // 高亮显示指定节点
-      this.chart.dispatchAction({
-        type: 'highlight',
-        seriesIndex: 0,
-        dataIndex: this.traceabilityData.findIndex(item => item.identifyCode === identifyCode)
-      })
+      // 可以添加高亮逻辑
     },
 
     // 重置布局
@@ -443,6 +480,19 @@ export default {
         'sales': 'danger'
       }
       return typeMap[step] || 'info'
+    },
+
+    // 获取订单类型文本
+    getOrderTypeText(type) {
+      const textMap = {
+        'purchase': '采购订单',
+        'transport': '运输订单',
+        'process': '加工订单',
+        'sales': '销售订单',
+        'storage': '仓储订单',
+        'other': '其他订单'
+      }
+      return textMap[type] || '未知类型'
     },
 
     // 格式化日期时间
@@ -559,6 +609,24 @@ export default {
       
       &:hover {
         opacity: 0.8;
+      }
+    }
+  }
+
+  // 节点详情表单样式
+  .node-detail-form {
+    ::v-deep .el-form-item {
+      margin-bottom: 15px;
+
+      .el-form-item__label {
+        font-weight: 600;
+        color: #606266;
+      }
+
+      .el-form-item__content {
+        span {
+          color: #303133;
+        }
       }
     }
   }
