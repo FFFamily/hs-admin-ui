@@ -6,7 +6,6 @@
         <el-button-group size="small">
           <el-button icon="el-icon-refresh" @click="resetLayout">重置布局</el-button>
           <el-button icon="el-icon-full-screen" @click="fitView">适应视图</el-button>
-          <el-button icon="el-icon-download" @click="exportGraph">导出图片</el-button>
         </el-button-group>
       </div>
 
@@ -14,25 +13,16 @@
       <div class="graph-legend">
         <span class="legend-title">订单类型：</span>
         <div class="legend-items">
-          <div class="legend-item">
-            <div class="legend-color purchase" />
-            <span>采购</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color transport" />
-            <span>运输</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color process" />
-            <span>加工</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color storage" />
-            <span>仓储</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color sales" />
-            <span>销售</span>
+          <div
+            v-for="item in orderTypeLegends"
+            :key="item.value"
+            class="legend-item"
+          >
+            <div
+              class="legend-color"
+              :style="{ backgroundColor: item.color }"
+            />
+            <span>{{ item.label }}</span>
           </div>
         </div>
       </div>
@@ -44,43 +34,6 @@
       class="chart-container"
       element-loading-text="正在生成关系图..."
     />
-
-    <!-- 节点详情弹窗 -->
-    <el-dialog
-      title="订单详情"
-      :visible.sync="nodeDetailVisible"
-      width="60%"
-      append-to-body
-    >
-      <div v-if="selectedNode">
-        <el-form label-width="100px" size="small" class="node-detail-form">
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="订单ID">
-                <span>{{ selectedNode.orderId }}</span>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="订单编号">
-                <span>{{ selectedNode.orderNo }}</span>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="识别码">
-                <span>{{ selectedNode.identifyCode }}</span>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="订单类型">
-                <el-tag :type="getFlowStepTagType(selectedNode.orderType)">
-                  {{ getOrderTypeText(selectedNode.orderType) }}
-                </el-tag>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </el-form>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
@@ -93,8 +46,8 @@ import {
 } from '@/constants/traceability'
 import {
   ORDER_TYPES,
-  getOrderTypeText,
-  ORDER_TYPE_TAG_TYPE
+  ORDER_TYPE_OPTIONS,
+  getOrderTypeText
 } from '@/constants/orderTypes'
 
 export default {
@@ -103,14 +56,16 @@ export default {
     graphData: {
       type: Object,
       default: () => ({})
+    },
+    allOrders: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
     return {
       chart: null,
       loading: false,
-      nodeDetailVisible: false,
-      selectedNode: null,
       // 节点颜色配置 - 与订单类型对应
       nodeColors: {
         [ORDER_TYPES.PURCHASE]: '#67C23A',    // 采购 - 绿色
@@ -120,6 +75,16 @@ export default {
         [ORDER_TYPES.SALES]: '#F56C6C',       // 销售 - 红色
         [ORDER_TYPES.OTHER]: '#909399'        // 其他 - 灰色
       }
+    }
+  },
+  computed: {
+    // 动态生成图例数据
+    orderTypeLegends() {
+      return ORDER_TYPE_OPTIONS.map(option => ({
+        label: option.label,
+        value: option.value,
+        color: this.nodeColors[option.value] || this.nodeColors[ORDER_TYPES.OTHER]
+      }))
     }
   },
   watch: {
@@ -146,9 +111,6 @@ export default {
 
       // 监听窗口大小变化
       window.addEventListener('resize', this.handleResize)
-
-      // 监听节点点击事件
-      this.chart.on('click', this.handleNodeClick)
     },
 
     // 更新图表
@@ -183,11 +145,10 @@ export default {
                   </div>
                 `
               } else if (params.dataType === 'edge') {
+                const changeReason = params.data.changeReason || '--'
                 return `
                   <div style="padding: 8px;">
-                    <div style="font-weight: bold;">依赖关系</div>
-                    <div>从: ${params.data.sourceName}</div>
-                    <div>到: ${params.data.targetName}</div>
+                    <div style="font-weight: bold;">变更原因: ${changeReason}</div>
                   </div>
                 `
               }
@@ -206,10 +167,9 @@ export default {
               formatter: (params) => {
                 const data = params.data
                 const typeText = getOrderTypeText(data.orderType)
-                const orderNo = data.orderNo
-                // 显示订单类型和订单编号（截断）
-                const shortNo = orderNo.length > 12 ? orderNo.substring(0, 12) + '...' : orderNo
-                return `${typeText}\n${shortNo}`
+                const identifyCode = data.identifyCode || '--'
+                // 显示订单类型和识别码
+                return `${typeText}\n${identifyCode}`
               },
               fontSize: 11,
               fontWeight: 'bold',
@@ -268,19 +228,19 @@ export default {
       const links = []
       const nodeMap = new Map()
 
-      console.log('开始转换图数据，原始数据:', this.graphData)
+      
 
       // 第一遍遍历：收集所有出现在 value 中的节点信息
       Object.keys(this.graphData).forEach(orderId => {
         
         const targetOrders = this.graphData[orderId]
-        console.log(`第一遍遍历：收集所有出现在 value 中的节点信息，orderId: ${orderId} 判断信息：${targetOrders && targetOrders.length > 0}`,)
+        
         // 为 value 中的节点收集 context 信息
         if (targetOrders && targetOrders.length > 0) {
           targetOrders.forEach(targetOrder => {
             if (!nodeMap.has(targetOrder.orderId)) {
               const orderType = targetOrder.context.type || ORDER_TYPES.OTHER
-              console.log(`节点 ${targetOrder.orderId} 订单类型: ${orderType}`)
+              
               const node = {
                 id: targetOrder.orderId,
                 name: targetOrder.context.no,
@@ -305,7 +265,7 @@ export default {
 
         // 为 key 节点创建节点（如果还没创建）
         if (!nodeMap.has(orderId)) {
-          console.log(`为 key 节点 ${orderId} 创建节点`)
+          
           // 查找该节点的信息
           const orderInfo = this.findOrderInfo(orderId)
           const orderType = orderInfo ? (orderInfo.type || ORDER_TYPES.OTHER) : ORDER_TYPES.OTHER
@@ -334,6 +294,7 @@ export default {
               target: targetOrder.orderId, // 指向 value
               sourceName: nodeMap.get(orderId)?.orderNo || orderId,
               targetName: targetOrder.context.no,
+              changeReason: targetOrder.changeReason || '--', // 变更原因
               lineStyle: {
                 color: this.nodeColors[orderType] || this.nodeColors[ORDER_TYPES.OTHER]
               }
@@ -345,23 +306,31 @@ export default {
       // 将 Map 转换为数组
       nodes.push(...nodeMap.values())
 
-      console.log('图数据转换完成，节点数量:', nodes.length, '连接数量:', links.length)
-      console.log('转换后的节点:', nodes)
+      
+      
 
       return { nodes, links }
     },
 
     // 查找订单信息
     findOrderInfo(orderId) {
-      // 遍历所有节点的目标节点列表，查找该订单的 context 信息
-      for (const targetOrders of Object.values(this.graphData)) {
-        if (targetOrders && targetOrders.length > 0) {
-          const found = targetOrders.find(t => t.orderId === orderId)
-          if (found) {
-            return found.context
-          }
+      
+      // 从 allOrders 数组中查找订单信息
+      if (!this.allOrders || !Array.isArray(this.allOrders)) {
+        return null
+      }
+      
+      const order = this.allOrders.find(o => o.id === orderId)
+      
+      if (order) {
+        // 组装 context 格式
+        return {
+          no: order.no,
+          type: order.type,
+          identifyCode: order.identifyCode
         }
       }
+      
       return null
     },
 
@@ -402,20 +371,6 @@ export default {
       return textMap[relation] || '流转'
     },
 
-    // 处理节点点击事件
-    handleNodeClick(params) {
-      if (params.dataType === 'node') {
-        this.selectedNode = params.data
-        this.nodeDetailVisible = true
-      }
-    },
-
-    // 跳转到源节点
-    jumpToSourceNode(orderId) {
-      this.nodeDetailVisible = false
-      // 可以添加高亮逻辑
-    },
-
     // 重置布局
     resetLayout() {
       if (this.chart) {
@@ -435,40 +390,11 @@ export default {
       }
     },
 
-    // 导出图片
-    exportGraph() {
-      if (this.chart) {
-        const url = this.chart.getDataURL({
-          type: 'png',
-          pixelRatio: 2,
-          backgroundColor: '#fff'
-        })
-
-        const link = document.createElement('a')
-        link.download = `追溯关系图_${new Date().getTime()}.png`
-        link.href = url
-        link.click()
-      }
-    },
-
     // 处理窗口大小变化
     handleResize() {
       if (this.chart) {
         this.chart.resize()
       }
-    },
-
-    // 获取流转步骤标签类型
-    getFlowStepTagType(orderType) {
-      const typeMap = {
-        [ORDER_TYPES.PURCHASE]: 'success',
-        [ORDER_TYPES.TRANSPORT]: 'info',
-        [ORDER_TYPES.PROCESS]: 'warning',
-        [ORDER_TYPES.STORAGE]: 'primary',
-        [ORDER_TYPES.SALES]: 'danger',
-        [ORDER_TYPES.OTHER]: 'info'
-      }
-      return typeMap[orderType] || 'info'
     },
 
     // 格式化日期时间
@@ -500,7 +426,7 @@ export default {
 
   .graph-toolbar {
     display: flex;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
     margin-bottom: 10px;
     padding: 12px 15px;
@@ -543,12 +469,6 @@ export default {
         border-radius: 3px;
         border: 1px solid rgba(255,255,255,0.8);
         box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-
-        &.purchase { background-color: #67C23A; }
-        &.transport { background-color: #409EFF; }
-        &.process { background-color: #E6A23C; }
-        &.storage { background-color: #909399; }
-        &.sales { background-color: #F56C6C; }
       }
     }
   }
@@ -576,24 +496,6 @@ export default {
 
       &:hover {
         opacity: 0.8;
-      }
-    }
-  }
-
-  // 节点详情表单样式
-  .node-detail-form {
-    ::v-deep .el-form-item {
-      margin-bottom: 15px;
-
-      .el-form-item__label {
-        font-weight: 600;
-        color: #606266;
-      }
-
-      .el-form-item__content {
-        span {
-          color: #303133;
-        }
       }
     }
   }

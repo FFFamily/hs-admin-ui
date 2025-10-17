@@ -205,6 +205,13 @@ export const constantRoutes = [
         name: 'SystemDict',
         component: () => import('@/views/system/dict/index.vue'),
         meta: { title: '字典管理', icon: 'el-icon-s-grid' }
+      },
+      {
+        path: 'dict/data',
+        name: 'SystemDictData',
+        component: () => import('@/views/system/dict/data.vue'),
+        meta: { title: '字典数据', icon: 'el-icon-document' },
+        hidden: true
       }
     ]
   },

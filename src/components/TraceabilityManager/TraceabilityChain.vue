@@ -104,15 +104,15 @@
       </el-timeline>
 
       <!-- 空状态 -->
-      <el-empty v-else-if="!loading" description="暂无追溯数据" :image-size="100" />
+      <!-- <el-empty v-else-if="!loading" description="暂无追溯数据" :image-size="100" /> -->
     </div>
 
     <!-- 关系图谱 -->
     <el-divider content-position="left">关系图谱</el-divider>
     <div v-if="graphData && Object.keys(graphData).length > 0">
-      <relationship-graph :graph-data="graphData" />
+      <relationship-graph :graph-data="graphData" :all-orders="allOrders" />
     </div>
-    <el-empty v-else description="暂无数据生成关系图谱" :image-size="100" />
+    <!-- <el-empty v-else description="暂无数据生成关系图谱" :image-size="100" /> -->
   </div>
 </template>
 
@@ -146,6 +146,7 @@ export default {
       searchIdentifyCode: '',
       traceabilityData: [],
       graphData: {},
+      allOrders: [],
       loading: false
     }
   },
@@ -193,13 +194,15 @@ export default {
         const response = await getTraceabilityChain(queryParam)
 
         // 新数据结构
-        // response.data 格式：{ graph: {...}, paths: [...] }
+        // response.data 格式：{ graph: {...}, paths: [...], allOrders: [...] }
         this.graphData = response.data.graph || {}
         this.traceabilityData = response.data.paths || []
+        this.allOrders = response.data.allOrders || []
 
         // 调试：打印数据结构
         console.log('追溯链数据:', this.traceabilityData)
         console.log('关系图数据:', this.graphData)
+        console.log('所有订单数据:', this.allOrders)
 
         if (this.traceabilityData.length === 0) {
           this.$message.info('未找到相关追溯数据')
