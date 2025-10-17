@@ -20,6 +20,7 @@
                     v-if="order && order.context"
                     :key="orderIndex"
                     :name="String(orderIndex)"
+                    :class="{ 'current-order-item': isCurrentOrder(order) }"
                   >
                     <template slot="title">
                       <div class="order-title">
@@ -27,6 +28,9 @@
                           {{ getOrderTypeText(order.context.type) }}
                         </el-tag>
                         <span class="order-no">{{ order.context.identifyCode }}</span>
+                        <el-tag v-if="isCurrentOrder(order)" type="warning" size="mini" effect="dark" class="current-tag">
+                          当前订单
+                        </el-tag>
                       </div>
                     </template>
                     <el-form label-width="80px" size="small" class="order-info-form">
@@ -61,13 +65,16 @@
 
               <!-- 单个订单也使用折叠面板展示 -->
               <el-collapse v-else-if="nodeOrders.length === 1 && nodeOrders[0] && nodeOrders[0].context" accordion>
-                <el-collapse-item name="0">
+                <el-collapse-item name="0" :class="{ 'current-order-item': isCurrentOrder(nodeOrders[0]) }">
                   <template slot="title">
                     <div class="order-title">
                       <el-tag :type="getFlowStepTagType(nodeOrders[0].context.type)" size="small">
                         {{ getOrderTypeText(nodeOrders[0].context.type) }}
                       </el-tag>
                       <span class="order-no">{{ nodeOrders[0].context.identifyCode }}</span>
+                      <el-tag v-if="isCurrentOrder(nodeOrders[0])" type="warning" size="mini" effect="dark" class="current-tag">
+                        当前订单
+                      </el-tag>
                     </div>
                   </template>
                   <el-form label-width="80px" size="small" class="order-info-form">
@@ -110,7 +117,7 @@
     <!-- 关系图谱 -->
     <el-divider content-position="left">关系图谱</el-divider>
     <div v-if="graphData && Object.keys(graphData).length > 0">
-      <relationship-graph :graph-data="graphData" :all-orders="allOrders" />
+      <relationship-graph :graph-data="graphData" :all-orders="allOrders" :current-order-id="orderId" :current-identify-code="identifyCode" />
     </div>
     <!-- <el-empty v-else description="暂无数据生成关系图谱" :image-size="100" /> -->
   </div>
@@ -321,7 +328,21 @@ export default {
     getChangeReasonText,
 
     // 获取货物状态文本
-    getGoodsStatusText
+    getGoodsStatusText,
+
+    // 判断是否是当前订单
+    isCurrentOrder(order) {
+      if (!order) return false
+      // 优先通过 orderId 匹配
+      if (this.orderId && order.orderId) {
+        return String(order.orderId) === String(this.orderId)
+      }
+      // 如果没有 orderId，通过 identifyCode 匹配
+      if (this.identifyCode && order.context && order.context.identifyCode) {
+        return order.context.identifyCode === this.identifyCode
+      }
+      return false
+    }
   }
 }
 </script>
@@ -422,6 +443,34 @@ export default {
     display: flex;
     align-items: center;
     width: 100%;
+  }
+
+  // 当前订单高亮样式
+  ::v-deep .current-order-item {
+    .el-collapse-item__header {
+      background-color: #fdf6ec;
+      border-left: 3px solid #e6a23c;
+      padding-left: 8px;
+      
+      &:hover {
+        background-color: #faecd8;
+      }
+    }
+  }
+
+  .current-tag {
+    margin-left: 10px;
+    font-weight: bold;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
   }
 }
 

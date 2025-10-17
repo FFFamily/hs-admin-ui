@@ -6,7 +6,7 @@
     <el-form>
       <el-form-item>
         <!-- 移除关联源识别码按钮，不再需要 -->
-        <el-button type="success" @click="syncFromPurchaseItems">从进项同步</el-button>
+        <!-- <el-button type="success" @click="syncFromPurchaseItems">从进项同步</el-button> -->
         <el-button type="primary" @click="addSalesItem">新增行</el-button>
         <el-button type="danger" @click="clearSalesItems">清空</el-button>
       </el-form-item>

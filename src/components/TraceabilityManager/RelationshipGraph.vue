@@ -41,17 +41,19 @@
 import * as echarts from 'echarts'
 import { parseTime } from '@/utils'
 import {
-  getFlowStepText,
-  getChangeReasonText
+  getFlowStepText
 } from '@/constants/traceability'
 import {
   ORDER_TYPES,
   ORDER_TYPE_OPTIONS,
   getOrderTypeText
 } from '@/constants/orderTypes'
+import { dictMixin } from '@/utils/dict'
 
 export default {
   name: 'RelationshipGraph',
+  mixins: [dictMixin],
+  dicts: ['order_change_reason'],
   props: {
     graphData: {
       type: Object,
@@ -60,6 +62,14 @@ export default {
     allOrders: {
       type: Array,
       default: () => []
+    },
+    currentOrderId: {
+      type: [String, Number],
+      default: ''
+    },
+    currentIdentifyCode: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -93,6 +103,15 @@ export default {
         this.updateChart()
       },
       deep: true
+    },
+    // 监听字典数据加载，加载完成后重新渲染图表
+    'dict.order_change_reason': {
+      handler(newVal) {
+        if (newVal && newVal.length > 0) {
+          this.updateChart()
+        }
+      },
+      deep: true
     }
   },
   mounted() {
@@ -121,6 +140,14 @@ export default {
 
       try {
         const { nodes, links } = this.transformData()
+        
+        // 在外部保存 this 引用和字典数据
+        const vm = this
+        const dictData = this.dict.order_change_reason || []
+        
+        // 调试日志：输出字典数据
+        console.log('变更原因字典数据:', dictData)
+        console.log('字典数据详细信息:', JSON.stringify(dictData, null, 2))
 
         const option = {
           title: {
@@ -136,8 +163,10 @@ export default {
             formatter: (params) => {
               if (params.dataType === 'node') {
                 const data = params.data
+                const currentTag = data.isCurrent ? '<div style="display: inline-block; background: #E6A23C; color: white; padding: 2px 8px; border-radius: 3px; margin-bottom: 5px; font-size: 12px;">★ 当前订单</div>' : ''
                 return `
                   <div style="padding: 8px;">
+                    ${currentTag}
                     <div style="font-weight: bold; margin-bottom: 5px;">订单编号: ${data.orderNo}</div>
                     <div>订单ID: ${data.orderId}</div>
                     <div>类型: ${getOrderTypeText(data.orderType)}</div>
@@ -145,10 +174,28 @@ export default {
                   </div>
                 `
               } else if (params.dataType === 'edge') {
-                const changeReason = params.data.changeReason || '--'
+                const changeReasonValue = params.data.changeReason
+                // 使用外部保存的字典数据查找标签
+                let changeReasonLabel = '--'
+                if (changeReasonValue && dictData.length > 0) {
+                  // 兼容两种字段名：value/label 或 dictValue/dictLabel
+                  const item = dictData.find(i => {
+                    const itemValue = i.value || i.dictValue
+                    return String(itemValue) === String(changeReasonValue)
+                  })
+                  if (item) {
+                    changeReasonLabel = item.label || item.dictLabel || changeReasonValue
+                  } else {
+                    changeReasonLabel = changeReasonValue
+                  }
+                  // 调试日志
+                  console.log('变更原因值:', changeReasonValue, '找到的字典项:', item, '标签:', changeReasonLabel)
+                } else {
+                  console.log('变更原因值:', changeReasonValue, '字典数据长度:', dictData.length)
+                }
                 return `
                   <div style="padding: 8px;">
-                    <div style="font-weight: bold;">变更原因: ${changeReason}</div>
+                    <div style="font-weight: bold;">变更原因: ${changeReasonLabel}</div>
                   </div>
                 `
               }
@@ -168,8 +215,9 @@ export default {
                 const data = params.data
                 const typeText = getOrderTypeText(data.orderType)
                 const identifyCode = data.identifyCode || '--'
-                // 显示订单类型和识别码
-                return `${typeText}\n${identifyCode}`
+                const currentMark = data.isCurrent ? '★ ' : ''
+                // 显示订单类型和识别码，当前订单添加星标
+                return `${currentMark}${typeText}\n${identifyCode}`
               },
               fontSize: 11,
               fontWeight: 'bold',
@@ -240,6 +288,7 @@ export default {
           targetOrders.forEach(targetOrder => {
             if (!nodeMap.has(targetOrder.orderId)) {
               const orderType = targetOrder.context.type || ORDER_TYPES.OTHER
+              const isCurrent = this.isCurrentOrder(targetOrder.orderId, targetOrder.context)
               
               const node = {
                 id: targetOrder.orderId,
@@ -249,8 +298,14 @@ export default {
                 orderType: orderType,
                 identifyCode: targetOrder.context.identifyCode,
                 category: orderType,
+                isCurrent: isCurrent,
+                symbolSize: isCurrent ? [140, 70] : [120, 60],
                 itemStyle: {
-                  color: this.nodeColors[orderType] || this.nodeColors[ORDER_TYPES.OTHER]
+                  color: this.nodeColors[orderType] || this.nodeColors[ORDER_TYPES.OTHER],
+                  borderColor: isCurrent ? '#E6A23C' : '#fff',
+                  borderWidth: isCurrent ? 4 : 2,
+                  shadowBlur: isCurrent ? 15 : 8,
+                  shadowColor: isCurrent ? 'rgba(230, 162, 60, 0.5)' : 'rgba(0, 0, 0, 0.2)'
                 }
               }
               nodeMap.set(targetOrder.orderId, node)
@@ -269,6 +324,7 @@ export default {
           // 查找该节点的信息
           const orderInfo = this.findOrderInfo(orderId)
           const orderType = orderInfo ? (orderInfo.type || ORDER_TYPES.OTHER) : ORDER_TYPES.OTHER
+          const isCurrent = this.isCurrentOrder(orderId, orderInfo)
 
           const node = {
             id: orderId,
@@ -278,8 +334,14 @@ export default {
             orderType: orderType,
             identifyCode: orderInfo ? orderInfo.identifyCode : '--',
             category: orderType,
+            isCurrent: isCurrent,
+            symbolSize: isCurrent ? [140, 70] : [120, 60],
             itemStyle: {
-              color: this.nodeColors[orderType] || this.nodeColors[ORDER_TYPES.OTHER]
+              color: this.nodeColors[orderType] || this.nodeColors[ORDER_TYPES.OTHER],
+              borderColor: isCurrent ? '#E6A23C' : '#fff',
+              borderWidth: isCurrent ? 4 : 2,
+              shadowBlur: isCurrent ? 15 : 8,
+              shadowColor: isCurrent ? 'rgba(230, 162, 60, 0.5)' : 'rgba(0, 0, 0, 0.2)'
             }
           }
           nodeMap.set(orderId, node)
@@ -405,11 +467,21 @@ export default {
     // 获取流转步骤文本
     getFlowStepText,
 
-    // 获取变更原因文本
-    getChangeReasonText,
-
     // 获取订单类型文本（从 orderTypes.js 导入）
-    getOrderTypeText
+    getOrderTypeText,
+
+    // 判断是否是当前订单
+    isCurrentOrder(orderId, orderInfo) {
+      // 优先通过 orderId 匹配
+      if (this.currentOrderId && orderId) {
+        return String(orderId) === String(this.currentOrderId)
+      }
+      // 如果没有 orderId，通过 identifyCode 匹配
+      if (this.currentIdentifyCode && orderInfo && orderInfo.identifyCode) {
+        return orderInfo.identifyCode === this.currentIdentifyCode
+      }
+      return false
+    }
   }
 }
 </script>

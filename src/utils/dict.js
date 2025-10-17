@@ -1,32 +1,25 @@
 /**
  * 字典工具类
- * 提供字典数据的缓存和快速访问方法
+ * 提供字典数据的快速访问方法（缓存由后端负责）
  */
 
 import { getDictItemsByTypeCode } from '@/api/dict'
 
-// 字典缓存
-const dictCache = {}
-
 /**
- * 获取字典数据（带缓存）
+ * 获取字典数据（不使用前端缓存，由后端负责缓存）
  * @param {string} typeCode - 字典类型编码
- * @param {boolean} forceRefresh - 是否强制刷新缓存
  * @returns {Promise<Array>} 字典项列表
  */
-export async function getDictData(typeCode, forceRefresh = false) {
-  // 如果缓存中有数据且不强制刷新，直接返回
-  if (!forceRefresh && dictCache[typeCode]) {
-    return dictCache[typeCode]
-  }
-
+export async function getDictData(typeCode) {
   try {
     const res = await getDictItemsByTypeCode(typeCode)
+    console.log(`字典API响应 [${typeCode}]:`, res)
     if (res.code === 200 || res.code === 0) {
       const data = res.data || []
-      dictCache[typeCode] = data
+      console.log(`字典数据 [${typeCode}]:`, data)
       return data
     }
+    console.warn(`字典API返回异常状态码 [${typeCode}]:`, res.code)
     return []
   } catch (error) {
     console.error(`获取字典数据失败: ${typeCode}`, error)
@@ -87,17 +80,12 @@ export async function getDictObject(typeCode) {
 }
 
 /**
- * 清除指定字典的缓存
+ * 清除指定字典的缓存（已废弃，缓存由后端负责）
+ * @deprecated 前端不再维护缓存，此方法保留仅为兼容性
  * @param {string} typeCode - 字典类型编码（不传则清除所有）
  */
 export function clearDictCache(typeCode) {
-  if (typeCode) {
-    delete dictCache[typeCode]
-  } else {
-    Object.keys(dictCache).forEach(key => {
-      delete dictCache[key]
-    })
-  }
+  console.warn('clearDictCache 已废弃：前端不再维护字典缓存，缓存由后端负责')
 }
 
 /**
@@ -121,16 +109,6 @@ export default {
     Vue.prototype.$getDictMap = getDictMap
     Vue.prototype.$getDictObject = getDictObject
     Vue.prototype.$clearDictCache = clearDictCache
-
-    // 全局过滤器：字典值转标签
-    Vue.filter('dictLabel', function(value, typeCode) {
-      if (!typeCode || value === undefined || value === null) return value
-      
-      // 从缓存中同步获取
-      const items = dictCache[typeCode] || []
-      const item = items.find(i => String(i.value) === String(value))
-      return item ? item.label : value
-    })
   }
 }
 
@@ -149,7 +127,7 @@ export default {
 export const dictMixin = {
   data() {
     return {
-      dict: {} // 存储字典数据
+      dict: {} // 临时存储字典数据（每次加载都从后端获取）
     }
   },
   created() {
@@ -169,14 +147,14 @@ export const dictMixin = {
       await Promise.all(promises)
     },
     
-    // 刷新字典数据
+    // 刷新字典数据（重新从后端获取）
     async refreshDicts() {
       if (!this.$options.dicts || !Array.isArray(this.$options.dicts)) {
         return
       }
 
       const promises = this.$options.dicts.map(async typeCode => {
-        const data = await getDictData(typeCode, true)
+        const data = await getDictData(typeCode)
         this.$set(this.dict, typeCode, data)
       })
 

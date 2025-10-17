@@ -45,13 +45,6 @@
         <el-button type="success" size="small" @click="addSourceCode">
           添加源识别码
         </el-button>
-        <el-button
-          type="warning"
-          size="small"
-          @click="showSourceCodeSelector"
-        >
-          从库存选择
-        </el-button>
       </div>
 
       <el-table
@@ -139,21 +132,6 @@
       />
     </el-dialog>
 
-    <!-- 库存识别码选择弹窗 -->
-    <el-dialog
-      title="选择库存识别码"
-      :visible.sync="sourceCodeSelectorVisible"
-      width="70%"
-      append-to-body
-      :close-on-click-modal="false"
-    >
-      <inventory-identify-code-selector
-        :visible="sourceCodeSelectorVisible"
-        @confirm="handleSourceCodeSelected"
-        @cancel="sourceCodeSelectorVisible = false"
-      />
-    </el-dialog>
-
     <!-- 关联订单选择弹窗 -->
     <el-dialog
       title="选择关联订单"
@@ -225,20 +203,20 @@
 
 <script>
 import {
-  IDENTIFY_CODE_CHANGE_REASON_OPTIONS,
   getFlowStepText,
   getChangeReasonText
 } from '@/constants/traceability'
 import { getOrdersByIdentifyCode } from '@/api/recycle'
+import { dictMixin } from '@/utils/dict'
 import TraceabilityChain from './TraceabilityChain.vue'
-import InventoryIdentifyCodeSelector from './InventoryIdentifyCodeSelector.vue'
 
 export default {
   name: 'TraceabilityManager',
   components: {
-    TraceabilityChain,
-    InventoryIdentifyCodeSelector
+    TraceabilityChain
   },
+  mixins: [dictMixin],
+  dicts: ['order_change_reason'],
   props: {
     // 订单识别码（来自订单的 identifyCode 字段）
     identifyCode: {
@@ -268,9 +246,7 @@ export default {
     return {
       localIdentifyCode: '',
       sourceCodes: [],
-      changeReasonOptions: IDENTIFY_CODE_CHANGE_REASON_OPTIONS,
       traceabilityDialogVisible: false,
-      sourceCodeSelectorVisible: false,
       relatedOrdersDialogVisible: false,
       relatedOrders: [],
       relatedOrdersLoading: false,
@@ -279,7 +255,15 @@ export default {
     }
   },
   computed: {
-    // 移除自动生成相关的计算属性
+    // 从字典数据中获取变更原因选项
+    changeReasonOptions() {
+      const dictData = this.dict.order_change_reason || []
+      // 确保数据格式正确，映射为 { label, value } 格式
+      return dictData.map(item => ({
+        label: item.label || item.dictLabel,
+        value: item.value || item.dictValue
+      }))
+    }
   },
   watch: {
     identifyCode: {
@@ -307,6 +291,14 @@ export default {
         this.emitSourceCodesChange()
       },
       deep: true
+    },
+    // 监听字典数据加载
+    'dict.order_change_reason': {
+      handler(newVal) {
+        console.log('字典数据 order_change_reason 已加载:', newVal)
+        console.log('处理后的选项:', this.changeReasonOptions)
+      },
+      deep: true
     }
   },
   methods: {
@@ -327,28 +319,6 @@ export default {
     // 移除源识别码
     removeSourceCode(index) {
       this.sourceCodes.splice(index, 1)
-    },
-
-    // 显示源识别码选择器
-    showSourceCodeSelector() {
-      this.sourceCodeSelectorVisible = true
-    },
-
-    // 处理源识别码选择
-    handleSourceCodeSelected(selectedCodes) {
-      selectedCodes.forEach(code => {
-        this.sourceCodes.push({
-          identifyCode: code.identifyCode,
-          orderType: code.orderType || code.type || '',
-          orderId: code.orderId || null,
-          orderNo: code.orderNo || code.no || '',
-          goodName: code.goodName,
-          goodCount: code.goodCount,
-          goodWeight: code.goodWeight,
-          changeReason: 'initial'
-        })
-      })
-      this.sourceCodeSelectorVisible = false
     },
 
     // 显示追溯链弹窗

@@ -77,7 +77,7 @@ export function getDictItemPage(params) {
  */
 export function getDictItemsByTypeCode(typeCode) {
   return request({
-    url: `/system/dict/data/list/${typeCode}`,
+    url: `/system/dict/data/type/${typeCode}`,
     method: 'get'
   })
 }
