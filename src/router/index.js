@@ -176,6 +176,66 @@ export const constantRoutes = [
       }
     ]
   },
+  // 库存管理
+  {
+    path: '/inventory',
+    component: Layout,
+    redirect: '/inventory/warehouse',
+    name: 'Inventory',
+    meta: { title: '库存管理', icon: 'el-icon-box' },
+    children: [
+      {
+        path: 'warehouse',
+        name: 'Warehouse',
+        component: () => import('@/views/inventory/warehouse/index.vue'),
+        meta: { title: '仓库管理', icon: 'el-icon-office-building' }
+      },
+      {
+        path: 'list',
+        name: 'InventoryList',
+        component: () => import('@/views/inventory/list/index.vue'),
+        meta: { title: '库存查询', icon: 'el-icon-search' }
+      },
+      {
+        path: 'statistics',
+        name: 'InventoryStatistics',
+        component: () => import('@/views/inventory/statistics/index.vue'),
+        meta: { title: '库存统计', icon: 'el-icon-data-analysis' }
+      },
+      {
+        path: 'inbound',
+        name: 'Inbound',
+        component: () => import('@/views/inventory/inbound/index.vue'),
+        meta: { title: '入库管理', icon: 'el-icon-download' }
+      },
+      {
+        path: 'inbound/detail/:id',
+        name: 'InboundDetail',
+        component: () => import('@/views/inventory/inbound/detail.vue'),
+        meta: { title: '入库单详情', icon: 'el-icon-document' },
+        hidden: true
+      },
+      {
+        path: 'outbound',
+        name: 'Outbound',
+        component: () => import('@/views/inventory/outbound/index.vue'),
+        meta: { title: '出库管理', icon: 'el-icon-upload2' }
+      },
+      {
+        path: 'outbound/detail/:id',
+        name: 'OutboundDetail',
+        component: () => import('@/views/inventory/outbound/detail.vue'),
+        meta: { title: '出库单详情', icon: 'el-icon-document' },
+        hidden: true
+      },
+      {
+        path: 'transaction',
+        name: 'Transaction',
+        component: () => import('@/views/inventory/transaction/index.vue'),
+        meta: { title: '库存流水', icon: 'el-icon-tickets' }
+      }
+    ]
+  },
   // 报表管理
   {
     path: '/report',

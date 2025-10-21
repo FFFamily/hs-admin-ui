@@ -1,0 +1,238 @@
+<template>
+  <div class="app-container">
+    <el-page-header :content="'入库单详情 - ' + (detail.inNo || '')" @back="goBack" />
+
+    <el-card v-loading="loading" style="margin-top: 20px;" shadow="never">
+      <!-- 基本信息 -->
+      <div slot="header" class="clearfix">
+        <span class="card-title">基本信息</span>
+        <div style="float: right;">
+          <el-tag :type="getOrderStatusTag(detail.status)" size="medium">
+            {{ getOrderStatusText(detail.status) }}
+          </el-tag>
+        </div>
+      </div>
+
+      <el-descriptions :column="3" border>
+        <el-descriptions-item label="入库单号">{{ detail.inNo }}</el-descriptions-item>
+        <el-descriptions-item label="仓库名称">{{ detail.warehouseName }}</el-descriptions-item>
+        <el-descriptions-item label="入库类型">
+          <el-tag :type="getInboundTypeTag(detail.inType)" size="small">
+            {{ getInboundTypeText(detail.inType) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="来源单号">{{ detail.sourceOrderNo || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="来源单ID">{{ detail.sourceOrderId || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="总数量">
+          <el-tag type="primary" size="small">{{ detail.totalQuantity || 0 }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="创建时间" :span="1">{{ detail.createTime }}</el-descriptions-item>
+        <el-descriptions-item label="确认时间" :span="1">{{ detail.confirmTime || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="创建人" :span="1">{{ detail.createBy || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="备注" :span="3">{{ detail.remark || '-' }}</el-descriptions-item>
+      </el-descriptions>
+    </el-card>
+
+    <!-- 入库明细 -->
+    <el-card style="margin-top: 20px;" shadow="never">
+      <div slot="header" class="clearfix">
+        <span class="card-title">入库明细</span>
+      </div>
+
+      <el-table
+        :data="items"
+        border
+        style="width: 100%"
+      >
+        <el-table-column type="index" label="序号" width="60" align="center" />
+        <el-table-column prop="goodNo" label="货物编号" width="150" />
+        <el-table-column prop="goodName" label="货物名称" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="goodType" label="货物类型" width="120" />
+        <el-table-column prop="goodModel" label="型号" width="120" show-overflow-tooltip />
+        <el-table-column prop="inQuantity" label="入库数量" width="120" align="center">
+          <template slot-scope="scope">
+            <el-tag type="success" size="small">{{ scope.row.inQuantity }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="unit" label="单位" width="80" align="center" />
+        <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
+      </el-table>
+    </el-card>
+
+    <!-- 操作按钮 -->
+    <div style="margin-top: 20px; text-align: center;">
+      <el-button @click="goBack">返回列表</el-button>
+      <el-button
+        v-if="detail.status === 'pending'"
+        type="success"
+        :loading="confirmLoading"
+        @click="handleConfirm"
+      >
+        确认入库
+      </el-button>
+      <el-button
+        v-if="detail.status === 'pending'"
+        type="danger"
+        :loading="cancelLoading"
+        @click="handleCancel"
+      >
+        取消入库单
+      </el-button>
+    </div>
+  </div>
+</template>
+
+<script>
+import {
+  getInbound,
+  getInboundItems,
+  confirmInbound,
+  cancelInbound
+} from '@/api/inventory'
+import {
+  INBOUND_TYPE_MAP,
+  ORDER_STATUS_MAP
+} from '@/constants/inventory'
+
+export default {
+  name: 'InboundDetail',
+  data() {
+    return {
+      loading: false,
+      confirmLoading: false,
+      cancelLoading: false,
+      detail: {},
+      items: []
+    }
+  },
+  mounted() {
+    this.loadDetail()
+  },
+  methods: {
+    // 加载详情
+    async loadDetail() {
+      const id = this.$route.params.id
+      if (!id) {
+        this.$message.error('参数错误')
+        this.goBack()
+        return
+      }
+
+      this.loading = true
+      try {
+        // 获取入库单基本信息
+        const detailResponse = await getInbound(id)
+        if (detailResponse && detailResponse.data) {
+          this.detail = detailResponse.data
+        }
+
+        // 获取入库明细
+        const itemsResponse = await getInboundItems(id)
+        if (itemsResponse && itemsResponse.data) {
+          this.items = itemsResponse.data || []
+        }
+      } catch (error) {
+        console.error('获取入库单详情失败:', error)
+        this.$message.error('获取入库单详情失败')
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // 确认入库
+    handleConfirm() {
+      this.$confirm('确定要确认入库吗？确认后将自动更新库存，操作不可撤销。', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(async() => {
+        this.confirmLoading = true
+        try {
+          await confirmInbound(this.detail.id)
+          this.$message.success('确认入库成功')
+          this.loadDetail()
+        } catch (error) {
+          console.error('确认入库失败:', error)
+          this.$message.error('确认入库失败')
+        } finally {
+          this.confirmLoading = false
+        }
+      }).catch(() => {
+        this.$message.info('已取消操作')
+      })
+    },
+
+    // 取消入库单
+    handleCancel() {
+      this.$confirm('确定要取消该入库单吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(async() => {
+        this.cancelLoading = true
+        try {
+          await cancelInbound(this.detail.id)
+          this.$message.success('取消成功')
+          this.loadDetail()
+        } catch (error) {
+          console.error('取消入库单失败:', error)
+          this.$message.error('取消入库单失败')
+        } finally {
+          this.cancelLoading = false
+        }
+      }).catch(() => {
+        this.$message.info('已取消操作')
+      })
+    },
+
+    // 返回列表
+    goBack() {
+      this.$router.push('/inventory/inbound')
+    },
+
+    // 获取入库类型文本
+    getInboundTypeText(type) {
+      return INBOUND_TYPE_MAP[type] || type
+    },
+
+    // 获取入库类型标签
+    getInboundTypeTag(type) {
+      const tagMap = {
+        purchase: 'success',
+        return: 'warning',
+        transfer: 'info',
+        other: ''
+      }
+      return tagMap[type] || ''
+    },
+
+    // 获取状态文本
+    getOrderStatusText(status) {
+      return ORDER_STATUS_MAP[status] || status
+    },
+
+    // 获取状态标签
+    getOrderStatusTag(status) {
+      const tagMap = {
+        pending: 'warning',
+        confirmed: 'success',
+        cancelled: 'info'
+      }
+      return tagMap[status] || ''
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.app-container {
+  padding: 20px;
+
+  .card-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #303133;
+  }
+}
+</style>
+
