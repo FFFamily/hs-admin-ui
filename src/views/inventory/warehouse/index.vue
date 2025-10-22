@@ -5,10 +5,10 @@
       <el-form-item label="仓库名称">
         <el-input v-model="searchForm.warehouseName" placeholder="请输入仓库名称" clearable style="width: 200px;" />
       </el-form-item>
-      <el-form-item label="仓库编号">
+      <!-- <el-form-item label="仓库编号">
         <el-input v-model="searchForm.warehouseNo" placeholder="请输入仓库编号" clearable style="width: 200px;" />
-      </el-form-item>
-      <el-form-item label="仓库类型">
+      </el-form-item> -->
+      <!-- <el-form-item label="仓库类型">
         <el-select v-model="searchForm.warehouseType" placeholder="请选择仓库类型" clearable style="width: 150px;">
           <el-option
             v-for="item in warehouseTypeOptions"
@@ -23,7 +23,7 @@
           <el-option label="启用" value="active" />
           <el-option label="停用" value="inactive" />
         </el-select>
-      </el-form-item>
+      </el-form-item> -->
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
         <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
@@ -40,18 +40,18 @@
     >
       <el-table-column prop="warehouseNo" label="仓库编号" width="150" />
       <el-table-column prop="warehouseName" label="仓库名称" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="warehouseType" label="仓库类型" width="120" align="center">
-        <template slot-scope="scope">
+      <!-- <el-table-column prop="warehouseType" label="仓库类型" width="120" align="center"> -->
+        <!-- <template slot-scope="scope">
           <el-tag :type="getWarehouseTypeTag(scope.row.warehouseType)" size="small">
             {{ getWarehouseTypeText(scope.row.warehouseType) }}
           </el-tag>
         </template>
-      </el-table-column>
+      </el-table-column> -->
       <el-table-column prop="warehouseAddress" label="仓库地址" min-width="200" show-overflow-tooltip />
-      <el-table-column prop="managerName" label="负责人" width="100" />
+      <!-- <el-table-column prop="managerName" label="负责人" width="100" />
       <el-table-column prop="contactPhone" label="联系电话" width="130" />
-      <el-table-column prop="status" label="状态" width="100" align="center">
-        <template slot-scope="scope">
+      <el-table-column prop="status" label="状态" width="100" align="center"> -->
+        <!-- <template slot-scope="scope">
           <el-switch
             v-model="scope.row.status"
             active-value="active"
@@ -61,7 +61,7 @@
             @change="handleStatusChange(scope.row)"
           />
         </template>
-      </el-table-column>
+      </el-table-column> -->
       <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column label="操作" width="200" fixed="right">
         <template slot-scope="scope">
@@ -97,7 +97,7 @@
         <el-form-item label="仓库名称" prop="warehouseName">
           <el-input v-model="form.warehouseName" placeholder="请输入仓库名称" />
         </el-form-item>
-        <el-form-item label="仓库类型" prop="warehouseType">
+        <!-- <el-form-item label="仓库类型" prop="warehouseType">
           <el-select v-model="form.warehouseType" placeholder="请选择仓库类型" style="width: 100%;">
             <el-option
               v-for="item in warehouseTypeOptions"
@@ -106,17 +106,17 @@
               :value="item.value"
             />
           </el-select>
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="仓库地址" prop="warehouseAddress">
           <el-input v-model="form.warehouseAddress" type="textarea" :rows="2" placeholder="请输入仓库地址" />
         </el-form-item>
-        <el-form-item label="负责人ID" prop="managerId">
+        <!-- <el-form-item label="负责人ID" prop="managerId">
           <el-input v-model="form.managerId" placeholder="请输入负责人ID" />
         </el-form-item>
         <el-form-item label="负责人姓名" prop="managerName">
           <el-input v-model="form.managerName" placeholder="请输入负责人姓名" />
-        </el-form-item>
-        <el-form-item label="联系电话" prop="contactPhone">
+        </el-form-item> -->
+        <!-- <el-form-item label="联系电话" prop="contactPhone">
           <el-input v-model="form.contactPhone" placeholder="请输入联系电话" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
@@ -124,7 +124,7 @@
             <el-radio label="active">启用</el-radio>
             <el-radio label="inactive">停用</el-radio>
           </el-radio-group>
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注信息" />
         </el-form-item>
