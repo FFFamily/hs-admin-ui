@@ -98,6 +98,14 @@
           >
             取消
           </el-button>
+          <el-button
+            v-if="scope.row.status === 'cancelled'"
+            size="mini"
+            type="danger"
+            @click="handleDelete(scope.row)"
+          >
+            删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -234,7 +242,8 @@ import {
   getInboundPage,
   createInbound,
   confirmInbound,
-  cancelInbound
+  cancelInbound,
+  deleteInbound
 } from '@/api/inventory'
 import {
   INBOUND_TYPE_OPTIONS,
@@ -440,6 +449,26 @@ export default {
         } catch (error) {
           console.error('取消入库单失败:', error)
           this.$message.error('取消入库单失败')
+        }
+      }).catch(() => {
+        this.$message.info('已取消操作')
+      })
+    },
+
+    // 删除
+    handleDelete(row) {
+      this.$confirm('确定要删除该入库单吗？删除后无法恢复。', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(async() => {
+        try {
+          await deleteInbound(row.id)
+          this.$message.success('删除成功')
+          this.fetchList()
+        } catch (error) {
+          console.error('删除入库单失败:', error)
+          this.$message.error('删除入库单失败')
         }
       }).catch(() => {
         this.$message.info('已取消操作')

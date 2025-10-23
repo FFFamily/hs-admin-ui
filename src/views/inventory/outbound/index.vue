@@ -123,6 +123,16 @@
       @confirm="handleWarehouseSelected"
     />
 
+    <!-- 货物选择器 -->
+    <GoodSelector
+      :visible.sync="goodSelectorVisible"
+      title="选择出库货物"
+      :multiple="true"
+      :show-stock="true"
+      :warehouse-id="form.warehouseId"
+      @confirm="handleGoodsSelected"
+    />
+
     <!-- 创建出库单对话框 -->
     <el-dialog
       title="创建出库单"
@@ -175,27 +185,34 @@
 
         <el-divider content-position="left">出库明细</el-divider>
         <el-button type="primary" size="small" icon="el-icon-plus" style="margin-bottom: 10px;" @click="addItem">
-          添加货物
+          选择货物
         </el-button>
         <el-table :data="form.items" border style="width: 100%">
           <el-table-column label="货物编号" width="150">
             <template slot-scope="scope">
-              <el-input v-model="scope.row.goodNo" placeholder="货物编号" size="small" />
+              <span>{{ scope.row.goodNo }}</span>
             </template>
           </el-table-column>
           <el-table-column label="货物名称" width="150">
             <template slot-scope="scope">
-              <el-input v-model="scope.row.goodName" placeholder="货物名称" size="small" />
+              <span>{{ scope.row.goodName }}</span>
             </template>
           </el-table-column>
           <el-table-column label="货物类型" width="120">
             <template slot-scope="scope">
-              <el-input v-model="scope.row.goodType" placeholder="货物类型" size="small" />
+              <span>{{ scope.row.goodType }}</span>
             </template>
           </el-table-column>
           <el-table-column label="型号" width="120">
             <template slot-scope="scope">
-              <el-input v-model="scope.row.goodModel" placeholder="型号" size="small" />
+              <span>{{ scope.row.goodModel }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="可用库存" width="100" align="center">
+            <template slot-scope="scope">
+              <el-tag :type="getStockTagType(scope.row.availableQuantity)" size="mini">
+                {{ scope.row.availableQuantity || 0 }}
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column label="出库数量" width="120">
@@ -203,6 +220,7 @@
               <el-input-number
                 v-model="scope.row.outQuantity"
                 :min="1"
+                :max="scope.row.availableQuantity"
                 :precision="0"
                 size="small"
                 style="width: 100%;"
@@ -211,7 +229,7 @@
           </el-table-column>
           <el-table-column label="单位" width="80">
             <template slot-scope="scope">
-              <el-input v-model="scope.row.unit" placeholder="单位" size="small" />
+              <span>{{ scope.row.unit }}</span>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="80" align="center">
@@ -243,18 +261,22 @@ import {
   ORDER_STATUS_MAP
 } from '@/constants/inventory'
 import WarehouseSelector from '@/components/WarehouseSelector'
+import GoodSelector from '@/components/GoodSelector'
 
 export default {
   name: 'OutboundManagement',
   components: {
-    WarehouseSelector
+    WarehouseSelector,
+    GoodSelector
   },
   data() {
     return {
       loading: false,
       submitLoading: false,
       warehouseSelectorVisible: false,
+      goodSelectorVisible: false,
       createDialogVisible: false,
+      currentEditIndex: -1, // 当前编辑的明细行索引
       outboundTypeOptions: OUTBOUND_TYPE_OPTIONS,
       orderStatusOptions: ORDER_STATUS_OPTIONS,
       dateRange: [],
@@ -446,16 +468,38 @@ export default {
       })
     },
 
-    // 添加明细项
+    // 添加明细项 - 打开货物选择器
     addItem() {
-      this.form.items.push({
-        goodNo: '',
-        goodName: '',
-        goodType: '',
-        goodModel: '',
-        outQuantity: 1,
-        unit: '',
-        remark: ''
+      // 检查是否已选择仓库
+      if (!this.form.warehouseId) {
+        this.$message.warning('请先选择仓库')
+        return
+      }
+      this.goodSelectorVisible = true
+    },
+
+    // 处理货物选择
+    handleGoodsSelected(goods) {
+      if (!goods || goods.length === 0) {
+        return
+      }
+
+      // 添加选择的货物到明细列表
+      goods.forEach(good => {
+        // 检查是否已经添加过该货物
+        const exists = this.form.items.some(item => item.goodNo === good.goodNo)
+        if (!exists) {
+          this.form.items.push({
+            goodNo: good.goodNo,
+            goodName: good.goodName,
+            goodType: good.goodType,
+            goodModel: good.goodModel,
+            unit: good.unit,
+            availableQuantity: good.availableQuantity || 0,
+            outQuantity: 1,
+            remark: ''
+          })
+        }
       })
     },
 
@@ -480,6 +524,11 @@ export default {
         for (const item of this.form.items) {
           if (!item.goodNo || !item.goodName || !item.outQuantity) {
             this.$message.warning('请完整填写出库明细信息')
+            return
+          }
+          // 检查出库数量是否超过可用库存
+          if (item.outQuantity > item.availableQuantity) {
+            this.$message.warning(`货物 ${item.goodName} 的出库数量不能超过可用库存 ${item.availableQuantity}`)
             return
           }
         }
@@ -550,6 +599,13 @@ export default {
         cancelled: 'info'
       }
       return tagMap[status] || ''
+    },
+
+    // 获取库存标签类型
+    getStockTagType(quantity) {
+      if (quantity <= 0) return 'danger'
+      if (quantity < 10) return 'warning'
+      return 'success'
     }
   }
 }

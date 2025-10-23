@@ -219,6 +219,16 @@ export function cancelInbound(inId) {
 }
 
 /**
+ * 删除入库单
+ */
+export function deleteInbound(inId) {
+  return request({
+    url: `/inventory/in/delete/${inId}`,
+    method: 'delete'
+  })
+}
+
+/**
  * 分页查询入库单
  */
 export function getInboundPage(params) {
