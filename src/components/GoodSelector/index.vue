@@ -60,13 +60,10 @@
         <el-table-column prop="goodName" label="货物名称" min-width="150" show-overflow-tooltip />
         <el-table-column prop="goodType" label="货物类型" width="120" />
         <el-table-column prop="goodModel" label="型号" width="120" show-overflow-tooltip />
-        <el-table-column prop="unit" label="单位" width="80" align="center" />
-        <el-table-column v-if="showStock" prop="availableQuantity" label="可用库存" width="100" align="center">
+        <!-- <el-table-column prop="unit" label="单位" width="80" align="center" /> -->
+        <el-table-column v-if="showStock" prop="currentStock" label="可用库存" width="100" align="center">
           <template slot-scope="scope">
-            <el-tag v-if="scope.row.availableQuantity !== undefined" :type="getStockTagType(scope.row.availableQuantity)" size="mini">
-              {{ scope.row.availableQuantity }}
-            </el-tag>
-            <span v-else>-</span>
+            {{ scope.row.currentStock }}
           </template>
         </el-table-column>
       </el-table>

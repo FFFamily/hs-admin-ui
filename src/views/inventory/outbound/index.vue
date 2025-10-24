@@ -227,12 +227,12 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="单位" width="80">
+          <!-- <el-table-column label="单位" width="80">
             <template slot-scope="scope">
               <span>{{ scope.row.unit }}</span>
             </template>
-          </el-table-column>
-          <el-table-column label="操作" width="80" align="center">
+          </el-table-column> -->
+          <el-table-column label="操作" align="center">
             <template slot-scope="scope">
               <el-button size="mini" type="danger" icon="el-icon-delete" @click="removeItem(scope.$index)" />
             </template>
@@ -495,7 +495,7 @@ export default {
             goodType: good.goodType,
             goodModel: good.goodModel,
             unit: good.unit,
-            availableQuantity: good.availableQuantity || 0,
+            availableQuantity: good.currentStock || 0,
             outQuantity: 1,
             remark: ''
           })

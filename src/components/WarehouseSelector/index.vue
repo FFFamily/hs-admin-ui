@@ -25,12 +25,12 @@
             style="width: 200px;"
           />
         </el-form-item>
-        <el-form-item v-if="!activeOnly" label="状态">
+        <!-- <el-form-item v-if="!activeOnly" label="状态">
           <el-select v-model="searchParams.status" placeholder="请选择状态" clearable style="width: 120px;">
             <el-option label="启用" value="active" />
             <el-option label="停用" value="inactive" />
           </el-select>
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item>
           <el-button type="primary" @click="handleSearch">搜索</el-button>
           <el-button @click="handleReset">重置</el-button>
@@ -56,21 +56,22 @@
 
         <el-table-column prop="warehouseNo" label="仓库编号" width="150" />
         <el-table-column prop="warehouseName" label="仓库名称" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="warehouseType" label="仓库类型" width="100" align="center">
+        <el-table-column prop="warehouseAddress" label="仓库地址" min-width="200" show-overflow-tooltip />
+        <!-- <el-table-column prop="warehouseType" label="仓库类型" width="100" align="center">
           <template slot-scope="scope">
             <el-tag :type="getWarehouseTypeTag(scope.row.warehouseType)" size="mini">
               {{ getWarehouseTypeText(scope.row.warehouseType) }}
             </el-tag>
           </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="80" align="center">
+        </el-table-column> -->
+        <!-- <el-table-column prop="status" label="状态" width="80" align="center">
           <template slot-scope="scope">
             <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" size="mini">
               {{ scope.row.status === 'active' ? '启用' : '停用' }}
             </el-tag>
           </template>
-        </el-table-column>
-        <el-table-column prop="managerName" label="负责人" width="100" />
+        </el-table-column> -->
+        <!-- <el-table-column prop="managerName" label="负责人" width="100" /> -->
       </el-table>
 
       <!-- 分页 -->

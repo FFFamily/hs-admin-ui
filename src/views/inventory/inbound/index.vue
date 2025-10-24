@@ -78,7 +78,7 @@
       <el-table-column prop="totalQuantity" label="总数量" width="100" align="center" />
       <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
       <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column prop="confirmTime" label="确认时间" width="180" />
+      <!-- <el-table-column prop="confirmTime" label="确认时间" width="180" /> -->
       <el-table-column label="操作" width="300" fixed="right">
         <template slot-scope="scope">
           <el-button size="mini" type="primary" @click="handleView(scope.row)">查看</el-button>
@@ -129,6 +129,15 @@
       :multiple="false"
       :active-only="true"
       @confirm="handleWarehouseSelected"
+    />
+
+    <!-- 经营范围选择器 -->
+    <BusinessScopeSelector
+      :visible.sync="businessScopeSelectorVisible"
+      title="选择货物"
+      :multiple="true"
+      :only-show-enabled="true"
+      @confirm="handleBusinessScopeSelected"
     />
 
     <!-- 创建入库单对话框 -->
@@ -182,28 +191,28 @@
         </el-form-item>
 
         <el-divider content-position="left">入库明细</el-divider>
-        <el-button type="primary" size="small" icon="el-icon-plus" style="margin-bottom: 10px;" @click="addItem">
-          添加货物
+        <el-button type="primary" size="small" icon="el-icon-plus" style="margin-bottom: 10px;" @click="showBusinessScopeSelector">
+          选择货物
         </el-button>
         <el-table :data="form.items" border style="width: 100%">
-          <el-table-column label="货物编号" width="150">
+          <el-table-column label="货物类型" width="120">
             <template slot-scope="scope">
-              <el-input v-model="scope.row.goodNo" placeholder="货物编号" size="small" />
+              <span>{{ scope.row.goodType }}</span>
             </template>
           </el-table-column>
           <el-table-column label="货物名称" width="150">
             <template slot-scope="scope">
-              <el-input v-model="scope.row.goodName" placeholder="货物名称" size="small" />
+              <span>{{ scope.row.goodName }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="货物类型" width="120">
+          <el-table-column label="规格型号" width="150">
             <template slot-scope="scope">
-              <el-input v-model="scope.row.goodType" placeholder="货物类型" size="small" />
+              <span>{{ scope.row.goodModel }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="型号" width="120">
+          <el-table-column label="货物编号" width="120">
             <template slot-scope="scope">
-              <el-input v-model="scope.row.goodModel" placeholder="型号" size="small" />
+              <span>{{ scope.row.goodNo }}</span>
             </template>
           </el-table-column>
           <el-table-column label="入库数量" width="120">
@@ -217,12 +226,7 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="单位" width="80">
-            <template slot-scope="scope">
-              <el-input v-model="scope.row.unit" placeholder="单位" size="small" />
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="80" align="center">
+          <el-table-column label="操作"  align="center">
             <template slot-scope="scope">
               <el-button size="mini" type="danger" icon="el-icon-delete" @click="removeItem(scope.$index)" />
             </template>
@@ -252,17 +256,20 @@ import {
   ORDER_STATUS_MAP
 } from '@/constants/inventory'
 import WarehouseSelector from '@/components/WarehouseSelector'
+import BusinessScopeSelector from '@/components/BusinessScopeSelector'
 
 export default {
   name: 'InboundManagement',
   components: {
-    WarehouseSelector
+    WarehouseSelector,
+    BusinessScopeSelector
   },
   data() {
     return {
       loading: false,
       submitLoading: false,
       warehouseSelectorVisible: false,
+      businessScopeSelectorVisible: false,
       createDialogVisible: false,
       inboundTypeOptions: INBOUND_TYPE_OPTIONS,
       orderStatusOptions: ORDER_STATUS_OPTIONS,
@@ -475,7 +482,38 @@ export default {
       })
     },
 
-    // 添加明细项
+    // 显示经营范围选择器
+    showBusinessScopeSelector() {
+      this.businessScopeSelectorVisible = true
+    },
+
+    // 经营范围选择
+    handleBusinessScopeSelected(businessScopes) {
+      if (businessScopes && businessScopes.length > 0) {
+        businessScopes.forEach(scope => {
+          // 检查是否已经存在相同的货物
+          const exists = this.form.items.some(item =>
+            item.goodType === scope.goodType &&
+            item.goodName === scope.goodName &&
+            item.goodModel === scope.goodModel
+          )
+          
+          if (!exists) {
+            this.form.items.push({
+              businessScopeId: scope.id,
+              goodNo: scope.no || '',
+              goodName: scope.goodName,
+              goodType: scope.goodType,
+              goodModel: scope.goodModel,
+              inQuantity: 1,
+              remark: scope.goodRemark || ''
+            })
+          }
+        })
+      }
+    },
+
+    // 添加明细项（保留用于兼容）
     addItem() {
       this.form.items.push({
         goodNo: '',
@@ -483,7 +521,6 @@ export default {
         goodType: '',
         goodModel: '',
         inQuantity: 1,
-        unit: '',
         remark: ''
       })
     },

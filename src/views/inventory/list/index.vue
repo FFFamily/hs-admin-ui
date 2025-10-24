@@ -41,19 +41,12 @@
       <el-table-column prop="goodName" label="货物名称" min-width="150" show-overflow-tooltip />
       <el-table-column prop="goodType" label="货物类型" width="120" />
       <el-table-column prop="goodModel" label="型号" width="120" show-overflow-tooltip />
-      <el-table-column prop="totalQuantity" label="总库存" width="100" align="center">
+      <el-table-column prop="totalQuantity" label="当前库存数量" width="120" align="center">
         <template slot-scope="scope">
-          <el-badge
-            v-if="scope.row.totalQuantity <= (scope.row.minStock || 0)"
-            is-dot
-            class="item"
-          >
-            <span>{{ scope.row.totalQuantity }}</span>
-          </el-badge>
-          <span v-else>{{ scope.row.totalQuantity }}</span>
+          <span>{{ scope.row.currentStock }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="availableQuantity" label="可用库存" width="100" align="center">
+      <!-- <el-table-column prop="availableQuantity" label="可用库存" width="100" align="center">
         <template slot-scope="scope">
           <el-tag :type="getStockTag(scope.row.availableQuantity)" size="small">
             {{ scope.row.availableQuantity }}
@@ -67,17 +60,17 @@
           </el-tag>
           <span v-else>0</span>
         </template>
-      </el-table-column>
-      <el-table-column prop="minStock" label="安全库存" width="100" align="center" />
-      <el-table-column prop="unit" label="单位" width="80" align="center" />
+      </el-table-column> -->
+      <!-- <el-table-column prop="minStock" label="安全库存" width="100" align="center" /> -->
+      <!-- <el-table-column prop="unit" label="单位" width="80" align="center" /> -->
       <el-table-column prop="updateTime" label="更新时间" width="180" />
-      <el-table-column label="操作" width="300" fixed="right">
+      <!-- <el-table-column label="操作" width="300" fixed="right">
         <template slot-scope="scope">
           <el-button size="mini" type="primary" @click="handleSetMinStock(scope.row)">设置安全库存</el-button>
           <el-button size="mini" type="warning" @click="handleLockStock(scope.row)">锁定库存</el-button>
           <el-button size="mini" type="success" :disabled="scope.row.lockedQuantity <= 0" @click="handleUnlockStock(scope.row)">解锁库存</el-button>
         </template>
-      </el-table-column>
+      </el-table-column> -->
     </el-table>
 
     <!-- 分页 -->

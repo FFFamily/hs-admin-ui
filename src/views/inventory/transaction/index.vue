@@ -62,47 +62,40 @@
           <el-form label-position="left" class="table-expand">
             <el-row :gutter="20">
               <el-col :span="8">
-                <el-form-item label="变动前总库存:">
-                  <span>{{ props.row.beforeTotalQuantity }}</span>
+                <el-form-item label="流水号:">
+                  <span>{{ props.row.transactionNo }}</span>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="变动前可用库存:">
-                  <span>{{ props.row.beforeAvailableQuantity }}</span>
+                <el-form-item label="变动前库存:">
+                  <span>{{ props.row.beforeStock }}</span>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="变动前锁定库存:">
-                  <span>{{ props.row.beforeLockedQuantity }}</span>
+                <el-form-item label="变动后库存:">
+                  <span>{{ props.row.afterStock }}</span>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
-              <el-col :span="8">
-                <el-form-item label="变动后总库存:">
-                  <span>{{ props.row.afterTotalQuantity }}</span>
+              <el-col :span="12">
+                <el-form-item label="关联单号:">
+                  <span>{{ props.row.relatedNo || '-' }}</span>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
-                <el-form-item label="变动后可用库存:">
-                  <span>{{ props.row.afterAvailableQuantity }}</span>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="变动后锁定库存:">
-                  <span>{{ props.row.afterLockedQuantity }}</span>
+              <el-col :span="12">
+                <el-form-item label="操作人:">
+                  <span>{{ props.row.operatorName || '-' }}</span>
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-form-item label="备注:">
-              <span>{{ props.row.remark || '-' }}</span>
-            </el-form-item>
           </el-form>
         </template>
       </el-table-column>
-      <el-table-column prop="warehouseName" label="仓库" width="150" />
-      <el-table-column prop="goodNo" label="货物编号" width="150" />
-      <el-table-column prop="goodName" label="货物名称" min-width="150" show-overflow-tooltip />
+      <el-table-column prop="transactionNo" label="流水号" width="180" show-overflow-tooltip />
+      <el-table-column prop="warehouseName" label="仓库" width="120" />
+      <el-table-column prop="goodNo" label="货物编号" width="120" />
+      <el-table-column prop="goodName" label="货物名称" min-width="120" show-overflow-tooltip />
       <el-table-column prop="transactionType" label="交易类型" width="100" align="center">
         <template slot-scope="scope">
           <el-tag :type="getTransactionTypeTag(scope.row.transactionType)" size="small">
@@ -117,14 +110,15 @@
       </el-table-column>
       <el-table-column prop="quantity" label="变动数量" width="100" align="center">
         <template slot-scope="scope">
-          <span :style="{ color: getQuantityColor(scope.row.transactionType, scope.row.quantity) }">
-            {{ formatQuantity(scope.row.transactionType, scope.row.quantity) }}
+          <span :style="{ color: getQuantityColor(scope.row.quantity) }">
+            {{ formatQuantity(scope.row.quantity) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column prop="relatedOrderNo" label="关联单号" width="180" show-overflow-tooltip />
-      <el-table-column prop="operator" label="操作人" width="100" />
-      <el-table-column prop="createTime" label="交易时间" width="180" />
+      <el-table-column prop="beforeStock" label="变动前库存" width="110" align="center" />
+      <el-table-column prop="afterStock" label="变动后库存" width="110" align="center" />
+      <el-table-column prop="operatorName" label="操作人" width="100" />
+      <el-table-column prop="transactionTime" label="交易时间" width="180" />
     </el-table>
 
     <!-- 分页 -->
@@ -302,21 +296,21 @@ export default {
     },
 
     // 格式化数量显示
-    formatQuantity(transactionType, quantity) {
-      if (transactionType === 'in' || transactionType === 'unlock') {
+    formatQuantity(quantity) {
+      if (quantity > 0) {
         return '+' + quantity
-      } else if (transactionType === 'out' || transactionType === 'lock') {
-        return '-' + quantity
+      } else if (quantity < 0) {
+        return quantity
       }
       return quantity
     },
 
     // 获取数量颜色
-    getQuantityColor(transactionType, quantity) {
-      if (transactionType === 'in' || transactionType === 'unlock') {
-        return '#67c23a' // 绿色
-      } else if (transactionType === 'out' || transactionType === 'lock') {
-        return '#f56c6c' // 红色
+    getQuantityColor(quantity) {
+      if (quantity > 0) {
+        return '#67c23a' // 绿色 - 正数（入库）
+      } else if (quantity < 0) {
+        return '#f56c6c' // 红色 - 负数（出库）
       }
       return '#303133'
     }
