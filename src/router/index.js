@@ -275,14 +275,6 @@ export const constantRoutes = [
       }
     ]
   },
-  // 模板管理
-  {
-    path: '/template',
-    component: Layout,
-    redirect: '/template/fundflow',
-    name: 'Template',
-    meta: { title: '模板管理', icon: 'table' },
-  },
   {
     path: '/rental',
     component: Layout,

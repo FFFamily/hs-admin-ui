@@ -140,6 +140,14 @@
       @confirm="handleBusinessScopeSelected"
     />
 
+    <!-- 订单选择器 -->
+    <OrderSelector
+      :visible.sync="orderSelectorVisible"
+      title="选择关联订单"
+      :multiple="false"
+      @confirm="handleOrderSelected"
+    />
+
     <!-- 创建入库单对话框 -->
     <el-dialog
       title="创建入库单"
@@ -177,12 +185,19 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="来源单号" prop="sourceOrderNo">
-              <el-input v-model="form.sourceOrderNo" placeholder="请输入来源单号" />
+              <el-input
+                v-model="form.sourceOrderNo"
+                placeholder="请选择关联订单"
+                readonly
+                @focus="showOrderSelector"
+              >
+                <i slot="suffix" class="el-icon-search el-input__icon" style="cursor: pointer;" @click="showOrderSelector" />
+              </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="来源单ID">
-              <el-input v-model="form.sourceOrderId" placeholder="请输入来源单ID" />
+              <el-input v-model="form.sourceOrderId" placeholder="选择订单后自动填充" readonly />
             </el-form-item>
           </el-col>
         </el-row>
@@ -257,12 +272,14 @@ import {
 } from '@/constants/inventory'
 import WarehouseSelector from '@/components/WarehouseSelector'
 import BusinessScopeSelector from '@/components/BusinessScopeSelector'
+import OrderSelector from '@/components/OrderSelector'
 
 export default {
   name: 'InboundManagement',
   components: {
     WarehouseSelector,
-    BusinessScopeSelector
+    BusinessScopeSelector,
+    OrderSelector
   },
   data() {
     return {
@@ -270,6 +287,7 @@ export default {
       submitLoading: false,
       warehouseSelectorVisible: false,
       businessScopeSelectorVisible: false,
+      orderSelectorVisible: false,
       createDialogVisible: false,
       inboundTypeOptions: INBOUND_TYPE_OPTIONS,
       orderStatusOptions: ORDER_STATUS_OPTIONS,
@@ -313,9 +331,6 @@ export default {
         ],
         inType: [
           { required: true, message: '请选择入库类型', trigger: 'change' }
-        ],
-        sourceOrderNo: [
-          { required: true, message: '请输入来源单号', trigger: 'blur' }
         ]
       }
     }
@@ -480,6 +495,21 @@ export default {
       }).catch(() => {
         this.$message.info('已取消操作')
       })
+    },
+
+    // 显示订单选择器
+    showOrderSelector() {
+      this.orderSelectorVisible = true
+    },
+
+    // 订单选择确认
+    handleOrderSelected(orders) {
+      if (orders && orders.length > 0) {
+        const selectedOrder = orders[0]
+        this.form.sourceOrderId = selectedOrder.id
+        this.form.sourceOrderNo = selectedOrder.no
+        this.$message.success('已选择关联订单')
+      }
     },
 
     // 显示经营范围选择器

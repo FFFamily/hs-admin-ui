@@ -112,22 +112,12 @@
           <span v-else>--</span>
         </template>
       </el-table-column>
-      <el-table-column label="起始时间" prop="startTime" width="180" align="center">
-        <template slot-scope="scope">
-          {{ formatDateTime(scope.row.startTime) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="结束时间" prop="endTime" width="180" align="center">
-        <template slot-scope="scope">
-          {{ formatDateTime(scope.row.endTime) }}
-        </template>
-      </el-table-column>
     </el-table>
 
     <!-- 分页组件 -->
     <el-pagination
       :current-page="pagination.page"
-      :page-sizes="[10, 20, 50, 100]"
+      :page-sizes="[5, 10, 20, 50]"
       :page-size="pagination.size"
       :total="pagination.total"
       layout="total, sizes, prev, pager, next, jumper"
@@ -207,7 +197,7 @@ export default {
       },
       pagination: {
         page: 1,
-        size: 10,
+        size: 5,
         total: 0
       },
       selectedRows: [],
