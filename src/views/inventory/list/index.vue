@@ -25,7 +25,7 @@
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
         <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
-        <el-button type="warning" icon="el-icon-warning" @click="showWarnings">库存预警</el-button>
+        <!-- <el-button type="warning" icon="el-icon-warning" @click="showWarnings">库存预警</el-button> -->
       </el-form-item>
     </el-form>
 

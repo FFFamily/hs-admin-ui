@@ -196,12 +196,12 @@ export const constantRoutes = [
         component: () => import('@/views/inventory/list/index.vue'),
         meta: { title: '库存查询', icon: 'el-icon-search' }
       },
-      {
-        path: 'statistics',
-        name: 'InventoryStatistics',
-        component: () => import('@/views/inventory/statistics/index.vue'),
-        meta: { title: '库存统计', icon: 'el-icon-data-analysis' }
-      },
+      // {
+      //   path: 'statistics',
+      //   name: 'InventoryStatistics',
+      //   component: () => import('@/views/inventory/statistics/index.vue'),
+      //   meta: { title: '库存统计', icon: 'el-icon-data-analysis' }
+      // },
       {
         path: 'inbound',
         name: 'Inbound',
