@@ -13,24 +13,56 @@
         </div>
       </div>
 
-      <el-descriptions :column="3" border>
-        <el-descriptions-item label="入库单号">{{ detail.inNo }}</el-descriptions-item>
-        <el-descriptions-item label="仓库名称">{{ detail.warehouseName }}</el-descriptions-item>
-        <el-descriptions-item label="入库类型">
-          <el-tag :type="getInboundTypeTag(detail.inType)" size="small">
-            {{ getInboundTypeText(detail.inType) }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="来源单号">{{ detail.sourceOrderNo || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="来源单ID">{{ detail.sourceOrderId || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="总数量">
-          <el-tag type="primary" size="small">{{ detail.totalQuantity || 0 }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="创建时间" :span="1">{{ detail.createTime }}</el-descriptions-item>
-        <el-descriptions-item label="确认时间" :span="1">{{ detail.confirmTime || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="创建人" :span="1">{{ detail.createBy || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="备注" :span="3">{{ detail.remark || '-' }}</el-descriptions-item>
-      </el-descriptions>
+      <div class="info-list">
+        <div class="info-item">
+          <div class="info-label">入库单号</div>
+          <div class="info-value">{{ detail.inNo || '-' }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">仓库名称</div>
+          <div class="info-value">{{ detail.warehouseName || '-' }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">入库类型</div>
+          <div class="info-value">
+            <el-tag size="small">{{ getDictLabel('in_bound_type', detail.inType) }}</el-tag>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">来源单号</div>
+          <div class="info-value">{{ detail.sourceOrderNo || '-' }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">来源单ID</div>
+          <div class="info-value">{{ detail.sourceOrderId || '-' }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">合作方</div>
+          <div class="info-value">{{ detail.contractPartnerName || '-' }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">总数量</div>
+          <div class="info-value">
+            <el-tag type="primary" size="small">{{ detail.totalQuantity || 0 }}</el-tag>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">创建时间</div>
+          <div class="info-value">{{ detail.createTime || '-' }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">确认时间</div>
+          <div class="info-value">{{ detail.confirmTime || '-' }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">创建人</div>
+          <div class="info-value">{{ detail.createByName || '-' }}</div>
+        </div>
+        <div class="info-item info-item--full">
+          <div class="info-label">备注</div>
+          <div class="info-value">{{ detail.remark || '-' }}</div>
+        </div>
+      </div>
     </el-card>
 
     <!-- 入库明细 -->
@@ -89,13 +121,13 @@ import {
   confirmInbound,
   cancelInbound
 } from '@/api/inventory'
-import {
-  INBOUND_TYPE_MAP,
-  ORDER_STATUS_MAP
-} from '@/constants/inventory'
+import { ORDER_STATUS_MAP } from '@/constants/inventory'
+import { dictMixin } from '@/utils/dict'
 
 export default {
   name: 'InboundDetail',
+  mixins: [dictMixin],
+  dicts: ['in_bound_type'],
   data() {
     return {
       loading: false,
@@ -190,22 +222,6 @@ export default {
       this.$router.push('/inventory/inbound')
     },
 
-    // 获取入库类型文本
-    getInboundTypeText(type) {
-      return INBOUND_TYPE_MAP[type] || type
-    },
-
-    // 获取入库类型标签
-    getInboundTypeTag(type) {
-      const tagMap = {
-        purchase: 'success',
-        return: 'warning',
-        transfer: 'info',
-        other: ''
-      }
-      return tagMap[type] || ''
-    },
-
     // 获取状态文本
     getOrderStatusText(status) {
       return ORDER_STATUS_MAP[status] || status
@@ -232,6 +248,38 @@ export default {
     font-size: 16px;
     font-weight: bold;
     color: #303133;
+  }
+}
+
+.info-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 12px 16px;
+
+  .info-item {
+    display: flex;
+    align-items: center;
+
+    .info-label {
+      width: 90px;
+      color: #606266;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .info-value {
+      color: #303133;
+      word-break: break-all;
+    }
+  }
+
+  .info-item--full {
+    grid-column: 1 / -1;
+    align-items: flex-start;
+
+    .info-label {
+      margin-top: 2px;
+    }
   }
 }
 </style>

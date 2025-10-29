@@ -147,6 +147,16 @@ export default {
     defaultSelected: {
       type: Array,
       default: () => []
+    },
+    // 是否使用外部提供的货物列表（用于基于订单明细的选择）
+    useExternal: {
+      type: Boolean,
+      default: false
+    },
+    // 外部提供的货物列表
+    externalList: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -206,9 +216,15 @@ export default {
         goodType: ''
       }
       this.pagination.page = 1
-      await this.fetchGoodList()
+      if (this.useExternal) {
+        // 外部列表模式下，直接使用外部数据并关闭分页
+        this.goodList = Array.isArray(this.externalList) ? [...this.externalList] : []
+      } else {
+        await this.fetchGoodList()
+      }
     },
     async fetchGoodList() {
+      if (this.useExternal) return
       this.loading = true
       try {
         const data = {
@@ -232,10 +248,12 @@ export default {
       }
     },
     handleSearch() {
+      if (this.useExternal) return
       this.pagination.page = 1
       this.fetchGoodList()
     },
     handleReset() {
+      if (this.useExternal) return
       this.searchParams = {
         goodNo: '',
         goodName: '',
@@ -245,11 +263,13 @@ export default {
       this.fetchGoodList()
     },
     handleSizeChange(size) {
+      if (this.useExternal) return
       this.pagination.size = size
       this.pagination.page = 1
       this.fetchGoodList()
     },
     handleCurrentChange(page) {
+      if (this.useExternal) return
       this.pagination.page = page
       this.fetchGoodList()
     },

@@ -5,7 +5,7 @@
       <el-form-item label="入库类型">
         <el-select v-model="searchForm.inType" placeholder="请选择入库类型" clearable style="width: 150px;">
           <el-option
-            v-for="item in inboundTypeOptions"
+            v-for="item in dict['in_bound_type'] || []"
             :key="item.value"
             :label="item.label"
             :value="item.value"
@@ -63,7 +63,7 @@
       <el-table-column prop="inType" label="入库类型" width="120" align="center">
         <template slot-scope="scope">
           <el-tag :type="getInboundTypeTag(scope.row.inType)" size="small">
-            {{ getInboundTypeText(scope.row.inType) }}
+            {{ getDictLabel('in_bound_type', scope.row.inType) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -132,12 +132,16 @@
     />
 
     <!-- 经营范围选择器 -->
-    <BusinessScopeSelector
-      :visible.sync="businessScopeSelectorVisible"
-      title="选择货物"
+    <!-- 替换为基于订单明细的货物选择器 -->
+    <GoodSelector
+      :visible.sync="goodSelectorVisible"
+      title="选择订单货物"
       :multiple="true"
-      :only-show-enabled="true"
-      @confirm="handleBusinessScopeSelected"
+      :show-pagination="false"
+      :show-stock="false"
+      :use-external="true"
+      :external-list="orderInGoods"
+      @confirm="handleGoodSelected"
     />
 
     <!-- 订单选择器 -->
@@ -145,6 +149,8 @@
       :visible.sync="orderSelectorVisible"
       title="选择关联订单"
       :multiple="false"
+      :show-flow-direction="true"
+      :filters="orderSelectorFilters"
       @confirm="handleOrderSelected"
     />
 
@@ -173,10 +179,10 @@
             <el-form-item label="入库类型" prop="inType">
               <el-select v-model="form.inType" placeholder="请选择入库类型" style="width: 100%;">
                 <el-option
-                  v-for="item in inboundTypeOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
+                  v-for="item in dict['in_bound_type'] || []"
+                  :key="item.dictValue"
+                  :label="item.dictLabel"
+                  :value="item.dictValue"
                 />
               </el-select>
             </el-form-item>
@@ -195,9 +201,16 @@
               </el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="12" v-if="false">
             <el-form-item label="来源单ID">
               <el-input v-model="form.sourceOrderId" placeholder="选择订单后自动填充" readonly />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="合作方">
+              <el-input v-model="form.sourceOrderPartnerName" placeholder="选择订单后自动填充" readonly />
             </el-form-item>
           </el-col>
         </el-row>
@@ -206,7 +219,7 @@
         </el-form-item>
 
         <el-divider content-position="left">入库明细</el-divider>
-        <el-button type="primary" size="small" icon="el-icon-plus" style="margin-bottom: 10px;" @click="showBusinessScopeSelector">
+        <el-button type="primary" size="small" icon="el-icon-plus" style="margin-bottom: 10px;" @click="showGoodSelector">
           选择货物
         </el-button>
         <el-table :data="form.items" border style="width: 100%">
@@ -265,31 +278,36 @@ import {
   deleteInbound
 } from '@/api/inventory'
 import {
-  INBOUND_TYPE_OPTIONS,
-  INBOUND_TYPE_MAP,
   ORDER_STATUS_OPTIONS,
   ORDER_STATUS_MAP
 } from '@/constants/inventory'
+import { dictMixin } from '@/utils/dict'
 import WarehouseSelector from '@/components/WarehouseSelector'
-import BusinessScopeSelector from '@/components/BusinessScopeSelector'
+// import BusinessScopeSelector from '@/components/BusinessScopeSelector'
 import OrderSelector from '@/components/OrderSelector'
+import { ORDER_TYPES, FLOW_DIRECTION } from '@/constants/orderTypes'
+import GoodSelector from '@/components/GoodSelector'
+import { getRecycleDetail } from '@/api/recycle'
 
 export default {
   name: 'InboundManagement',
+  mixins: [dictMixin],
+  dicts: ['in_bound_type'],
   components: {
     WarehouseSelector,
-    BusinessScopeSelector,
-    OrderSelector
+    // BusinessScopeSelector,
+    OrderSelector,
+    GoodSelector
   },
   data() {
     return {
       loading: false,
       submitLoading: false,
       warehouseSelectorVisible: false,
-      businessScopeSelectorVisible: false,
+      // businessScopeSelectorVisible: false,
+      goodSelectorVisible: false,
       orderSelectorVisible: false,
       createDialogVisible: false,
-      inboundTypeOptions: INBOUND_TYPE_OPTIONS,
       orderStatusOptions: ORDER_STATUS_OPTIONS,
       dateRange: [],
 
@@ -320,8 +338,19 @@ export default {
         inType: '',
         sourceOrderId: '',
         sourceOrderNo: '',
+        sourceOrderPartner: '',
+        sourceOrderPartnerName: '',
         remark: '',
         items: []
+      },
+
+      // 订单入库方向的货物明细（供 GoodSelector 外部列表使用）
+      orderInGoods: [],
+
+      // 订单选择器预过滤条件
+      orderSelectorFilters: {
+        type: ORDER_TYPES.STORAGE,
+        flowDirection: FLOW_DIRECTION.IN
       },
 
       // 表单验证规则
@@ -503,44 +532,80 @@ export default {
     },
 
     // 订单选择确认
-    handleOrderSelected(orders) {
+    async handleOrderSelected(orders) {
       if (orders && orders.length > 0) {
         const selectedOrder = orders[0]
         this.form.sourceOrderId = selectedOrder.id
         this.form.sourceOrderNo = selectedOrder.no
+        // 赋值合作方编码与名称
+        this.form.sourceOrderPartner = selectedOrder.contractPartner || selectedOrder.contractPartnerCode || ''
+        this.form.sourceOrderPartnerName = selectedOrder.contractPartnerName || ''
         this.$message.success('已选择关联订单')
+        // 选择订单后，加载该订单的入库方向明细作为可选货物
+        await this.fetchOrderInItems(selectedOrder.id)
       }
     },
 
-    // 显示经营范围选择器
+    // 加载订单入库方向明细
+    async fetchOrderInItems(orderId) {
+      this.orderInGoods = []
+      try {
+        const resp = await getRecycleDetail(orderId)
+        const orderData = resp && resp.data ? resp.data : {}
+        const items = Array.isArray(orderData.items) ? orderData.items : []
+        // direction 可能为 'in'/'out' 或 'IN'/'OUT'
+        const inItems = items.filter(it => (it.direction || '').toString().toLowerCase() === 'in')
+        // 转为 GoodSelector 需要的字段
+        this.orderInGoods = inItems.map(it => ({
+          id: it.id,
+          goodNo: it.goodNo || '',
+          goodName: it.goodName || '',
+          goodType: it.goodType || '',
+          goodModel: it.goodModel || '',
+          // 可根据需要扩展更多字段
+        }))
+      } catch (e) {
+        console.error('加载订单入库明细失败:', e)
+        this.$message.error('加载订单入库明细失败')
+      }
+    },
+
+    // 显示货物选择器（基于订单明细）
+    showGoodSelector() {
+      if (!this.form.sourceOrderId) {
+        this.$message.warning('请先选择关联订单')
+        return
+      }
+      // 确保已加载
+      if (this.orderInGoods.length === 0) {
+        this.fetchOrderInItems(this.form.sourceOrderId)
+      }
+      this.goodSelectorVisible = true
+    },
+
+    // 处理选择的货物（来自订单明细）
+    handleGoodSelected(goods) {
+      if (!goods || goods.length === 0) return
+      goods.forEach(g => {
+        const exists = this.form.items.some(item =>
+          item.goodNo === g.goodNo && item.goodModel === g.goodModel && item.goodName === g.goodName
+        )
+        if (!exists) {
+          this.form.items.push({
+            goodNo: g.goodNo,
+            goodName: g.goodName,
+            goodType: g.goodType,
+            goodModel: g.goodModel,
+            inQuantity: 1,
+            remark: ''
+          })
+        }
+      })
+    },
+
+    // 兼容旧按钮方法名，改为打开 GoodSelector
     showBusinessScopeSelector() {
-      this.businessScopeSelectorVisible = true
-    },
-
-    // 经营范围选择
-    handleBusinessScopeSelected(businessScopes) {
-      if (businessScopes && businessScopes.length > 0) {
-        businessScopes.forEach(scope => {
-          // 检查是否已经存在相同的货物
-          const exists = this.form.items.some(item =>
-            item.goodType === scope.goodType &&
-            item.goodName === scope.goodName &&
-            item.goodModel === scope.goodModel
-          )
-          
-          if (!exists) {
-            this.form.items.push({
-              businessScopeId: scope.id,
-              goodNo: scope.no || '',
-              goodName: scope.goodName,
-              goodType: scope.goodType,
-              goodModel: scope.goodModel,
-              inQuantity: 1,
-              remark: scope.goodRemark || ''
-            })
-          }
-        })
-      }
+      this.showGoodSelector()
     },
 
     // 添加明细项（保留用于兼容）
@@ -609,6 +674,8 @@ export default {
         inType: '',
         sourceOrderId: '',
         sourceOrderNo: '',
+        sourceOrderPartner: '',
+        sourceOrderPartnerName: '',
         remark: '',
         items: []
       }
@@ -619,18 +686,13 @@ export default {
 
     // 获取入库类型文本
     getInboundTypeText(type) {
-      return INBOUND_TYPE_MAP[type] || type
+      return this.dicts.in_bound_type.find(item => item.value === type)?.label || type
     },
 
     // 获取入库类型标签
     getInboundTypeTag(type) {
-      const tagMap = {
-        purchase: 'success',
-        return: 'warning',
-        transfer: 'info',
-        other: ''
-      }
-      return tagMap[type] || ''
+      // 使用字典后，统一使用默认样式
+      return ''
     },
 
     // 获取状态文本
