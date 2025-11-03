@@ -1,0 +1,467 @@
+<template>
+  <div class="app-container">
+    <!-- 搜索表单 -->
+    <el-form :inline="true" :model="searchForm" class="search-form" @submit.native.prevent>
+      <el-form-item label="积分类型：">
+        <el-select v-model="searchForm.pointsType" placeholder="请选择积分类型" clearable style="width: 150px;">
+          <el-option
+            v-for="option in pointsTypeOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="类型：">
+        <el-select v-model="searchForm.type" placeholder="请选择类型" clearable style="width: 120px;">
+          <el-option label="收入" value="income" />
+          <el-option label="支出" value="expense" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="用户：">
+        <el-input
+          v-model="searchForm.userName"
+          placeholder="请输入用户名称"
+          clearable
+          readonly
+          style="width: 200px;"
+          @click="showUserSelector"
+        >
+          <el-button slot="append" icon="el-icon-search" @click="showUserSelector" />
+        </el-input>
+      </el-form-item>
+      <el-form-item label="创建时间：">
+        <el-date-picker
+          v-model="searchForm.dateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          format="yyyy-MM-dd"
+          value-format="yyyy-MM-dd"
+          style="width: 240px;"
+        />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
+        <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
+        <el-button type="warning" icon="el-icon-edit" @click="handleAdjustPoints">积分调整</el-button>
+        <el-button type="success" icon="el-icon-download" @click="handleExport">导出</el-button>
+      </el-form-item>
+    </el-form>
+
+    <!-- 数据表格 -->
+    <el-table v-loading="listLoading" :data="list" border fit highlight-current-row>
+      <el-table-column label="积分类型" prop="pointsType" width="120" align="center">
+        <template slot-scope="scope">
+          {{ getPointsTypeText(scope.row.pointsType) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" prop="createTime" width="180" align="center" sortable="custom">
+        <template slot-scope="scope">
+          {{ formatDateTime(scope.row.createTime) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="支出/收入" prop="type" width="100" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.type === 'income' ? 'success' : 'danger'" size="small">
+            {{ scope.row.type === 'income' ? '收入' : '支出' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="积分数" prop="points" width="120" align="center">
+        <template slot-scope="scope">
+          <span :class="scope.row.type === 'income' ? 'income-points' : 'expense-points'">
+            {{ scope.row.type === 'income' ? '+' : '-' }}{{ scope.row.points || 0 }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="对应用户" prop="userName" width="150" align="center" show-overflow-tooltip />
+      <el-table-column label="备注" prop="remark" min-width="200" show-overflow-tooltip />
+    </el-table>
+
+    <!-- 分页 -->
+    <el-pagination
+      v-show="total > 0"
+      :current-page="listQuery.pageNum"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="listQuery.pageSize"
+      :total="total"
+      layout="total, sizes, prev, pager, next, jumper"
+      class="pagination"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
+
+    <!-- 用户选择器（搜索用） -->
+    <UserSelector
+      :visible.sync="userSelectorVisible"
+      title="选择用户"
+      :multiple="false"
+      @confirm="handleUserConfirm"
+      @close="handleUserClose"
+    />
+
+    <!-- 积分调整对话框 -->
+    <el-dialog
+      title="积分调整"
+      :visible.sync="adjustDialogVisible"
+      width="600px"
+      :close-on-click-modal="false"
+      @close="handleAdjustDialogClose"
+    >
+      <el-form ref="adjustForm" :model="adjustForm" :rules="adjustRules" label-width="120px">
+        <el-form-item label="选择用户" prop="userId">
+          <el-input
+            v-model="adjustForm.userName"
+            placeholder="请选择用户"
+            readonly
+            style="width: 100%;"
+            @click="showAdjustUserSelector"
+          >
+            <el-button slot="append" icon="el-icon-search" @click="showAdjustUserSelector" />
+          </el-input>
+        </el-form-item>
+        <el-form-item label="操作类型" prop="type">
+          <el-radio-group v-model="adjustForm.type">
+            <el-radio label="income">添加积分</el-radio>
+            <el-radio label="expense">减少积分</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="积分数" prop="points">
+          <el-input-number
+            v-model="adjustForm.points"
+            :precision="0"
+            :min="1"
+            :step="1"
+            placeholder="请输入积分数"
+            style="width: 100%;"
+            controls-position="right"
+          />
+        </el-form-item>
+        <el-form-item label="备注" prop="remark">
+          <el-input
+            v-model="adjustForm.remark"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入备注信息"
+          />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="adjustDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="adjustSubmitLoading" @click="handleAdjustSubmit">确定</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 积分调整用户选择器 -->
+    <UserSelector
+      :visible.sync="adjustUserSelectorVisible"
+      title="选择用户"
+      :multiple="false"
+      @confirm="handleAdjustUserConfirm"
+      @close="handleAdjustUserClose"
+    />
+  </div>
+</template>
+
+<script>
+import { parseTime } from '@/utils'
+import UserSelector from '@/components/UserSelector'
+import { getPointsDetailPage, exportPointsDetail, adjustPoints } from '@/api/points'
+
+export default {
+  name: 'PointsDetail',
+  components: {
+    UserSelector
+  },
+  data() {
+    return {
+      // 搜索表单
+      searchForm: {
+        pointsType: '',
+        type: '',
+        userId: '',
+        userName: '',
+        dateRange: []
+      },
+      // 列表数据
+      list: [],
+      total: 0,
+      listLoading: false,
+      listQuery: {
+        pageNum: 1,
+        pageSize: 20
+      },
+      // 用户选择器控制
+      userSelectorVisible: false,
+      // 积分调整对话框控制
+      adjustDialogVisible: false,
+      adjustSubmitLoading: false,
+      adjustUserSelectorVisible: false,
+      // 积分调整表单
+      adjustForm: {
+        userId: '',
+        userName: '',
+        type: 'income', // income: 添加积分, expense: 减少积分
+        points: null,
+        remark: ''
+      },
+      // 积分调整表单验证规则
+      adjustRules: {
+        userId: [{ required: true, message: '请选择用户', trigger: 'change' }],
+        type: [{ required: true, message: '请选择操作类型', trigger: 'change' }],
+        points: [
+          { required: true, message: '请输入积分数', trigger: 'blur' },
+          { type: 'number', min: 1, message: '积分数必须大于0', trigger: 'blur' }
+        ]
+      },
+      // 积分类型选项
+      pointsTypeOptions: [
+        { label: '签到', value: 'sign_in' },
+        { label: '订单收入', value: 'order_income' },
+        { label: '订单支出', value: 'order_expense' },
+        { label: '活动奖励', value: 'activity_reward' },
+        { label: '系统调整', value: 'system_adjust' }
+      ]
+    }
+  },
+  created() {
+    this.fetchData()
+  },
+  methods: {
+    // 获取数据
+    async fetchData() {
+      this.listLoading = true
+      try {
+        const params = {
+          ...this.searchForm,
+          pageNum: this.listQuery.pageNum,
+          pageSize: this.listQuery.pageSize
+        }
+
+        // 处理日期范围
+        if (params.dateRange && params.dateRange.length === 2) {
+          params.startDate = params.dateRange[0]
+          params.endDate = params.dateRange[1]
+        }
+        delete params.dateRange
+
+        const response = await getPointsDetailPage(params)
+        this.list = response.data.records || []
+        this.total = response.data.total || 0
+      } catch (error) {
+        console.error('获取积分明细失败:', error)
+        this.list = []
+        this.total = 0
+        this.$message.error('获取积分明细失败')
+      } finally {
+        this.listLoading = false
+      }
+    },
+
+    // 搜索
+    handleSearch() {
+      this.listQuery.pageNum = 1
+      this.fetchData()
+    },
+
+    // 重置搜索
+    handleReset() {
+      this.searchForm = {
+        pointsType: '',
+        type: '',
+        userId: '',
+        userName: '',
+        dateRange: []
+      }
+      this.listQuery.pageNum = 1
+      this.fetchData()
+    },
+
+    // 分页相关
+    handleSizeChange(val) {
+      this.listQuery.pageSize = val
+      this.fetchData()
+    },
+    handleCurrentChange(val) {
+      this.listQuery.pageNum = val
+      this.fetchData()
+    },
+
+    // 显示用户选择器
+    showUserSelector() {
+      this.userSelectorVisible = true
+    },
+
+    // 用户选择确认
+    handleUserConfirm(users) {
+      if (users && users.length > 0) {
+        const user = users[0]
+        this.searchForm.userId = user.id
+        this.searchForm.userName = user.nickname || user.username
+      }
+      this.userSelectorVisible = false
+    },
+
+    // 用户选择器关闭
+    handleUserClose() {
+      this.userSelectorVisible = false
+    },
+
+    // 获取积分类型文本
+    getPointsTypeText(type) {
+      const option = this.pointsTypeOptions.find(opt => opt.value === type)
+      return option ? option.label : type || '--'
+    },
+
+    // 导出数据
+    async handleExport() {
+      try {
+        const params = {
+          ...this.searchForm
+        }
+
+        // 处理日期范围
+        if (params.dateRange && params.dateRange.length === 2) {
+          params.startDate = params.dateRange[0]
+          params.endDate = params.dateRange[1]
+        }
+        delete params.dateRange
+
+        const response = await exportPointsDetail(params)
+        const blob = new Blob([response.data], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `用户积分明细_${new Date().toISOString().split('T')[0]}.xlsx`
+        link.click()
+        window.URL.revokeObjectURL(url)
+        this.$message.success('导出成功')
+      } catch (error) {
+        console.error('导出失败:', error)
+        this.$message.error('导出失败')
+      }
+    },
+
+    // 积分调整相关方法
+    handleAdjustPoints() {
+      this.adjustDialogVisible = true
+    },
+
+    // 显示积分调整用户选择器
+    showAdjustUserSelector() {
+      this.adjustUserSelectorVisible = true
+    },
+
+    // 积分调整用户选择确认
+    handleAdjustUserConfirm(users) {
+      if (users && users.length > 0) {
+        const user = users[0]
+        this.adjustForm.userId = user.id
+        this.adjustForm.userName = user.nickname || user.username
+      }
+      this.adjustUserSelectorVisible = false
+    },
+
+    // 积分调整用户选择器关闭
+    handleAdjustUserClose() {
+      this.adjustUserSelectorVisible = false
+    },
+
+    // 积分调整对话框关闭
+    handleAdjustDialogClose() {
+      this.$refs.adjustForm && this.$refs.adjustForm.resetFields()
+      this.adjustForm = {
+        userId: '',
+        userName: '',
+        type: 'income',
+        points: null,
+        remark: ''
+      }
+    },
+
+    // 提交积分调整
+    async handleAdjustSubmit() {
+      this.$refs.adjustForm.validate(async(valid) => {
+        if (!valid) {
+          return false
+        }
+
+        this.adjustSubmitLoading = true
+        try {
+          const submitData = {
+            userId: this.adjustForm.userId,
+            type: this.adjustForm.type, // income 或 expense
+            points: this.adjustForm.points,
+            pointsType: 'system_adjust', // 系统调整
+            remark: this.adjustForm.remark || ''
+          }
+
+          await adjustPoints(submitData)
+          this.$message.success(this.adjustForm.type === 'income' ? '添加积分成功' : '减少积分成功')
+          this.adjustDialogVisible = false
+          // 刷新列表
+          this.fetchData()
+        } catch (error) {
+          console.error('积分调整失败:', error)
+          this.$message.error('积分调整失败，请稍后重试')
+        } finally {
+          this.adjustSubmitLoading = false
+        }
+      })
+    },
+
+    // 工具方法
+    formatDateTime(time) {
+      return parseTime(time)
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.app-container {
+  padding: 20px;
+}
+
+.search-form {
+  .el-form-item {
+    margin-bottom: 15px;
+  }
+}
+
+.pagination {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.income-points {
+  color: #67c23a;
+  font-weight: 600;
+}
+
+.expense-points {
+  color: #f56c6c;
+  font-weight: 600;
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .search-form {
+    .el-form-item {
+      display: block;
+      margin-bottom: 15px;
+
+      .el-form-item__label {
+        display: block;
+        text-align: left;
+        margin-bottom: 5px;
+      }
+    }
+  }
+}
+</style>
+

@@ -122,7 +122,7 @@ export const constantRoutes = [
         path: 'purchaseOrder',
         name: 'PurchaseOrder',
         component: () => import('@/views/recycle/order/index.vue'),
-        meta: { title: '订单管理', icon: 'table' }
+        meta: { title: '订单总览', icon: 'table' }
       },
       {
         path: 'fundflow',
@@ -155,6 +155,57 @@ export const constantRoutes = [
         name: 'OrderEdit',
         component: () => import('@/views/recycle/order/OrderEdit.vue'),
         meta: { title: '订单编辑', icon: 'edit' },
+        hidden: true
+      }
+    ]
+  },
+  {
+    // 用户订单
+    path: '/userOrder',
+    component: Layout,
+    redirect: '/userOrder/userOrderList',
+    name: 'UserOrder',
+    meta: { title: '用户订单管理', icon: 'table' },
+    children: [
+      {
+        path: 'userOrderList',
+        name: 'UserOrderList',
+        component: () => import('@/views/userOrder/userOrderList.vue'),
+        meta: { title: '用户订单列表', icon: 'table' }
+      },
+      {
+        path: 'userOrderAdd',
+        name: 'UserOrderAdd',
+        component: () => import('@/views/userOrder/userOrderAdd.vue'),
+        meta: { title: '添加用户订单', icon: 'form' },
+        hidden: true
+      },
+      {
+        path: 'userOrderPurchase',
+        name: 'UserOrderPurchase',
+        component: () => import('@/views/userOrder/userOrderPurchase.vue'),
+        meta: { title: '登记采购信息', icon: 'form' },
+        hidden: true
+      },
+      {
+        path: 'userOrderTransport',
+        name: 'UserOrderTransport',
+        component: () => import('@/views/userOrder/userOrderTransport.vue'),
+        meta: { title: '登记运输信息', icon: 'form' },
+        hidden: true
+      },
+      {
+        path: 'userOrderProcessing',
+        name: 'UserOrderProcessing',
+        component: () => import('@/views/userOrder/userOrderProcessing.vue'),
+        meta: { title: '登记加工信息', icon: 'form' },
+        hidden: true
+      },
+      {
+        path: 'userOrderWarehousing',
+        name: 'UserOrderWarehousing',
+        component: () => import('@/views/userOrder/userOrderWarehousing.vue'),
+        meta: { title: '登记入库信息', icon: 'form' },
         hidden: true
       }
     ]
@@ -305,6 +356,27 @@ export const constantRoutes = [
         name: 'RentalOrder',
         component: () => import('@/views/rental/order/index.vue'),
         meta: { title: '租赁执行管理', icon: 'table' }
+      }
+    ]
+  },
+  {
+    path: '/points',
+    component: Layout,
+    redirect: '/points/rule',
+    name: 'Points',
+    meta: { title: '积分管理', icon: 'el-icon-coin' },
+    children: [
+      {
+        path: 'rule',
+        name: 'PointsRule',
+        component: () => import('@/views/points/rule/index.vue'),
+        meta: { title: '积分规则', icon: 'el-icon-setting' }
+      },
+      {
+        path: 'detail',
+        name: 'PointsDetail',
+        component: () => import('@/views/points/detail/index.vue'),
+        meta: { title: '用户积分明细', icon: 'el-icon-document' }
       }
     ]
   },

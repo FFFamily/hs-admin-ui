@@ -262,6 +262,69 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-divider content-position="center">受益人信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <div class="beneficiaries-header">
+              <span class="beneficiaries-info">
+                共 {{ form.beneficiaries.length }} 个受益人，
+                收益比例总和：<span :class="{ 'error-text': !isBeneficiaryRatioValid }">{{ getTotalBeneficiaryRatio() }}%</span>
+              </span>
+              <div>
+                <el-button size="small" type="primary" icon="el-icon-plus" @click="handleAddMainBeneficiary" :disabled="hasMainBeneficiary">
+                  添加主受益人
+                </el-button>
+                <el-button size="small" type="success" icon="el-icon-plus" @click="handleAddSecondaryBeneficiary">
+                  添加次受益人
+                </el-button>
+              </div>
+            </div>
+            <el-table :data="form.beneficiaries" border fit style="margin-top: 10px;">
+              <el-table-column label="受益人类型" prop="beneficiaryType" width="120" align="center">
+                <template slot-scope="scope">
+                  <el-tag :type="scope.row.beneficiaryType === 'MAIN' ? 'warning' : 'info'" size="small">
+                    {{ scope.row.beneficiaryType === 'MAIN' ? '主受益人' : '次受益人' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="受益人名称" prop="beneficiaryName" width="150" align="center" show-overflow-tooltip />
+              <el-table-column label="收益比例" prop="shareRatio" width="150" align="center">
+                <template slot-scope="scope">
+                  <el-input-number
+                    v-model="scope.row.shareRatio"
+                    :precision="2"
+                    :min="0"
+                    :max="1"
+                    :step="0.01"
+                    size="small"
+                    style="width: 100%;"
+                    controls-position="right"
+                    @change="handleBeneficiaryRatioChange"
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="收益比例(%)" width="120" align="center">
+                <template slot-scope="scope">
+                  {{ (scope.row.shareRatio * 100).toFixed(2) }}%
+                </template>
+              </el-table-column>
+              <el-table-column label="备注" prop="remark" align="center" show-overflow-tooltip>
+                <template slot-scope="scope">
+                  <el-input
+                    v-model="scope.row.remark"
+                    size="small"
+                    placeholder="请输入备注"
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" align="center" width="100">
+                <template slot-scope="scope">
+                  <el-button size="mini" type="danger" icon="el-icon-delete" @click="handleDeleteBeneficiary(scope.$index)" />
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-col>
+        </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -432,6 +495,24 @@
       @confirm="handleSearchPartnerConfirm"
       @close="handleSearchPartnerClose"
     />
+
+    <!-- 主受益人选择器 -->
+    <UserSelector
+      :visible.sync="mainBeneficiarySelectorVisible"
+      title="选择主受益人"
+      :multiple="false"
+      @confirm="handleMainBeneficiaryConfirm"
+      @close="handleMainBeneficiaryClose"
+    />
+
+    <!-- 次受益人选择器 -->
+    <UserSelector
+      :visible.sync="secondaryBeneficiarySelectorVisible"
+      title="选择次受益人"
+      :multiple="true"
+      @confirm="handleSecondaryBeneficiaryConfirm"
+      @close="handleSecondaryBeneficiaryClose"
+    />
   </div>
 </template>
 
@@ -445,6 +526,7 @@ import { CONTRACT_TYPE_OPTIONS, getContractTypeText, getContractTypeTagType } fr
 import { getStatusText, getStatusType } from '@/constants/constract'
 import {
   getRecycleContractPage,
+  getRecycleContractDetail,
   createRecycleContract,
   updateRecycleContract,
   deleteRecycleContract,
@@ -512,7 +594,8 @@ export default {
         totalAmount: 0,
         pool: '',
         file: '', // 合同文件
-        status: 'draft'
+        status: 'draft',
+        beneficiaries: [] // 受益人列表
       },
       // 货物明细表单
       itemForm: {
@@ -543,6 +626,10 @@ export default {
       businessScopeSelectorVisible: false,
       // 主银行卡号选择器控制
       mainBankCardSelectorVisible: false,
+      // 主受益人选择器控制
+      mainBeneficiarySelectorVisible: false,
+      // 次受益人选择器控制
+      secondaryBeneficiarySelectorVisible: false,
       // 日期选择器配置
       pickerOptions: {
 
@@ -592,6 +679,30 @@ export default {
       }
     }
   },
+  computed: {
+    // 是否已有主受益人
+    hasMainBeneficiary() {
+      if (!this.form.beneficiaries || !Array.isArray(this.form.beneficiaries)) {
+        return false
+      }
+      return this.form.beneficiaries.some(b => {
+        return b && (b.beneficiaryType === 'MAIN' || b.beneficiaryType === 'main')
+      })
+    },
+    // 受益人收益比例是否有效（总和为1）
+    isBeneficiaryRatioValid() {
+      if (!this.form.beneficiaries || this.form.beneficiaries.length === 0) {
+        return true // 如果没有受益人，则认为有效
+      }
+      const total = this.form.beneficiaries.reduce((sum, b) => {
+        const ratio = Number(b.shareRatio) || 0
+        return sum + ratio
+      }, 0)
+      // 使用四舍五入到小数点后2位来比较，解决浮点数精度问题
+      const roundedTotal = Math.round(total * 100) / 100
+      return Math.abs(roundedTotal - 1) < 0.01
+    }
+  },
   created() {
     this.fetchData()
   },
@@ -635,6 +746,7 @@ export default {
       this.dialogTitle = '新增合同'
       this.form = {
         name: '',
+        no: '', // 合同编号
         type: '',
         partyA: '', // 甲方
         partyAName: '', // 甲方名称
@@ -652,41 +764,84 @@ export default {
         totalAmount: 0,
         pool: '',
         file: '', // 合同文件
-        status: 'draft'
+        filePath: '', // 合同文件路径
+        status: 'draft',
+        beneficiaries: [] // 受益人列表
       }
       this.dialogVisible = true
     },
 
     // 编辑合同
-    handleEdit(row) {
+    async handleEdit(row) {
       this.dialogTitle = '编辑合同'
-      this.form = { ...row }
-      // 确保甲方和乙方字段存在
-      if (!this.form.partyA) {
-        this.form.partyA = ''
-        this.form.partyAName = ''
-      }
-      if (!this.form.partyB) {
-        this.form.partyB = ''
-        this.form.partyBName = ''
-      }
-      // 确保合作方名称字段存在并根据合作方ID设置正确的名称
-      if (this.form.partner) {
-        if (this.form.partner === this.form.partyA) {
-          this.form.partnerName = this.form.partyAName
-        } else if (this.form.partner === this.form.partyB) {
-          this.form.partnerName = this.form.partyBName
-        } else {
-          this.form.partnerName = ''
+      
+      // 显示加载状态
+      const loading = this.$loading({
+        lock: true,
+        text: '加载中...',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.7)'
+      })
+
+      try {
+        // 调用详情接口获取完整数据
+        const response = await getRecycleContractDetail(row.id)
+        const detailData = response.data || {}
+
+        // 填充表单数据
+        this.form = {
+          ...detailData,
+          // 确保所有必需字段存在
+          name: detailData.name || '',
+          no: detailData.no || '',
+          type: detailData.type || '',
+          partyA: detailData.partyA || '',
+          partyAName: detailData.partyAName || '',
+          partyB: detailData.partyB || '',
+          partyBName: detailData.partyBName || '',
+          partner: detailData.partner || '',
+          partnerName: detailData.partnerName || '',
+          startTime: detailData.startTime || '',
+          endTime: detailData.endTime || '',
+          mainBankCard: detailData.mainBankCard || '',
+          mainBankCardName: detailData.mainBankCardName || detailData.mainBankCard || '',
+          mainInvoice: detailData.mainInvoice || '',
+          payNode: detailData.payNode || '',
+          invoiceNode: detailData.invoiceNode || '',
+          totalAmount: detailData.totalAmount || 0,
+          pool: detailData.pool || '',
+          file: detailData.file || '',
+          filePath: detailData.filePath || detailData.file || '',
+          status: detailData.status || 'draft',
+          beneficiaries: []
         }
-      } else {
-        this.form.partnerName = ''
+
+        // 处理受益人列表
+        if (detailData.beneficiaries && Array.isArray(detailData.beneficiaries)) {
+          this.form.beneficiaries = detailData.beneficiaries.map(b => ({
+            ...b,
+            beneficiaryType: b.beneficiaryType ? String(b.beneficiaryType).toUpperCase() : b.beneficiaryType,
+            shareRatio: Number(b.shareRatio) || 0,
+            remark: b.remark || ''
+          }))
+        }
+
+        // 处理合作方名称
+        if (this.form.partner) {
+          if (this.form.partner === this.form.partyA) {
+            this.form.partnerName = this.form.partyAName
+          } else if (this.form.partner === this.form.partyB) {
+            this.form.partnerName = this.form.partyBName
+          }
+        }
+
+        this.dialogVisible = true
+      } catch (error) {
+        console.error('获取合同详情失败:', error)
+        this.$message.error('获取合同详情失败，请稍后重试')
+      } finally {
+        loading.close()
       }
-      // 确保主银行卡号名称字段存在
-      if (this.form.mainBankCard && !this.form.mainBankCardName) {
-        this.form.mainBankCardName = this.form.mainBankCard
-      }
-      this.dialogVisible = true
     },
 
     // 查看详情
@@ -858,12 +1013,52 @@ export default {
     async handleSubmit() {
       this.$refs.form.validate(async(valid) => {
         if (valid) {
+          // 验证受益人收益比例总和
+          if (this.form.beneficiaries && Array.isArray(this.form.beneficiaries) && this.form.beneficiaries.length > 0) {
+            // 检查是否有主受益人
+            const hasMain = this.form.beneficiaries.some(b => {
+              return b && (b.beneficiaryType === 'MAIN' || b.beneficiaryType === 'main')
+            })
+            
+            if (!hasMain) {
+              this.$message.error('必须至少设置一个主受益人')
+              return
+            }
+            
+            // 重新计算总和进行验证
+            const total = this.form.beneficiaries.reduce((sum, b) => {
+              const ratio = Number(b.shareRatio) || 0
+              return sum + ratio
+            }, 0)
+            // 使用四舍五入到小数点后2位来比较，解决浮点数精度问题
+            const roundedTotal = Math.round(total * 100) / 100
+            const ratioDifference = Math.abs(roundedTotal - 1)
+            
+            if (ratioDifference >= 0.01) {
+              this.$message.error(`受益人收益比例总和必须为100%，当前为 ${(roundedTotal * 100).toFixed(2)}%`)
+              return
+            }
+          }
+
           this.submitLoading = true
           try {
+            // 格式化提交数据
+            const submitData = { ...this.form }
+            // 确保受益人数据格式正确
+            if (submitData.beneficiaries && submitData.beneficiaries.length > 0) {
+              submitData.beneficiaries = submitData.beneficiaries.map(b => ({
+                beneficiaryType: b.beneficiaryType,
+                beneficiaryId: b.beneficiaryId,
+                beneficiaryName: b.beneficiaryName,
+                shareRatio: Number(b.shareRatio || 0),
+                remark: b.remark || ''
+              }))
+            }
+
             if (this.form.id) {
-              await updateRecycleContract(this.form)
+              await updateRecycleContract(submitData)
             } else {
-              await createRecycleContract(this.form)
+              await createRecycleContract(submitData)
             }
             this.$message.success(this.form.id ? '更新成功' : '创建成功')
             this.dialogVisible = false
@@ -1110,6 +1305,107 @@ export default {
         return this.form.mainBankCardName
       }
       return this.form.mainBankCard
+    },
+
+    // 添加主受益人
+    handleAddMainBeneficiary() {
+      if (this.hasMainBeneficiary) {
+        this.$message.warning('只能有一个主受益人，请先删除现有主受益人')
+        return
+      }
+      this.mainBeneficiarySelectorVisible = true
+    },
+
+    // 添加次受益人
+    handleAddSecondaryBeneficiary() {
+      this.secondaryBeneficiarySelectorVisible = true
+    },
+
+    // 主受益人选择确认
+    handleMainBeneficiaryConfirm(users) {
+      if (users && users.length > 0) {
+        const user = users[0]
+        // 检查是否已经存在该受益人
+        const exists = this.form.beneficiaries.some(b => b.beneficiaryId === user.id)
+        if (exists) {
+          this.$message.warning('该受益人已经存在')
+          this.mainBeneficiarySelectorVisible = false
+          return
+        }
+
+        // 计算剩余比例（如果没有其他受益人，默认给主受益人100%，否则给剩余比例）
+        const usedRatio = this.form.beneficiaries.reduce((sum, b) => sum + (b.shareRatio || 0), 0)
+        const remainingRatio = 1 - usedRatio
+        const mainRatio = remainingRatio > 0 ? remainingRatio : (this.form.beneficiaries.length === 0 ? 1 : 0)
+
+        this.form.beneficiaries.push({
+          beneficiaryType: 'MAIN',
+          beneficiaryId: user.id,
+          beneficiaryName: user.nickname || user.username,
+          shareRatio: mainRatio,
+          remark: ''
+        })
+      }
+      this.mainBeneficiarySelectorVisible = false
+    },
+
+    // 主受益人选择器关闭
+    handleMainBeneficiaryClose() {
+      this.mainBeneficiarySelectorVisible = false
+    },
+
+    // 次受益人选择确认
+    handleSecondaryBeneficiaryConfirm(users) {
+      if (users && users.length > 0) {
+        // 过滤出不存在于列表中的用户
+        const newUsers = users.filter(user => 
+          !this.form.beneficiaries.some(b => b.beneficiaryId === user.id)
+        )
+
+        if (newUsers.length === 0) {
+          this.$message.warning('所选受益人已存在')
+          this.secondaryBeneficiarySelectorVisible = false
+          return
+        }
+
+        // 添加新的次受益人，默认收益比例为0，由用户手动设置
+        newUsers.forEach(user => {
+          this.form.beneficiaries.push({
+            beneficiaryType: 'SECONDARY',
+            beneficiaryId: user.id,
+            beneficiaryName: user.nickname || user.username,
+            shareRatio: 0, // 默认为0，由用户手动输入
+            remark: ''
+          })
+        })
+
+        if (newUsers.length > 0) {
+          this.$message.success(`成功添加 ${newUsers.length} 个次受益人，请手动设置收益比例`)
+        }
+      }
+      this.secondaryBeneficiarySelectorVisible = false
+    },
+
+    // 次受益人选择器关闭
+    handleSecondaryBeneficiaryClose() {
+      this.secondaryBeneficiarySelectorVisible = false
+    },
+
+    // 删除受益人
+    handleDeleteBeneficiary(index) {
+      this.form.beneficiaries.splice(index, 1)
+    },
+
+    // 收益比例变化处理
+    handleBeneficiaryRatioChange() {
+      // 当比例变化时，可以在这里添加自动调整逻辑
+      // 例如：自动调整其他受益人的比例使其总和为1
+    },
+
+    // 获取总收益比例（百分比）
+    getTotalBeneficiaryRatio() {
+      const total = this.form.beneficiaries.reduce((sum, b) => sum + (b.shareRatio || 0), 0)
+      return (total * 100).toFixed(2)
     }
   }
 }
@@ -1137,6 +1433,23 @@ export default {
 .amount-text {
     font-weight: 600;
     color: #e6a23c;
+}
+
+.beneficiaries-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+
+    .beneficiaries-info {
+        font-size: 14px;
+        color: #606266;
+
+        .error-text {
+            color: #f56c6c;
+            font-weight: 600;
+        }
+    }
 }
 
 // 合计行样式
