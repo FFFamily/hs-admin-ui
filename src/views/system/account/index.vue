@@ -19,29 +19,25 @@
             <span>{{ getAccountType(scope.row.accountTypeId) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="纳税人识别号" prop="taxNumber" width="180" align="center" />
         <el-table-column prop="password" label="密码" width="200" />
         <el-table-column label="身份" prop="useType" width="100" align="center">
           <template slot-scope="scope">
             <span>{{ getUseType(scope.row.useType) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="注册时间" prop="createTime" width="160" align="center" />
         <el-table-column label="评级" prop="score" width="60" align="center" />
-        <el-table-column label="评级系数" prop="scoreFactor" width="60" align="center" />
-        <el-table-column prop="status" label="状态" width="100">
-          <template slot-scope="scope">
-            <el-switch
-              v-model="scope.row.status"
-              active-value="use"
-              inactive-value="disable"
-              @change="handleStatusChange(scope.row)"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" fixed="right" width="145">
+        <el-table-column label="评级系数" prop="scoreFactor" width="90" align="center" />
+        <el-table-column label="积分" prop="point" width="80" align="center" />
+        <el-table-column label="操作" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button
+              size="mini"
+              :type="scope.row.status === 'use' ? 'danger' : 'success'"
+              @click="handleStatusChange(scope.row)"
+            >
+              {{ scope.row.status === 'use' ? '停用' : '启用' }}
+            </el-button>
             <!-- <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button> -->
           </template>
         </el-table-column>
@@ -93,6 +89,9 @@
         </el-form-item>
         <el-form-item label="评级系数" prop="scoreFactor">
           <el-input v-model="form.scoreFactor" />
+        </el-form-item>
+        <el-form-item label="积分" prop="point">
+          <el-input v-model="form.point" disabled placeholder="积分初始值为0" />
         </el-form-item>
         <el-form-item label="编号(账号)" prop="username">
           <el-input v-model="form.username" disabled placeholder="专责用户类型后，自动按序生成账号编号" />
@@ -146,6 +145,7 @@ export default {
         address: '',
         contact_phone: '',
         nickname: '',
+        point: 0,
         status: 1
       },
       rules: {
@@ -206,6 +206,7 @@ export default {
         payAccount2: '',
         payAccount3: '',
         nickname: '',
+        point: 0,
         status: 1
       }
       this.dialogVisible = true

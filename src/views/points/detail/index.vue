@@ -2,81 +2,36 @@
   <div class="app-container">
     <!-- 搜索表单 -->
     <el-form :inline="true" :model="searchForm" class="search-form" @submit.native.prevent>
-      <el-form-item label="积分类型：">
-        <el-select v-model="searchForm.pointsType" placeholder="请选择积分类型" clearable style="width: 150px;">
-          <el-option
-            v-for="option in pointsTypeOptions"
-            :key="option.value"
-            :label="option.label"
-            :value="option.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="类型：">
-        <el-select v-model="searchForm.type" placeholder="请选择类型" clearable style="width: 120px;">
-          <el-option label="收入" value="income" />
-          <el-option label="支出" value="expense" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="用户：">
-        <el-input
-          v-model="searchForm.userName"
-          placeholder="请输入用户名称"
-          clearable
-          readonly
-          style="width: 200px;"
-          @click="showUserSelector"
-        >
-          <el-button slot="append" icon="el-icon-search" @click="showUserSelector" />
-        </el-input>
-      </el-form-item>
-      <el-form-item label="创建时间：">
-        <el-date-picker
-          v-model="searchForm.dateRange"
-          type="daterange"
-          range-separator="至"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          format="yyyy-MM-dd"
-          value-format="yyyy-MM-dd"
-          style="width: 240px;"
-        />
-      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
         <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
         <el-button type="warning" icon="el-icon-edit" @click="handleAdjustPoints">积分调整</el-button>
-        <el-button type="success" icon="el-icon-download" @click="handleExport">导出</el-button>
       </el-form-item>
     </el-form>
 
     <!-- 数据表格 -->
     <el-table v-loading="listLoading" :data="list" border fit highlight-current-row>
-      <el-table-column label="积分类型" prop="pointsType" width="120" align="center">
+      <el-table-column label="积分类型" prop="changeType" width="120" align="center">
         <template slot-scope="scope">
-          {{ getPointsTypeText(scope.row.pointsType) }}
+          {{ getPointsTypeText(scope.row.changeType) }}
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" prop="createTime" width="180" align="center" sortable="custom">
+      <el-table-column label="变更方向" prop="changeDirection" width="100" align="center">
         <template slot-scope="scope">
-          {{ formatDateTime(scope.row.createTime) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="支出/收入" prop="type" width="100" align="center">
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.type === 'income' ? 'success' : 'danger'" size="small">
-            {{ scope.row.type === 'income' ? '收入' : '支出' }}
+          <el-tag :type="scope.row.changeDirection === 'add' ? 'success' : 'danger'" size="small">
+            {{ scope.row.changeDirection === 'add' ? '增加' : '减少' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="积分数" prop="points" width="120" align="center">
+      <el-table-column label="变更数量" prop="changePoint" width="120" align="center">
         <template slot-scope="scope">
-          <span :class="scope.row.type === 'income' ? 'income-points' : 'expense-points'">
-            {{ scope.row.type === 'income' ? '+' : '-' }}{{ scope.row.points || 0 }}
+          <span :class="scope.row.changeDirection === 'add' ? 'income-points' : 'expense-points'">
+            {{ scope.row.changeDirection === 'add' ? '+' : '-' }}{{ scope.row.changePoint || 0 }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="对应用户" prop="userName" width="150" align="center" show-overflow-tooltip />
+      <el-table-column label="变更原因" prop="changeReason" width="150" align="center" show-overflow-tooltip />
+      <el-table-column label="账户名称" prop="accountName" width="150" align="center" show-overflow-tooltip />
       <el-table-column label="备注" prop="remark" min-width="200" show-overflow-tooltip />
     </el-table>
 
@@ -111,10 +66,10 @@
       @close="handleAdjustDialogClose"
     >
       <el-form ref="adjustForm" :model="adjustForm" :rules="adjustRules" label-width="120px">
-        <el-form-item label="选择用户" prop="userId">
+        <el-form-item label="选择账户" prop="accountId">
           <el-input
-            v-model="adjustForm.userName"
-            placeholder="请选择用户"
+            v-model="adjustForm.accountName"
+            placeholder="请选择账户"
             readonly
             style="width: 100%;"
             @click="showAdjustUserSelector"
@@ -122,21 +77,27 @@
             <el-button slot="append" icon="el-icon-search" @click="showAdjustUserSelector" />
           </el-input>
         </el-form-item>
-        <el-form-item label="操作类型" prop="type">
-          <el-radio-group v-model="adjustForm.type">
-            <el-radio label="income">添加积分</el-radio>
-            <el-radio label="expense">减少积分</el-radio>
+        <el-form-item label="操作类型" prop="changeDirection">
+          <el-radio-group v-model="adjustForm.changeDirection">
+            <el-radio label="add">添加积分</el-radio>
+            <el-radio label="sub">减少积分</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="积分数" prop="points">
+        <el-form-item label="积分数" prop="changePoint">
           <el-input-number
-            v-model="adjustForm.points"
+            v-model="adjustForm.changePoint"
             :precision="0"
             :min="1"
             :step="1"
             placeholder="请输入积分数"
             style="width: 100%;"
             controls-position="right"
+          />
+        </el-form-item>
+        <el-form-item label="变更原因" prop="changeReason">
+          <el-input
+            v-model="adjustForm.changeReason"
+            placeholder="请输入变更原因"
           />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
@@ -179,10 +140,10 @@ export default {
     return {
       // 搜索表单
       searchForm: {
-        pointsType: '',
-        type: '',
-        userId: '',
-        userName: '',
+        changeType: '',
+        changeDirection: '',
+        accountId: '',
+        accountName: '',
         dateRange: []
       },
       // 列表数据
@@ -201,22 +162,24 @@ export default {
       adjustUserSelectorVisible: false,
       // 积分调整表单
       adjustForm: {
-        userId: '',
-        userName: '',
-        type: 'income', // income: 添加积分, expense: 减少积分
-        points: null,
+        accountId: '',
+        accountName: '',
+        changeDirection: 'add', // add: 添加积分, sub: 减少积分
+        changePoint: null,
+        changeType: 'system_adjust', // 系统调整
+        changeReason: '',
         remark: ''
       },
       // 积分调整表单验证规则
       adjustRules: {
-        userId: [{ required: true, message: '请选择用户', trigger: 'change' }],
-        type: [{ required: true, message: '请选择操作类型', trigger: 'change' }],
-        points: [
+        accountId: [{ required: true, message: '请选择账户', trigger: 'change' }],
+        changeDirection: [{ required: true, message: '请选择操作类型', trigger: 'change' }],
+        changePoint: [
           { required: true, message: '请输入积分数', trigger: 'blur' },
           { type: 'number', min: 1, message: '积分数必须大于0', trigger: 'blur' }
         ]
       },
-      // 积分类型选项
+      // 积分类型选项（变更类型）
       pointsTypeOptions: [
         { label: '签到', value: 'sign_in' },
         { label: '订单收入', value: 'order_income' },
@@ -269,10 +232,10 @@ export default {
     // 重置搜索
     handleReset() {
       this.searchForm = {
-        pointsType: '',
-        type: '',
-        userId: '',
-        userName: '',
+        changeType: '',
+        changeDirection: '',
+        accountId: '',
+        accountName: '',
         dateRange: []
       }
       this.listQuery.pageNum = 1
@@ -298,8 +261,8 @@ export default {
     handleUserConfirm(users) {
       if (users && users.length > 0) {
         const user = users[0]
-        this.searchForm.userId = user.id
-        this.searchForm.userName = user.nickname || user.username
+        this.searchForm.accountId = user.id
+        this.searchForm.accountName = user.nickname || user.username
       }
       this.userSelectorVisible = false
     },
@@ -360,8 +323,8 @@ export default {
     handleAdjustUserConfirm(users) {
       if (users && users.length > 0) {
         const user = users[0]
-        this.adjustForm.userId = user.id
-        this.adjustForm.userName = user.nickname || user.username
+        this.adjustForm.accountId = user.id
+        this.adjustForm.accountName = user.nickname || user.username
       }
       this.adjustUserSelectorVisible = false
     },
@@ -375,10 +338,12 @@ export default {
     handleAdjustDialogClose() {
       this.$refs.adjustForm && this.$refs.adjustForm.resetFields()
       this.adjustForm = {
-        userId: '',
-        userName: '',
-        type: 'income',
-        points: null,
+        accountId: '',
+        accountName: '',
+        changeDirection: 'add',
+        changePoint: null,
+        changeType: 'system_adjust',
+        changeReason: '',
         remark: ''
       }
     },
@@ -393,15 +358,16 @@ export default {
         this.adjustSubmitLoading = true
         try {
           const submitData = {
-            userId: this.adjustForm.userId,
-            type: this.adjustForm.type, // income 或 expense
-            points: this.adjustForm.points,
-            pointsType: 'system_adjust', // 系统调整
+            accountId: this.adjustForm.accountId,
+            changeDirection: this.adjustForm.changeDirection, // add 或 sub
+            changePoint: this.adjustForm.changePoint,
+            changeType: this.adjustForm.changeType, // 系统调整
+            changeReason: this.adjustForm.changeReason || '系统调整',
             remark: this.adjustForm.remark || ''
           }
 
           await adjustPoints(submitData)
-          this.$message.success(this.adjustForm.type === 'income' ? '添加积分成功' : '减少积分成功')
+          this.$message.success(this.adjustForm.changeDirection === 'add' ? '添加积分成功' : '减少积分成功')
           this.adjustDialogVisible = false
           // 刷新列表
           this.fetchData()
