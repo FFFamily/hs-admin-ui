@@ -194,3 +194,30 @@ export function changePointsGoodsStatus(id, status) {
   })
 }
 
+// ========== 用户积分兑换管理 ==========
+// 获取用户积分兑换记录分页列表
+export function getPointsUseDetailPage(params) {
+  return request({
+    url: '/point/use-detail/page',
+    method: 'get',
+    params
+  })
+}
+
+// 获取用户积分兑换记录详情
+export function getPointsUseDetailInfo(id) {
+  return request({
+    url: `/point/use-detail/${id}`,
+    method: 'get'
+  })
+}
+
+// 创建用户积分兑换记录
+export function createPointsUseDetail(data) {
+  return request({
+    url: '/point/use-detail/create',
+    method: 'post',
+    data
+  })
+}
+

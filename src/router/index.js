@@ -389,6 +389,12 @@ export const constantRoutes = [
         name: 'PointsGoods',
         component: () => import('@/views/points/goods/index.vue'),
         meta: { title: '积分商品管理', icon: 'el-icon-goods' }
+      },
+      {
+        path: 'use-detail',
+        name: 'PointsUseDetail',
+        component: () => import('@/views/points/use-detail/index.vue'),
+        meta: { title: '用户积分兑换管理', icon: 'el-icon-tickets' }
       }
     ]
   },
