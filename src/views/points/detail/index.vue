@@ -2,6 +2,19 @@
   <div class="app-container">
     <!-- 搜索表单 -->
     <el-form :inline="true" :model="searchForm" class="search-form" @submit.native.prevent>
+      <el-form-item label="账户">
+        <el-input
+          v-model="searchForm.accountName"
+          placeholder="请选择账户"
+          readonly
+          style="width: 300px;"
+          clearable
+          @clear="handleClearAccount"
+          @click="showUserSelector"
+        >
+          <el-button slot="append" icon="el-icon-search" @click="showUserSelector" />
+        </el-input>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
         <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
@@ -11,6 +24,7 @@
 
     <!-- 数据表格 -->
     <el-table v-loading="listLoading" :data="list" border fit highlight-current-row>
+      <el-table-column label="账户名称" prop="accountName" width="150" align="center" show-overflow-tooltip />
       <el-table-column label="积分类型" prop="changeType" width="120" align="center">
         <template slot-scope="scope">
           {{ getPointsTypeText(scope.row.changeType) }}
@@ -30,8 +44,13 @@
           </span>
         </template>
       </el-table-column>
+      <el-table-column label="变更时间" prop="createTime" width="170" align="center">
+        <template slot-scope="scope">
+          {{ formatDateTime(scope.row.createTime) }}
+        </template>
+      </el-table-column>
       <el-table-column label="变更原因" prop="changeReason" width="150" align="center" show-overflow-tooltip />
-      <el-table-column label="账户名称" prop="accountName" width="150" align="center" show-overflow-tooltip />
+      
       <el-table-column label="备注" prop="remark" min-width="200" show-overflow-tooltip />
     </el-table>
 
@@ -130,6 +149,7 @@
 import { parseTime } from '@/utils'
 import UserSelector from '@/components/UserSelector'
 import { getPointsDetailPage, exportPointsDetail, adjustPoints } from '@/api/points'
+import { POINTS_CHANGE_TYPE_OPTIONS, getPointsChangeTypeText } from '@/constants/points'
 
 export default {
   name: 'PointsDetail',
@@ -180,13 +200,7 @@ export default {
         ]
       },
       // 积分类型选项（变更类型）
-      pointsTypeOptions: [
-        { label: '签到', value: 'sign_in' },
-        { label: '订单收入', value: 'order_income' },
-        { label: '订单支出', value: 'order_expense' },
-        { label: '活动奖励', value: 'activity_reward' },
-        { label: '系统调整', value: 'system_adjust' }
-      ]
+      pointsTypeOptions: POINTS_CHANGE_TYPE_OPTIONS
     }
   },
   created() {
@@ -272,10 +286,15 @@ export default {
       this.userSelectorVisible = false
     },
 
+    // 清除账户选择
+    handleClearAccount() {
+      this.searchForm.accountId = ''
+      this.searchForm.accountName = ''
+    },
+
     // 获取积分类型文本
     getPointsTypeText(type) {
-      const option = this.pointsTypeOptions.find(opt => opt.value === type)
-      return option ? option.label : type || '--'
+      return getPointsChangeTypeText(type)
     },
 
     // 导出数据

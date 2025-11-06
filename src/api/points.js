@@ -221,3 +221,12 @@ export function createPointsUseDetail(data) {
   })
 }
 
+// 确认使用积分兑换记录
+export function confirmUsePoints(data) {
+  return request({
+    url: '/point/use-detail/use',
+    method: 'put',
+    data
+  })
+}
+

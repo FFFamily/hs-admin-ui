@@ -52,7 +52,7 @@
 
       <!-- 数据表格 -->
       <el-table v-loading="listLoading" :data="list" border fit highlight-current-row>
-        <el-table-column label="兑换码" prop="exchangeCode" width="180" align="center" show-overflow-tooltip />
+        <el-table-column label="兑换码" prop="exchangeCode" width="200" align="center" show-overflow-tooltip />
         <el-table-column label="账户名称" prop="accountName" width="150" align="center" show-overflow-tooltip />
         <el-table-column label="积分商品" prop="goodsName" width="180" align="center" show-overflow-tooltip />
         <el-table-column label="消耗积分" prop="point" width="120" align="center">
@@ -72,9 +72,16 @@
             {{ formatDateTime(scope.row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right" align="center">
+        <el-table-column label="操作" fixed="right" align="center">
           <template slot-scope="scope">
             <el-button size="mini" type="primary" icon="el-icon-view" @click="handleView(scope.row)">查看</el-button>
+            <el-button
+              v-if="!scope.row.isUsed"
+              size="mini"
+              type="success"
+              icon="el-icon-check"
+              @click="handleConfirmUse(scope.row)"
+            >确认使用</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -168,20 +175,25 @@
         width="600px"
         :close-on-click-modal="false"
       >
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="兑换码">{{ detailData.exchangeCode || '--' }}</el-descriptions-item>
-          <el-descriptions-item label="账户名称">{{ detailData.accountName || '--' }}</el-descriptions-item>
-          <el-descriptions-item label="积分商品">{{ detailData.goodsName || '--' }}</el-descriptions-item>
-          <el-descriptions-item label="消耗积分">
-            <span style="color: #e6a23c; font-weight: 600;">{{ detailData.point || 0 }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="使用状态">
-            <el-tag :type="detailData.isUsed ? 'success' : 'info'" size="small">
-              {{ detailData.isUsed ? '已使用' : '未使用' }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="创建时间">{{ formatDateTime(detailData.createTime) || '--' }}</el-descriptions-item>
-        </el-descriptions>
+        <el-form label-width="100px">
+          <el-form-item label="原因">
+            <div style="padding: 10px 0;">{{ detailData.reason || '--' }}</div>
+          </el-form-item>
+          <el-form-item label="备注">
+            <div style="padding: 10px 0;">{{ detailData.remark || '--' }}</div>
+          </el-form-item>
+          <el-form-item label="凭证">
+            <div v-if="detailData.voucherImage" style="margin-top: 10px;">
+              <el-image
+                :src="getImageUrl(detailData.voucherImage)"
+                :preview-src-list="[getImageUrl(detailData.voucherImage)]"
+                fit="contain"
+                style="max-width: 300px; max-height: 300px; cursor: pointer;"
+              />
+            </div>
+            <div v-else style="padding: 10px 0;">--</div>
+          </el-form-item>
+        </el-form>
         <div slot="footer" class="dialog-footer">
           <el-button @click="detailVisible = false">关闭</el-button>
         </div>
@@ -230,6 +242,22 @@
             <div style="margin-top: 8px; color: #909399; font-size: 12px;">
               提示：如果不填写兑换码，系统将自动生成
             </div>
+          </el-form-item>
+          <el-form-item label="兑换原因" prop="reason">
+            <el-input
+              v-model="exchangeForm.reason"
+              placeholder="请输入兑换原因"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item label="备注" prop="remark">
+            <el-input
+              v-model="exchangeForm.remark"
+              type="textarea"
+              :rows="3"
+              placeholder="请输入备注信息"
+              clearable
+            />
           </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
@@ -306,6 +334,31 @@
           <el-button type="primary" :disabled="!exchangeSelectedGoods" @click="handleExchangeGoodsConfirm">确定</el-button>
         </div>
       </el-dialog>
+
+      <!-- 确认使用对话框 -->
+      <el-dialog
+        title="确认使用"
+        :visible.sync="confirmUseDialogVisible"
+        width="600px"
+        :close-on-click-modal="false"
+        @close="handleConfirmUseDialogClose"
+      >
+        <el-form ref="confirmUseForm" :model="confirmUseForm" :rules="confirmUseRules" label-width="120px">
+          <el-form-item label="凭证图片" prop="voucherImage">
+            <ImageUploader
+              v-model="confirmUseForm.voucherImage"
+              :multiple="false"
+              :limit="1"
+              :emit-raw="true"
+              tips="请上传凭证图片，支持JPG、PNG格式，大小不超过2MB"
+            />
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="confirmUseDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="confirmUseSubmitLoading" @click="handleConfirmUseSubmit">确定</el-button>
+        </div>
+      </el-dialog>
     </el-card>
   </div>
 </template>
@@ -313,12 +366,14 @@
 <script>
 import { parseTime } from '@/utils'
 import UserSelector from '@/components/UserSelector'
-import { getPointsUseDetailPage, getPointsUseDetailInfo, getPointsGoodsPage, createPointsUseDetail } from '@/api/points'
+import ImageUploader from '@/components/ImageUploader'
+import { getPointsUseDetailPage, getPointsUseDetailInfo, getPointsGoodsPage, createPointsUseDetail, confirmUsePoints } from '@/api/points'
 
 export default {
   name: 'PointsUseDetail',
   components: {
-    UserSelector
+    UserSelector,
+    ImageUploader
   },
   data() {
     return {
@@ -367,7 +422,9 @@ export default {
         pointGoodsId: '',
         goodsName: '',
         point: null,
-        exchangeCode: '' // 可选，如果为空则由后端生成
+        exchangeCode: '', // 可选，如果为空则由后端生成
+        reason: '', // 兑换原因
+        remark: '' // 备注
       },
       // 兑换表单验证规则
       exchangeRules: {
@@ -382,7 +439,19 @@ export default {
       exchangeUserSelectorVisible: false,
       // 兑换商品选择器
       exchangeGoodsSelectorVisible: false,
-      exchangeSelectedGoods: null
+      exchangeSelectedGoods: null,
+      // 确认使用对话框
+      confirmUseDialogVisible: false,
+      confirmUseSubmitLoading: false,
+      confirmUseForm: {
+        id: '',
+        voucherImage: ''
+      },
+      confirmUseRules: {
+        voucherImage: [
+          { required: true, message: '请上传凭证图片', trigger: 'change' }
+        ]
+      }
     }
   },
   created() {
@@ -545,11 +614,15 @@ export default {
     async handleView(row) {
       try {
         const response = await getPointsUseDetailInfo(row.id)
-        this.detailData = response.data || {}
-        this.detailVisible = true
+        if (response && response.data) {
+          this.detailData = response.data
+          this.detailVisible = true
+        } else {
+          this.$message.error('获取详情数据为空')
+        }
       } catch (error) {
         console.error('获取详情失败:', error)
-        this.$message.error('获取详情失败')
+        this.$message.error('获取详情失败，请稍后重试')
       }
     },
 
@@ -562,7 +635,9 @@ export default {
         pointGoodsId: '',
         goodsName: '',
         point: null,
-        exchangeCode: ''
+        exchangeCode: '',
+        reason: '',
+        remark: ''
       }
     },
 
@@ -630,7 +705,9 @@ export default {
         pointGoodsId: '',
         goodsName: '',
         point: null,
-        exchangeCode: ''
+        exchangeCode: '',
+        reason: '',
+        remark: ''
       }
     },
 
@@ -643,7 +720,9 @@ export default {
             const submitData = {
               accountId: this.exchangeForm.accountId,
               pointGoodsId: this.exchangeForm.pointGoodsId,
-              exchangeCode: this.exchangeForm.exchangeCode || undefined
+              exchangeCode: this.exchangeForm.exchangeCode || undefined,
+              reason: this.exchangeForm.reason || undefined,
+              remark: this.exchangeForm.remark || undefined
             }
             await createPointsUseDetail(submitData)
             this.$message.success('兑换成功')
@@ -660,9 +739,64 @@ export default {
       })
     },
 
+    // 确认使用相关方法
+    handleConfirmUse(row) {
+      this.confirmUseForm = {
+        id: row.id,
+        voucherImage: ''
+      }
+      this.confirmUseDialogVisible = true
+    },
+
+    // 确认使用对话框关闭
+    handleConfirmUseDialogClose() {
+      this.$refs.confirmUseForm && this.$refs.confirmUseForm.resetFields()
+      this.confirmUseForm = {
+        id: '',
+        voucherImage: ''
+      }
+    },
+
+    // 提交确认使用
+    async handleConfirmUseSubmit() {
+      this.$refs.confirmUseForm.validate(async(valid) => {
+        if (valid) {
+          this.confirmUseSubmitLoading = true
+          try {
+            const submitData = {
+              id: this.confirmUseForm.id,
+              voucherImage: this.confirmUseForm.voucherImage
+            }
+            await confirmUsePoints(submitData)
+            this.$message.success('确认使用成功')
+            this.confirmUseDialogVisible = false
+            // 刷新列表
+            this.fetchData()
+          } catch (error) {
+            console.error('确认使用失败:', error)
+            this.$message.error('确认使用失败，请稍后重试')
+          } finally {
+            this.confirmUseSubmitLoading = false
+          }
+        }
+      })
+    },
+
     // 工具方法
     formatDateTime(time) {
       return parseTime(time)
+    },
+
+    // 获取图片URL（处理相对路径和绝对路径）
+    getImageUrl(url) {
+      if (!url) return ''
+      // 如果是绝对路径，直接返回
+      if (/^(https?:)?\/\//.test(url)) {
+        return url
+      }
+      // 如果是相对路径，拼接基础URL
+      const baseUrl = process.env.VUE_APP_BASE_URL || ''
+      return baseUrl + (url.startsWith('/') ? url : '/' + url)
     }
   }
 }
