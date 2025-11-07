@@ -12,6 +12,12 @@
       </el-form>
 
       <el-table :data="list" style="width: 100%; margin-top: 20px;" border>
+        <el-table-column label="头像" width="80" align="center">
+          <template slot-scope="scope">
+            <el-avatar v-if="scope.row.avatar" :src="getAvatarUrl(scope.row.avatar)" :size="50" />
+            <el-avatar v-else icon="el-icon-user-solid" :size="50" />
+          </template>
+        </el-table-column>
         <el-table-column prop="username" label="账号" width="200" />
         <el-table-column prop="nickname" label="账号名称" width="200" />
         <el-table-column prop="accountTypeId" label="账号类型" width="200">
@@ -56,6 +62,15 @@
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" width="500px" :visible.sync="dialogVisible">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="头像" prop="avatar">
+          <image-uploader
+            v-model="form.avatar"
+            :multiple="false"
+            :limit="1"
+            :emit-raw="true"
+            tips="建议上传尺寸为200x200的图片"
+          />
+        </el-form-item>
         <el-form-item label="账号类型" prop="accountTypeId">
           <el-select
             v-model="form.accountTypeId"
@@ -112,8 +127,13 @@ import {
   deleteWxUser, changeWxUserType, generateAccountUsername, getUseTypeList
 } from '@/api/user'
 import { getAccountTypeList } from '@/api/accountType'
+import ImageUploader from '@/components/ImageUploader/index.vue'
+
 export default {
   name: 'AdminUserList',
+  components: {
+    ImageUploader
+  },
   data() {
     return {
       useTypeList: [],
@@ -135,6 +155,7 @@ export default {
         type: '',
         username: '',
         password: '',
+        avatar: '',
         // phone: '',
         // idCard: '',
         score: '',
@@ -193,6 +214,7 @@ export default {
         type: '',
         username: '',
         password: '',
+        avatar: '',
         phone: '',
         idCard: '',
         score: '',
@@ -294,6 +316,18 @@ export default {
     },
     getUseType(id) {
       return this.useTypeList.find(item => item.key === id)?.value
+    },
+    // 获取完整的头像URL
+    getAvatarUrl(avatar) {
+      if (!avatar) return ''
+      // 如果已经是完整的URL（http/https开头），直接返回
+      if (/^(?:[a-z]+:)?\/\//i.test(avatar) || /^data:/i.test(avatar)) {
+        return avatar
+      }
+      // 否则拼接baseUrl
+      const baseUrl = (process.env.VUE_APP_BASE_URL || '').replace(/\/$/, '')
+      const path = avatar.startsWith('/') ? avatar : `/${avatar}`
+      return `${baseUrl}${path}`
     }
   }
 }
