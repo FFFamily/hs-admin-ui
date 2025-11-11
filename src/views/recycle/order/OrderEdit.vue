@@ -463,12 +463,6 @@ export default {
         status: [
           { required: true, message: '请选择状态', trigger: 'change' }
         ],
-        startTime: [
-          { required: true, message: '请选择起始时间', trigger: 'change' }
-        ],
-        endTime: [
-          { required: true, message: '请选择结束时间', trigger: 'change' }
-        ],
         processor: [
           { required: true, message: '请输入经办人', trigger: 'blur' }
         ],

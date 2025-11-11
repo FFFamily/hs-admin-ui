@@ -1,0 +1,1608 @@
+<template>
+  <div class="app-container">
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <h2>订单信息登记</h2>
+    </div>
+
+    <!-- 订单基本信息 -->
+    <el-card class="basic-info-card">
+      <div slot="header" class="clearfix">
+        <span>订单基本信息</span>
+      </div>
+      <el-form :model="orderInfo" label-width="120px">
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="订单编号">
+              <el-input v-model="orderInfo.no" readonly disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="结算时间">
+              <el-input v-model="orderInfo.settlementTime" readonly disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="订单状态阶段">
+              {{ getStageText(orderInfo.stage) }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="合同编号">
+              <el-input v-model="orderInfo.contractNo" readonly disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="合同名称">
+              <el-input v-model="orderInfo.contractName" readonly disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="合同伙伴">
+              <el-input v-model="orderInfo.contractPartnerName" readonly disabled />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="甲方">
+              <el-input v-model="orderInfo.partyAName" readonly disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="乙方">
+              <el-input v-model="orderInfo.partyBName" readonly disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="合作方">
+              <el-input v-model="orderInfo.contractPartnerName" readonly disabled />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="经办人">
+              <el-input v-model="orderInfo.processorName" readonly disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="计价方式">
+              <el-input :value="getPricingMethodText(orderInfo.pricingMethod)" readonly disabled />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+    </el-card>
+
+    <!-- 步骤条 -->
+    <div class="steps-container">
+      <el-steps :active="activeStep" align-center finish-status="success">
+        <el-step
+          title="采购"
+          :class="{ 'step-clickable': 0 <= currentOrderStep, 'step-disabled': 0 > currentOrderStep }"
+          @click.native="handleStepClick(0)"
+        />
+        <el-step
+          title="运输"
+          :class="{ 'step-clickable': 1 <= currentOrderStep, 'step-disabled': 1 > currentOrderStep }"
+          @click.native="handleStepClick(1)"
+        />
+        <el-step
+          title="加工"
+          :class="{ 'step-clickable': 2 <= currentOrderStep, 'step-disabled': 2 > currentOrderStep }"
+          @click.native="handleStepClick(2)"
+        />
+        <el-step
+          title="入库"
+          :class="{ 'step-clickable': 3 <= currentOrderStep, 'step-disabled': 3 > currentOrderStep }"
+          @click.native="handleStepClick(3)"
+        />
+      </el-steps>
+    </div>
+
+    <!-- 表单内容区域 -->
+    <el-card class="form-card">
+      <!-- 采购阶段 -->
+      <div v-show="currentStage === 'purchase'" class="stage-content">
+        <h3 class="stage-title">
+          <i class="el-icon-shopping-bag"></i> 采购信息
+          <el-tag v-if="!canEdit" type="info" size="small" style="margin-left: 10px;">只读</el-tag>
+        </h3>
+        
+        <el-form ref="purchaseForm" :model="purchaseForm" :rules="canEdit ? purchaseRules : {}" label-width="120px">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="对应订单编号">
+                <el-input v-model="purchaseForm.orderNo" placeholder="系统自动生成" readonly disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="对应订单识别码">
+                <el-input v-model="purchaseForm.identifyCode" placeholder="系统自动生成" readonly disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="采购经办人" prop="processorId">
+                <el-input
+                  v-model="purchaseForm.processorName"
+                  :disabled="!canEdit"
+                  placeholder="请选择经办人"
+                  readonly
+                  @focus="showProcessorSelector"
+                >
+                  <el-button slot="append" type="primary" :disabled="!canEdit" @click="showProcessorSelector">选择经办人</el-button>
+                </el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="位置" prop="deliveryAddress">
+                <el-input v-model="purchaseForm.deliveryAddress" :disabled="!canEdit" placeholder="请输入位置" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="走款账号" prop="paymentAccount">
+                <el-input v-model="purchaseForm.paymentAccount" :disabled="!canEdit" placeholder="请输入走款账号" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="分配站点" prop="siteName">
+                <el-input v-model="purchaseForm.siteName" :disabled="!canEdit" placeholder="请输入分配站点" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="订单总金额" prop="totalAmount">
+                <el-input-number
+                  v-model="purchaseForm.totalAmount"
+                  :disabled="!canEdit"
+                  :precision="2"
+                  :min="0"
+                  placeholder="请输入订单总金额"
+                  style="width: 100%;"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="货物总金额" prop="goodsTotalAmount">
+                <el-input-number
+                  v-model="purchaseForm.goodsTotalAmount"
+                  :disabled="!canEdit"
+                  :precision="2"
+                  :min="0"
+                  placeholder="请输入货物总金额"
+                  style="width: 100%;"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="上传时间">
+                <el-input v-model="purchaseForm.createTime" placeholder="系统自动生成" readonly disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <el-form-item label="订单图片" prop="orderNodeImg">
+            <ImageUploader
+              v-model="purchaseForm.orderNodeImg"
+              :disabled="!canEdit"
+              :multiple="false"
+              :limit="1"
+              action="/api/system/file/upload"
+              list-type="picture-card"
+              :emit-raw="true"
+              tips="支持JPG、PNG格式，大小不超过2MB"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <!-- 运输阶段 -->
+      <div v-show="currentStage === 'transport'" class="stage-content">
+        <h3 class="stage-title">
+          <i class="el-icon-truck"></i> 运输信息
+          <el-tag v-if="!canEdit" type="info" size="small" style="margin-left: 10px;">只读</el-tag>
+        </h3>
+        <el-form ref="transportForm" :model="transportForm" :rules="canEdit ? transportRules : {}" label-width="120px">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="对应订单编号">
+                <el-input v-model="transportForm.orderNo" placeholder="系统自动生成" readonly disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="对应订单识别码">
+                <el-input v-model="transportForm.identifyCode" placeholder="系统自动生成" readonly disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="运输经办人" prop="processorId">
+                <el-input
+                  v-model="transportForm.processorName"
+                  :disabled="!canEdit"
+                  placeholder="请选择运输经办人"
+                  readonly
+                  @focus="showTransportProcessorSelector"
+                >
+                  <el-button slot="append" type="primary" :disabled="!canEdit" @click="showTransportProcessorSelector">选择经办人</el-button>
+                </el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="开始时间" prop="startTime">
+                <el-date-picker
+                  v-model="transportForm.startTime"
+                  :disabled="!canEdit"
+                  type="datetime"
+                  placeholder="请选择开始时间"
+                  style="width: 100%;"
+                  value-format="yyyy-MM-dd HH:mm:ss"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="结束时间" prop="endTime">
+                <el-date-picker
+                  v-model="transportForm.endTime"
+                  :disabled="!canEdit"
+                  type="datetime"
+                  placeholder="请选择结束时间"
+                  style="width: 100%;"
+                  value-format="yyyy-MM-dd HH:mm:ss"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="运输起点(拿货地址)" prop="pickupAddress">
+                <el-input v-model="transportForm.pickupAddress" :disabled="!canEdit" placeholder="请输入运输起点" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="运输终点(交付地址)" prop="deliveryAddress">
+                <el-input v-model="transportForm.deliveryAddress" :disabled="!canEdit" placeholder="请输入运输终点" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="货物重量(kg)" prop="goodsWeight">
+                <el-input-number
+                  v-model="transportForm.goodsWeight"
+                  :disabled="!canEdit"
+                  :precision="2"
+                  :step="1"
+                  :min="0"
+                  placeholder="请输入货物重量"
+                  style="width: 100%;"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+      </div>
+
+      <!-- 加工阶段 -->
+      <div v-show="currentStage === 'processing'" class="stage-content">
+        <h3 class="stage-title">
+          <i class="el-icon-setting"></i> 加工信息
+          <el-tag v-if="!canEdit" type="info" size="small" style="margin-left: 10px;">只读</el-tag>
+        </h3>
+        
+        <el-form ref="processingForm" :model="processingForm" :rules="canEdit ? processingRules : {}" label-width="120px">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="对应订单编号">
+                <el-input v-model="processingForm.orderNo" placeholder="系统自动生成" readonly disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="对应订单识别码">
+                <el-input v-model="processingForm.identifyCode" placeholder="系统自动生成" readonly disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="加工经办人" prop="processorId">
+                <el-input
+                  v-model="processingForm.processorName"
+                  :disabled="!canEdit"
+                  placeholder="请选择加工经办人"
+                  readonly
+                  @focus="showProcessingProcessorSelector"
+                >
+                  <el-button slot="append" type="primary" :disabled="!canEdit" @click="showProcessingProcessorSelector">选择经办人</el-button>
+                </el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+
+        <!-- 货物明细 -->
+        <el-form>
+          <el-form-item>
+            <el-button type="primary" :disabled="!canEdit" @click="addProcessingGoodItem">新增行</el-button>
+            <el-button type="danger" :disabled="!canEdit || processingSelectedItems.length === 0" @click="deleteProcessingSelectedItems">删除行</el-button>
+          </el-form-item>
+        </el-form>
+
+        <el-table
+          v-loading="loading"
+          :data="processingGoodItems"
+          border
+          fit
+          style="width: 100%"
+          @selection-change="handleProcessingSelectionChange"
+        >
+          <el-table-column type="selection" width="55" align="center" :selectable="() => canEdit" />
+          <el-table-column prop="goodNo" label="货物编号" fixed="left" width="180" align="center">
+            <template slot-scope="scope">
+              <el-input :disabled="!canEdit" v-model="scope.row.goodNo" placeholder="选择货物" readonly>
+                <el-button slot="append" icon="el-icon-search" :disabled="!canEdit" @click="openProcessingGoodSelector(scope.$index)" />
+              </el-input>
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodType" label="货物分类" width="160" align="center">
+            <template slot-scope="scope">
+              <el-input :disabled="true" v-model="scope.row.goodType" placeholder="无分类" />
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodName" label="货物名称" min-width="160" show-overflow-tooltip>
+            <template slot-scope="scope">
+              <el-input :disabled="true" v-model="scope.row.goodName" placeholder="无名称" />
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodModel" label="货物型号" width="140" align="center">
+            <template slot-scope="scope">
+              <el-input :disabled="true" v-model="scope.row.goodModel" placeholder="无型号" />
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodCount" label="货物数量" width="155" align="center">
+            <template slot-scope="scope">
+              <el-input-number
+                v-model="scope.row.goodCount"
+                :disabled="!canEdit"
+                style="width:130px;"
+                :min="1"
+                :precision="0"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodWeight" label="货物重量(kg)" width="160" align="center">
+            <template slot-scope="scope">
+              <el-input-number
+                v-model="scope.row.goodWeight"
+                :disabled="!canEdit"
+                :min="0"
+                :precision="2"
+                controls-position="right"
+                placeholder="请输入货物重量"
+                style="width: 130px;"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodRemark" label="货物备注" min-width="180">
+            <template slot-scope="scope">
+              <el-input :disabled="!canEdit" v-model="scope.row.goodRemark" placeholder="备注" />
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
+      <!-- 入库阶段 -->
+      <div v-show="currentStage === 'warehousing'" class="stage-content">
+        <h3 class="stage-title">
+          <i class="el-icon-box"></i> 入库信息
+          <el-tag v-if="!canEdit" type="info" size="small" style="margin-left: 10px;">只读</el-tag>
+        </h3>
+        <el-form ref="warehousingForm" :model="warehousingForm" :rules="canEdit ? warehousingRules : {}" label-width="120px">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="对应订单编号">
+                <el-input v-model="warehousingForm.orderNo" placeholder="系统自动生成" readonly disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="对应订单识别码">
+                <el-input v-model="warehousingForm.identifyCode" placeholder="系统自动生成" readonly disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <!-- <el-col :span="12">
+              <el-form-item label="入库日期" prop="warehousingDate">
+                <el-date-picker
+                  v-model="warehousingForm.warehousingDate"
+                  :disabled="!canEdit"
+                  type="date"
+                  placeholder="请选择入库日期"
+                  style="width: 100%;"
+                />
+              </el-form-item>
+            </el-col> -->
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="仓库" prop="warehouseId">
+                <el-input
+                  v-model="warehousingForm.warehouseName"
+                  :disabled="!canEdit"
+                  placeholder="请选择仓库"
+                  readonly
+                  @focus="showWarehouseSelector"
+                >
+                  <el-button slot="append" type="primary" :disabled="!canEdit" @click="showWarehouseSelector">选择仓库</el-button>
+                </el-input>
+              </el-form-item>
+            </el-col>
+            <!-- <el-col :span="12">
+              <el-form-item label="入库单号" prop="warehousingNo">
+                <el-input v-model="warehousingForm.warehousingNo" :disabled="!canEdit" placeholder="请输入入库单号" />
+              </el-form-item>
+            </el-col> -->
+          </el-row>
+        </el-form>
+
+        <!-- 货物明细 -->
+        <el-form>
+          <el-form-item>
+            <el-button type="primary" :disabled="!canEdit" @click="addWarehousingGoodItem">新增行</el-button>
+            <el-button type="danger" :disabled="!canEdit || warehousingSelectedItems.length === 0" @click="deleteWarehousingSelectedItems">删除行</el-button>
+          </el-form-item>
+        </el-form>
+
+        <el-table
+          v-loading="loading"
+          :data="warehousingGoodItems"
+          border
+          fit
+          style="width: 100%"
+          @selection-change="handleWarehousingSelectionChange"
+        >
+          <el-table-column type="selection" width="55" align="center" :selectable="() => canEdit" />
+          <el-table-column prop="goodNo" label="货物编号" fixed="left" width="180" align="center">
+            <template slot-scope="scope">
+              <el-input :disabled="!canEdit" v-model="scope.row.goodNo" placeholder="选择货物" readonly>
+                <el-button slot="append" icon="el-icon-search" :disabled="!canEdit" @click="openWarehousingGoodSelector(scope.$index)" />
+              </el-input>
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodType" label="货物分类" width="160" align="center">
+            <template slot-scope="scope">
+              <el-input :disabled="true" v-model="scope.row.goodType" placeholder="无分类" />
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodName" label="货物名称" min-width="160" show-overflow-tooltip>
+            <template slot-scope="scope">
+              <el-input :disabled="true" v-model="scope.row.goodName" placeholder="无名称" />
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodModel" label="货物型号" width="140" align="center">
+            <template slot-scope="scope">
+              <el-input :disabled="true" v-model="scope.row.goodModel" placeholder="无型号" />
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodCount" label="货物数量" width="155" align="center">
+            <template slot-scope="scope">
+              <el-input-number
+                v-model="scope.row.goodCount"
+                :disabled="!canEdit"
+                style="width:130px;"
+                :min="1"
+                :precision="0"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodWeight" label="货物重量(kg)" width="160" align="center">
+            <template slot-scope="scope">
+              <el-input-number
+                v-model="scope.row.goodWeight"
+                :disabled="!canEdit"
+                :min="0"
+                :precision="2"
+                controls-position="right"
+                placeholder="请输入货物重量"
+                style="width: 130px;"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodRemark" label="货物备注" min-width="180">
+            <template slot-scope="scope">
+              <el-input :disabled="!canEdit" v-model="scope.row.goodRemark" placeholder="备注" />
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-card>
+
+    <!-- 底部按钮 -->
+    <div class="form-footer">
+      <el-button @click="handleCancel">返回</el-button>
+      <el-button v-if="canEdit" type="primary" :loading="submitLoading" @click="handleSubmit">保存当前阶段</el-button>
+      <el-button v-if="userOrderData.stage !== USER_ORDER_STAGE.COMPLETED" type="warning" :loading="settleLoading" @click="handleSettle">结算订单</el-button>
+    </div>
+
+    <!-- 采购经办人选择器 -->
+    <agent-selector
+      :visible.sync="processorSelectorVisible"
+      title="选择采购经办人"
+      :multiple="false"
+      @confirm="handleProcessorSelected"
+    />
+
+    <!-- 运输经办人选择器 -->
+    <agent-selector
+      :visible.sync="transportProcessorSelectorVisible"
+      title="选择运输经办人"
+      :multiple="false"
+      @confirm="handleTransportProcessorSelected"
+    />
+
+    <!-- 加工经办人选择器 -->
+    <agent-selector
+      :visible.sync="processingProcessorSelectorVisible"
+      title="选择加工经办人"
+      :multiple="false"
+      @confirm="handleProcessingProcessorSelected"
+    />
+
+    <!-- 加工货物选择器 -->
+    <business-scope-selector
+      :visible.sync="processingGoodSelectorVisible"
+      title="选择货物"
+      :multiple="false"
+      :only-show-enabled="true"
+      @confirm="handleProcessingGoodSelected"
+      @close="handleProcessingGoodSelectorClose"
+    />
+
+    <!-- 入库货物选择器 -->
+    <business-scope-selector
+      :visible.sync="warehousingGoodSelectorVisible"
+      title="选择货物"
+      :multiple="false"
+      :only-show-enabled="true"
+      @confirm="handleWarehousingGoodSelected"
+      @close="handleWarehousingGoodSelectorClose"
+    />
+
+    <!-- 仓库选择器 -->
+    <warehouse-selector
+      :visible.sync="warehouseSelectorVisible"
+      title="选择仓库"
+      :multiple="false"
+      @confirm="handleWarehouseSelected"
+    />
+  </div>
+</template>
+
+<script>
+import { getRecycleOrderByParentId, getUserOrderDetail, getUserOrderInfo, updateUserOrder, settleUserOrder } from '@/api/userOrder'
+import { createRecycle, updateRecycle } from '@/api/recycle'
+import AgentSelector from '@/components/AgentSelector'
+import WarehouseSelector from '@/components/WarehouseSelector'
+import ImageUploader from '@/components/ImageUploader'
+import BusinessScopeSelector from '@/components/BusinessScopeSelector'
+import {
+  USER_ORDER_STAGE,
+  getUserOrderStageText,
+  getUserOrderStageTagType,
+  getUserOrderStatusText,
+  getUserOrderStatusTagType,
+  getPricingMethodText as getPricingMethodTextFromConst
+} from '@/constants/userOrder'
+
+export default {
+  name: 'UserOrderRegister',
+  components: {
+    AgentSelector,
+    WarehouseSelector,
+    ImageUploader,
+    BusinessScopeSelector
+  },
+  data() {
+    return {
+      submitLoading: false,
+      settleLoading: false,
+      loading: false,
+      orderId: null,
+      orderInfo: {},
+      userOrderData: {},
+      recycleOrderId: null,
+      isEdit: false,
+      parentId: null,
+      USER_ORDER_STAGE, // 将常量添加到 data 中，以便在模板中使用
+      
+      // 当前订单阶段
+      currentStage: 'purchase',
+      activeStep: 0,
+      
+      // 采购阶段数据
+      processorSelectorVisible: false,
+      purchaseForm: {
+        orderNo: '',
+        identifyCode: '',
+        processorId: '',
+        processorName: '',
+        deliveryAddress: '',
+        paymentAccount: '',
+        siteId: '',
+        siteName: '',
+        totalAmount: 0,
+        goodsTotalAmount: 0,
+        createTime: '',
+        orderNodeImg: ''
+      },
+      purchaseRules: {
+        processorId: [
+          { required: true, message: '请选择经办人', trigger: 'change' }
+        ],
+        deliveryAddress: [
+          { required: true, message: '请输入位置', trigger: 'blur' }
+        ]
+      },
+      
+      // 运输阶段数据
+      transportProcessorSelectorVisible: false,
+      transportForm: {
+        orderNo: '',
+        identifyCode: '',
+        processorId: '',
+        processorName: '',
+        startTime: '',
+        endTime: '',
+        pickupAddress: '',
+        deliveryAddress: '',
+        goodsWeight: 0
+      },
+      transportRules: {
+        processorId: [
+          { required: true, message: '请选择运输经办人', trigger: 'change' }
+        ],
+        startTime: [
+          { required: true, message: '请选择开始时间', trigger: 'change' }
+        ],
+        pickupAddress: [
+          { required: true, message: '请输入运输起点', trigger: 'blur' }
+        ],
+        deliveryAddress: [
+          { required: true, message: '请输入运输终点', trigger: 'blur' }
+        ],
+        goodsWeight: [
+          { required: true, message: '请输入货物重量', trigger: 'blur' }
+        ]
+      },
+      
+      // 加工阶段数据
+      processingProcessorSelectorVisible: false,
+      processingGoodSelectorVisible: false,
+      processingCurrentRowIndex: -1,
+      processingSelectedItems: [],
+      processingGoodItems: [],
+      processingForm: {
+        orderNo: '',
+        identifyCode: '',
+        processorId: '',
+        processorName: ''
+      },
+      processingRules: {
+        processorId: [
+          { required: true, message: '请选择加工经办人', trigger: 'change' }
+        ]
+      },
+      
+      // 入库阶段数据
+      warehouseSelectorVisible: false,
+      warehousingGoodSelectorVisible: false,
+      warehousingCurrentRowIndex: -1,
+      warehousingSelectedItems: [],
+      warehousingGoodItems: [],
+      warehousingForm: {
+        orderNo: '',
+        identifyCode: '',
+        warehousingDate: '',
+        warehouseId: '',
+        warehouseName: '',
+        warehousingNo: ''
+      },
+      warehousingRules: {
+        warehousingDate: [
+          { required: true, message: '请选择入库日期', trigger: 'change' }
+        ],
+        warehouseId: [
+          { required: true, message: '请选择仓库', trigger: 'change' }
+        ],
+        warehousingNo: [
+          { required: true, message: '请输入入库单号', trigger: 'blur' }
+        ]
+      }
+    }
+  },
+  computed: {
+    // 当前阶段是否可以编辑
+    canEdit() {
+      return this.currentStage === this.userOrderData.stage
+    },
+    // 当前订单所处的阶段索引
+    currentOrderStep() {
+      const stageMap = {
+        [USER_ORDER_STAGE.PURCHASE]: 0,
+        [USER_ORDER_STAGE.TRANSPORT]: 1,
+        [USER_ORDER_STAGE.PROCESSING]: 2,
+        [USER_ORDER_STAGE.WAREHOUSING]: 3,
+        [USER_ORDER_STAGE.COMPLETED]: 3 // 完成阶段相当于走完了入库阶段，显示全部完成
+      }
+      return stageMap[this.userOrderData.stage] || 0
+    }
+  },
+  mounted() {
+    this.initData()
+  },
+  methods: {
+    async initData() {
+      const id = this.$route.query.id
+      if (!id) {
+        this.$message.error('订单ID不存在')
+        this.$router.push({ name: 'UserOrderList' })
+        return
+      }
+      this.orderId = id
+      this.parentId = id
+      
+      // 加载用户订单信息（包含各阶段订单信息）
+      await this.loadUserOrderInfo(id)
+      
+      // 根据当前阶段设置初始显示
+      this.setCurrentStageByOrder()
+    },
+
+    // 根据订单阶段设置当前显示阶段
+    setCurrentStageByOrder() {
+      const stageMap = {
+        [USER_ORDER_STAGE.PURCHASE]: { stage: 'purchase', step: 0 },
+        [USER_ORDER_STAGE.TRANSPORT]: { stage: 'transport', step: 1 },
+        [USER_ORDER_STAGE.PROCESSING]: { stage: 'processing', step: 2 },
+        [USER_ORDER_STAGE.WAREHOUSING]: { stage: 'warehousing', step: 3 },
+        [USER_ORDER_STAGE.COMPLETED]: { stage: 'warehousing', step: 4 } // 完成阶段相当于走完了入库阶段，显示入库内容，步骤条全部完成
+      }
+      
+      const config = stageMap[this.userOrderData.stage] || { stage: 'purchase', step: 0 }
+      this.currentStage = config.stage
+      this.activeStep = config.step
+    },
+
+    // 加载用户订单信息（包含各阶段订单信息）
+    async loadUserOrderInfo(id) {
+      this.loading = true
+      try {
+        const response = await getUserOrderInfo(id)
+        if (response && response.data) {
+          const data = response.data
+          
+          // 加载用户订单基本信息
+          const userOrder = data.userOrder || {}
+          this.userOrderData = userOrder
+          this.orderInfo = {
+            no: userOrder.no || '',
+            settlementTime: userOrder.settlementTime || '',
+            stage: userOrder.stage || '',
+            status: userOrder.status || '',
+            contractNo: userOrder.contractNo || '',
+            contractName: userOrder.contractName || '',
+            contractPartner: userOrder.contractPartner || '',
+            contractPartnerName: userOrder.contractPartnerName || '',
+            partyA: userOrder.partyA || '',
+            partyAName: userOrder.partyAName || '',
+            partyB: userOrder.partyB || '',
+            partyBName: userOrder.partyBName || '',
+            processorId: userOrder.processorId || '',
+            processorName: userOrder.processorName || '',
+            location: userOrder.location || '',
+            pricingMethod: userOrder.pricingMethod || '',
+            imgUrl: userOrder.imgUrl || ''
+          }
+          
+          // 加载采购阶段数据
+          const purchaseOrder = data.purchaseOrder || {}
+          this.purchaseForm = {
+            orderNo: purchaseOrder.orderNo || purchaseOrder.no || '',
+            identifyCode: purchaseOrder.identifyCode || purchaseOrder.code || '',
+            processorId: purchaseOrder.processorId || '',
+            processorName: purchaseOrder.processorName || '',
+            deliveryAddress: purchaseOrder.deliveryAddress || '',
+            paymentAccount: purchaseOrder.paymentAccount || '',
+            siteId: purchaseOrder.siteId || '',
+            siteName: purchaseOrder.siteName || '',
+            totalAmount: purchaseOrder.totalAmount || 0,
+            goodsTotalAmount: purchaseOrder.goodsTotalAmount || 0,
+            createTime: purchaseOrder.createTime || '',
+            orderNodeImg: purchaseOrder.orderNodeImg || ''
+          }
+          
+          // 加载运输阶段数据
+          const transportOrder = data.transportOrder || {}
+          this.transportForm = {
+            orderNo: transportOrder.orderNo || transportOrder.no || '',
+            identifyCode: transportOrder.identifyCode || transportOrder.code || '',
+            processorId: transportOrder.processorId || '',
+            processorName: transportOrder.processorName || '',
+            startTime: transportOrder.startTime || '',
+            endTime: transportOrder.endTime || '',
+            pickupAddress: transportOrder.pickupAddress || '',
+            deliveryAddress: transportOrder.deliveryAddress || '',
+            goodsWeight: transportOrder.goodsWeight || 0,
+            
+          }
+          
+          // 加载加工阶段数据
+          const processingOrder = data.processingOrder || {}
+          this.processingForm = {
+            orderNo: processingOrder.orderNo || processingOrder.no || '',
+            identifyCode: processingOrder.identifyCode || processingOrder.code || '',
+            processorId: processingOrder.processorId || '',
+            processorName: processingOrder.processorName || ''
+          }
+          
+          // 加载加工货物明细
+          if (processingOrder.items && processingOrder.items.length > 0) {
+            this.processingGoodItems = processingOrder.items.map(item => ({ ...item }))
+          } else {
+            this.processingGoodItems = []
+          }
+          
+          // 加载入库阶段数据（storageOrder）
+          const storageOrder = data.storageOrder || {}
+          this.warehousingForm = {
+            orderNo: storageOrder.orderNo || storageOrder.no || '',
+            identifyCode: storageOrder.identifyCode || storageOrder.code || '',
+            warehousingDate: storageOrder.warehousingDate || storageOrder.date || '',
+            warehouseId: storageOrder.warehouseId || '',
+            warehouseName: storageOrder.warehouseName || '',
+            warehousingNo: storageOrder.warehousingNo || storageOrder.no || ''
+          }
+          
+          // 加载入库货物明细
+          if (storageOrder.items && storageOrder.items.length > 0) {
+            this.warehousingGoodItems = storageOrder.items.map(item => ({ ...item }))
+          } else {
+            this.warehousingGoodItems = []
+          }
+        }
+      } catch (error) {
+        console.error('获取订单信息失败:', error)
+        this.$message.error('获取订单信息失败')
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // 处理步骤点击
+    handleStepClick(step) {
+      // 只能查看当前阶段及之前的阶段
+      if (step > this.currentOrderStep) {
+        this.$message.warning('只能查看当前阶段及之前的阶段信息')
+        return
+      }
+      const stageMap = ['purchase', 'transport', 'processing', 'warehousing']
+      this.currentStage = stageMap[step]
+      this.activeStep = step
+    },
+
+  
+
+    // ====== 采购阶段方法 ======
+    // 显示采购经办人选择器
+    showProcessorSelector() {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      this.processorSelectorVisible = true
+    },
+
+    // 采购经办人选择确认
+    handleProcessorSelected(agents) {
+      if (agents && agents.length > 0) {
+        const agent = agents[0]
+        this.purchaseForm.processorId = agent.id
+        this.purchaseForm.processorName = agent.name || agent.accountName
+        if (this.$refs.purchaseForm) {
+          this.$refs.purchaseForm.validateField('processorId')
+        }
+      }
+    },
+
+    // ====== 运输阶段方法 ======
+    // 显示运输经办人选择器
+    showTransportProcessorSelector() {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      this.transportProcessorSelectorVisible = true
+    },
+
+    // 运输经办人选择确认
+    handleTransportProcessorSelected(agents) {
+      if (agents && agents.length > 0) {
+        const agent = agents[0]
+        this.transportForm.processorId = agent.id
+        this.transportForm.processorName = agent.name || agent.accountName
+        if (this.$refs.transportForm) {
+          this.$refs.transportForm.validateField('processorId')
+        }
+      }
+    },
+
+    // ====== 加工阶段方法 ======
+    // 显示加工经办人选择器
+    showProcessingProcessorSelector() {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      this.processingProcessorSelectorVisible = true
+    },
+
+    // 加工经办人选择确认
+    handleProcessingProcessorSelected(agents) {
+      if (agents && agents.length > 0) {
+        const agent = agents[0]
+        this.processingForm.processorId = agent.id
+        this.processingForm.processorName = agent.name || agent.accountName
+        if (this.$refs.processingForm) {
+          this.$refs.processingForm.validateField('processorId')
+        }
+      }
+    },
+
+    // 打开加工货物选择器
+    openProcessingGoodSelector(rowIndex) {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      this.processingCurrentRowIndex = rowIndex
+      this.processingGoodSelectorVisible = true
+    },
+
+    // 加工货物选择确认
+    handleProcessingGoodSelected(selectedItems) {
+      if (selectedItems && selectedItems.length > 0 && this.processingCurrentRowIndex >= 0) {
+        const selectedItem = selectedItems[0]
+        const currentRow = this.processingGoodItems[this.processingCurrentRowIndex]
+        if (currentRow) {
+          currentRow.goodNo = selectedItem.no || ''
+          currentRow.goodType = selectedItem.goodType || ''
+          currentRow.goodName = selectedItem.goodName || ''
+          currentRow.goodModel = selectedItem.goodModel || ''
+          currentRow.goodCount = currentRow.goodCount || 1
+          currentRow.goodWeight = currentRow.goodWeight || 0
+        }
+      }
+      this.processingGoodSelectorVisible = false
+    },
+
+    // 关闭加工货物选择器
+    handleProcessingGoodSelectorClose() {
+      this.processingGoodSelectorVisible = false
+      this.processingCurrentRowIndex = -1
+    },
+
+    // 新增加工货物行
+    addProcessingGoodItem() {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      const newItem = {
+        goodNo: '',
+        goodType: '',
+        goodName: '',
+        goodModel: '',
+        goodCount: 1,
+        goodWeight: 0,
+        goodRemark: ''
+      }
+      this.processingGoodItems.push(newItem)
+      this.$message.success('新增行成功')
+    },
+
+    // 删除选中的加工货物行
+    deleteProcessingSelectedItems() {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      if (this.processingSelectedItems.length === 0) {
+        this.$message.warning('请先选择要删除的行')
+        return
+      }
+
+      this.$confirm(`确定要删除选中的 ${this.processingSelectedItems.length} 行数据吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.processingSelectedItems.forEach(selectedItem => {
+          const index = this.processingGoodItems.findIndex(item => item === selectedItem)
+          if (index > -1) {
+            this.processingGoodItems.splice(index, 1)
+          }
+        })
+        this.processingSelectedItems = []
+        this.$message.success('删除成功')
+      }).catch(() => {})
+    },
+
+    // 处理加工货物表格选择变化
+    handleProcessingSelectionChange(selection) {
+      this.processingSelectedItems = selection
+    },
+
+    // ====== 入库阶段方法 ======
+    showWarehouseSelector() {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      this.warehouseSelectorVisible = true
+    },
+
+    handleWarehouseSelected(warehouses) {
+      if (warehouses && warehouses.length > 0) {
+        this.warehousingForm.warehouseId = warehouses[0].id
+        this.warehousingForm.warehouseName = warehouses[0].warehouseName
+        if (this.$refs.warehousingForm) {
+          this.$refs.warehousingForm.validateField('warehouseId')
+        }
+      }
+    },
+
+    // 打开入库货物选择器
+    openWarehousingGoodSelector(rowIndex) {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      this.warehousingCurrentRowIndex = rowIndex
+      this.warehousingGoodSelectorVisible = true
+    },
+
+    // 入库货物选择确认
+    handleWarehousingGoodSelected(selectedItems) {
+      if (selectedItems && selectedItems.length > 0 && this.warehousingCurrentRowIndex >= 0) {
+        const selectedItem = selectedItems[0]
+        const currentRow = this.warehousingGoodItems[this.warehousingCurrentRowIndex]
+        if (currentRow) {
+          currentRow.goodNo = selectedItem.no || ''
+          currentRow.goodType = selectedItem.goodType || ''
+          currentRow.goodName = selectedItem.goodName || ''
+          currentRow.goodModel = selectedItem.goodModel || ''
+          currentRow.goodCount = currentRow.goodCount || 1
+          currentRow.goodWeight = currentRow.goodWeight || 0
+        }
+      }
+      this.warehousingGoodSelectorVisible = false
+    },
+
+    // 关闭入库货物选择器
+    handleWarehousingGoodSelectorClose() {
+      this.warehousingGoodSelectorVisible = false
+      this.warehousingCurrentRowIndex = -1
+    },
+
+    // 新增入库货物行
+    addWarehousingGoodItem() {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      const newItem = {
+        goodNo: '',
+        goodType: '',
+        goodName: '',
+        goodModel: '',
+        goodCount: 1,
+        goodWeight: 0,
+        goodRemark: ''
+      }
+      this.warehousingGoodItems.push(newItem)
+      this.$message.success('新增行成功')
+    },
+
+    // 删除选中的入库货物行
+    deleteWarehousingSelectedItems() {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      if (this.warehousingSelectedItems.length === 0) {
+        this.$message.warning('请先选择要删除的行')
+        return
+      }
+
+      this.$confirm(`确定要删除选中的 ${this.warehousingSelectedItems.length} 行数据吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.warehousingSelectedItems.forEach(selectedItem => {
+          const index = this.warehousingGoodItems.findIndex(item => item === selectedItem)
+          if (index > -1) {
+            this.warehousingGoodItems.splice(index, 1)
+          }
+        })
+        this.warehousingSelectedItems = []
+        this.$message.success('删除成功')
+      }).catch(() => {})
+    },
+
+    // 处理入库货物表格选择变化
+    handleWarehousingSelectionChange(selection) {
+      this.warehousingSelectedItems = selection
+    },
+
+    // ====== 提交方法 ======
+    async handleSubmit() {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+
+      // 根据当前阶段进行不同的保存操作
+      switch (this.currentStage) {
+        case 'purchase':
+          await this.submitPurchase()
+          break
+        case 'transport':
+          await this.submitTransport()
+          break
+        case 'processing':
+          await this.submitProcessing()
+          break
+        case 'warehousing':
+          await this.submitWarehousing()
+          break
+      }
+    },
+
+    // 提交采购信息
+    async submitPurchase() {
+      if (!this.$refs.purchaseForm) return
+      
+      this.$refs.purchaseForm.validate(async(valid) => {
+        if (!valid) {
+          return false
+        }
+        this.submitLoading = true
+        try {
+          // 更新用户订单的采购信息
+          const updateData = {
+            id: this.orderId,
+            purchaseOrderNo: this.purchaseForm.orderNo,
+            purchaseOrderCode: this.purchaseForm.identifyCode,
+            processorId: this.purchaseForm.processorId,
+            processorName: this.purchaseForm.processorName,
+            deliveryAddress: this.purchaseForm.deliveryAddress,
+            paymentAccount: this.purchaseForm.paymentAccount,
+            siteId: this.purchaseForm.siteId,
+            siteName: this.purchaseForm.siteName,
+            totalAmount: this.purchaseForm.totalAmount,
+            goodsTotalAmount: this.purchaseForm.goodsTotalAmount,
+            orderNodeImg: this.purchaseForm.orderNodeImg
+          }
+          
+          await updateUserOrder(updateData)
+          this.$message.success('保存成功')
+          
+          // 重新加载数据
+          await this.loadUserOrderInfo(this.orderId)
+        } catch (error) {
+          console.error('保存失败:', error)
+          this.$message.error('保存失败')
+        } finally {
+          this.submitLoading = false
+        }
+      })
+    },
+
+    // 提交运输信息
+    async submitTransport() {
+      if (!this.$refs.transportForm) return
+      
+      this.$refs.transportForm.validate(async(valid) => {
+        if (!valid) {
+          return false
+        }
+        this.submitLoading = true
+        try {
+          // 更新用户订单的运输信息
+          const updateData = {
+            id: this.orderId,
+            transportOrderNo: this.transportForm.orderNo,
+            transportOrderCode: this.transportForm.identifyCode,
+            transportProcessorId: this.transportForm.processorId,
+            transportProcessorName: this.transportForm.processorName,
+            transportStartTime: this.transportForm.startTime,
+            transportEndTime: this.transportForm.endTime,
+            transportpickupAddress: this.transportForm.pickupAddress,
+            transportdeliveryAddress: this.transportForm.deliveryAddress,
+            transportGoodsWeight: this.transportForm.goodsWeight
+          }
+          
+          await updateUserOrder(updateData)
+          this.$message.success('保存成功')
+          
+          // 重新加载数据
+          await this.loadUserOrderInfo(this.orderId)
+        } catch (error) {
+          console.error('保存失败:', error)
+          this.$message.error('保存失败')
+        } finally {
+          this.submitLoading = false
+        }
+      })
+    },
+
+    // 提交加工信息
+    async submitProcessing() {
+      if (!this.$refs.processingForm) return
+      
+      this.$refs.processingForm.validate(async(valid) => {
+        if (!valid) {
+          return false
+        }
+
+        // 验证货物明细
+        if (this.processingGoodItems.length === 0) {
+          this.$message.warning('请至少添加一条货物明细')
+          return
+        }
+
+        for (let i = 0; i < this.processingGoodItems.length; i++) {
+          const item = this.processingGoodItems[i]
+          if (!item.goodNo) {
+            this.$message.warning(`第 ${i + 1} 行的货物编号不能为空`)
+            return
+          }
+          if (!item.goodCount || item.goodCount <= 0) {
+            this.$message.warning(`第 ${i + 1} 行的货物数量必须大于0`)
+            return
+          }
+        }
+
+        this.submitLoading = true
+        try {
+          // 更新用户订单的加工信息
+          const updateData = {
+            id: this.orderId,
+            processingOrderNo: this.processingForm.orderNo,
+            processingOrderCode: this.processingForm.identifyCode,
+            processingProcessorId: this.processingForm.processorId,
+            processingProcessorName: this.processingForm.processorName,
+            processingGoodItems: this.processingGoodItems.map(item => ({ ...item }))
+          }
+          
+          await updateUserOrder(updateData)
+          this.$message.success('保存成功')
+          
+          // 重新加载数据
+          await this.loadUserOrderInfo(this.orderId)
+        } catch (error) {
+          console.error('保存失败:', error)
+          this.$message.error('保存失败')
+        } finally {
+          this.submitLoading = false
+        }
+      })
+    },
+
+    // 提交入库信息
+    async submitWarehousing() {
+      if (!this.$refs.warehousingForm) return
+      
+      this.$refs.warehousingForm.validate(async(valid) => {
+        if (!valid) {
+          return false
+        }
+
+        // 验证货物明细
+        if (this.warehousingGoodItems.length === 0) {
+          this.$message.warning('请至少添加一条货物明细')
+          return
+        }
+
+        for (let i = 0; i < this.warehousingGoodItems.length; i++) {
+          const item = this.warehousingGoodItems[i]
+          if (!item.goodNo) {
+            this.$message.warning(`第 ${i + 1} 行的货物编号不能为空`)
+            return
+          }
+          if (!item.goodCount || item.goodCount <= 0) {
+            this.$message.warning(`第 ${i + 1} 行的货物数量必须大于0`)
+            return
+          }
+        }
+
+        this.submitLoading = true
+        try {
+          // 更新用户订单的入库信息
+          const updateData = {
+            id: this.orderId,
+            warehousingOrderNo: this.warehousingForm.orderNo,
+            warehousingOrderCode: this.warehousingForm.identifyCode,
+            warehousingDate: this.warehousingForm.warehousingDate,
+            warehouseId: this.warehousingForm.warehouseId,
+            warehouseName: this.warehousingForm.warehouseName,
+            warehousingNo: this.warehousingForm.warehousingNo,
+            warehousingGoodItems: this.warehousingGoodItems.map(item => ({ ...item }))
+          }
+          
+          await updateUserOrder(updateData)
+          this.$message.success('保存成功')
+          
+          // 重新加载数据
+          await this.loadUserOrderInfo(this.orderId)
+        } catch (error) {
+          console.error('保存失败:', error)
+          this.$message.error('保存失败')
+        } finally {
+          this.submitLoading = false
+        }
+      })
+    },
+
+    // 取消
+    handleCancel() {
+      this.$router.push({ name: 'UserOrderList' })
+    },
+
+    // 结算订单
+    async handleSettle() {
+      try {
+        await this.$confirm('结算后订单信息不可修改，是否结算？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+        
+        this.settleLoading = true
+        
+        // 根据当前阶段获取对应的登记信息
+        let settleData = {}
+        
+        switch (this.currentStage) {
+          case 'purchase':
+            // 采购阶段：传递采购表单数据
+            settleData = {
+              id: this.orderId,
+              ...this.purchaseForm
+            }
+            break
+          case 'transport':
+            // 运输阶段：传递运输表单数据
+            settleData = {
+              id: this.orderId,
+              ...this.transportForm
+            }
+            break
+          case 'processing':
+            // 加工阶段：传递加工表单数据和货物明细
+            settleData = {
+              id: this.orderId,
+              ...this.processingForm,
+              items: this.processingGoodItems.map(item => ({ ...item }))
+            }
+            break
+          case 'warehousing':
+            // 入库阶段：传递入库表单数据和货物明细
+            settleData = {
+              id: this.orderId,
+              ...this.warehousingForm,
+              items: this.warehousingGoodItems.map(item => ({ ...item }))
+            }
+            break
+          default:
+            settleData = { id: this.orderId }
+        }
+        
+        await settleUserOrder(settleData)
+        this.$message.success('结算成功')
+        
+        // 返回列表页面
+        this.$router.push({ name: 'UserOrderList' })
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('结算订单失败:', error)
+          this.$message.error('结算订单失败')
+        }
+      } finally {
+        this.settleLoading = false
+      }
+    },
+
+    // ====== 辅助方法 ======
+    // 获取订单状态阶段文本
+    getStageText(stage) {
+      return getUserOrderStageText(stage)
+    },
+
+    // 获取订单状态阶段标签类型
+    getStageTagType(stage) {
+      return getUserOrderStageTagType(stage)
+    },
+
+    // 获取订单状态文本
+    getStatusText(status) {
+      return getUserOrderStatusText(status)
+    },
+
+    // 获取订单状态标签类型
+    getStatusTagType(status) {
+      return getUserOrderStatusTagType(status)
+    },
+
+    // 获取计价方式显示文本
+    getPricingMethodText(method) {
+      return getPricingMethodTextFromConst(method)
+    },
+
+    // 显示图片URL（处理相对路径和绝对路径）
+    displayUrl(url) {
+      if (!url) return ''
+      // 如果是绝对路径，直接返回
+      if (/^(https?:)?\/\//.test(url)) {
+        return url
+      }
+      // 如果是相对路径，拼接基础URL
+      const baseUrl = process.env.VUE_APP_BASE_URL || ''
+      return baseUrl + (url.startsWith('/') ? url : '/' + url)
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.app-container {
+  padding: 20px;
+
+  .page-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+
+    h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 500;
+      color: #303133;
+    }
+  }
+
+  .basic-info-card {
+    margin-bottom: 20px;
+
+    .order-image-preview {
+      display: flex;
+      align-items: center;
+    }
+
+    ::v-deep .el-form-item__content {
+      line-height: normal;
+    }
+  }
+
+  .steps-container {
+    background: #fff;
+    padding: 30px 20px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+
+    ::v-deep .el-step__title {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    ::v-deep .el-step__head {
+      cursor: pointer;
+    }
+
+    // 可点击的步骤
+    .step-clickable {
+      ::v-deep .el-step__head {
+        cursor: pointer;
+      }
+      
+      &:hover ::v-deep .el-step__title {
+        color: #409EFF;
+      }
+    }
+
+    // 不可点击的步骤（后续步骤）
+    .step-disabled {
+      ::v-deep .el-step__head {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      ::v-deep .el-step__title {
+        color: #C0C4CC !important;
+      }
+
+      ::v-deep .el-step__icon {
+        opacity: 0.5;
+      }
+
+      ::v-deep .el-step__line {
+        opacity: 0.3;
+      }
+    }
+  }
+
+  .form-card {
+    margin-bottom: 20px;
+    min-height: 400px;
+
+    .stage-content {
+      .stage-title {
+        margin: 0 0 20px 0;
+        padding-bottom: 15px;
+        font-size: 18px;
+        font-weight: 500;
+        color: #303133;
+        border-bottom: 2px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+
+        i {
+          margin-right: 8px;
+          font-size: 20px;
+        }
+      }
+
+      .amount-text {
+        font-weight: 600;
+        color: #e6a23c;
+      }
+    }
+  }
+
+  .form-footer {
+    padding: 20px;
+    text-align: right;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+
+    .el-button {
+      margin-left: 10px;
+    }
+  }
+}
+</style>
+

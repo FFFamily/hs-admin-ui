@@ -13,6 +13,13 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="结算时间">
+              <el-input v-model="form.settlementTime" placeholder="系统自动生成" readonly disabled />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="订单状态阶段">
               <el-select v-model="form.stage" placeholder="请选择订单状态阶段" style="width: 100%;" disabled>
                 <el-option
@@ -39,11 +46,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="位置" prop="location">
-              <el-input v-model="form.location" placeholder="请输入位置" />
-            </el-form-item>
-          </el-col>
         </el-row>
 
         <el-row :gutter="20">
@@ -53,67 +55,65 @@
                 v-model="form.contractName"
                 placeholder="请选择合同"
                 readonly
+                :disabled="isEdit"
                 @focus="showContractSelector"
               >
-                <el-button slot="append" type="primary" @click="showContractSelector">选择合同</el-button>
+                <el-button slot="append" type="primary" :disabled="isEdit" @click="showContractSelector">选择合同</el-button>
               </el-input>
               <div v-if="form.contractNo" style="margin-top: 8px; color: #666; font-size: 12px;">
                 合同编号：{{ form.contractNo }}
               </div>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="经办人" prop="processorId">
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="甲方" prop="partyA">
               <el-input
-                v-model="form.processorName"
-                placeholder="请选择经办人"
+                v-model="form.partyAName"
+                placeholder="请先选择合同"
                 readonly
-                @focus="showProcessorSelector"
-              >
-                <el-button slot="append" type="primary" @click="showProcessorSelector">选择经办人</el-button>
-              </el-input>
+                disabled
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="乙方" prop="partyB">
+              <el-input
+                v-model="form.partyBName"
+                placeholder="请先选择合同"
+                readonly
+                disabled
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="合作方" prop="contractPartner">
+              <el-input
+                v-model="form.contractPartnerName"
+                placeholder="请先选择合同"
+                readonly
+                disabled
+              />
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="甲方" prop="partyA">
-              <el-input
-                v-model="form.partyAName"
-                placeholder="请选择甲方"
-                readonly
-                @focus="showPartyASelector"
-              >
-                <el-button slot="append" type="primary" @click="showPartyASelector">选择甲方</el-button>
-              </el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="乙方" prop="partyB">
-              <el-input
-                v-model="form.partyBName"
-                placeholder="请选择乙方"
-                readonly
-                @focus="showPartyBSelector"
-              >
-                <el-button slot="append" type="primary" @click="showPartyBSelector">选择乙方</el-button>
-              </el-input>
+            <el-form-item label="计价方式" prop="pricingMethod">
+              <el-select v-model="form.pricingMethod" placeholder="请选择计价方式" style="width: 100%;" :disabled="isEdit">
+                <el-option
+                  v-for="item in pricingMethodOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
-
-        <el-form-item label="订单图片" prop="imgUrl">
-          <ImageUploader
-            v-model="form.imgUrl"
-            :multiple="false"
-            :limit="1"
-            action="/api/system/file/upload"
-            list-type="picture-card"
-            :emit-raw="true"
-            tips="支持JPG、PNG格式，大小不超过2MB"
-          />
-        </el-form-item>
       </el-form>
 
       <!-- 底部按钮 -->
@@ -133,50 +133,24 @@
       @confirm="handleContractSelected"
     />
 
-    <!-- 经办人选择器 -->
-    <agent-selector
-      :visible.sync="processorSelectorVisible"
-      title="选择经办人"
-      :multiple="false"
-      @confirm="handleProcessorSelected"
-    />
 
-    <!-- 甲方选择器 -->
-    <UserSelector
-      :visible.sync="partyASelectorVisible"
-      title="选择甲方"
-      :multiple="false"
-      @confirm="handlePartyASelected"
-    />
-
-    <!-- 乙方选择器 -->
-    <UserSelector
-      :visible.sync="partyBSelectorVisible"
-      title="选择乙方"
-      :multiple="false"
-      @confirm="handlePartyBSelected"
-    />
   </div>
 </template>
 
 <script>
 import { createUserOrder, updateUserOrder, getUserOrderDetail } from '@/api/userOrder'
 import ContractSelector from '@/components/ContractSelector'
-import AgentSelector from '@/components/AgentSelector'
-import UserSelector from '@/components/UserSelector'
-import ImageUploader from '@/components/ImageUploader'
 import {
   USER_ORDER_STAGE_OPTIONS,
-  USER_ORDER_STATUS_OPTIONS
+  USER_ORDER_STATUS_OPTIONS,
+  PRICING_METHOD_OPTIONS,
+  PRICING_METHOD
 } from '@/constants/userOrder'
 
 export default {
   name: 'UserOrderAdd',
   components: {
-    ContractSelector,
-    AgentSelector,
-    UserSelector,
-    ImageUploader
+    ContractSelector
   },
   data() {
     return {
@@ -184,9 +158,6 @@ export default {
       isEdit: false,
       orderId: null,
       contractSelectorVisible: false,
-      processorSelectorVisible: false,
-      partyASelectorVisible: false,
-      partyBSelectorVisible: false,
 
       // 表单数据
       form: {
@@ -203,10 +174,8 @@ export default {
         partyAName: '',
         partyB: '',
         partyBName: '',
-        processorId: '',
-        processorName: '',
-        imgUrl: '',
-        location: ''
+        pricingMethod: PRICING_METHOD.GENERAL,
+        settlementTime: ''
       },
 
       // 表单验证规则
@@ -214,8 +183,8 @@ export default {
         contractId: [
           { required: true, message: '请选择合同', trigger: 'change' }
         ],
-        processorId: [
-          { required: true, message: '请选择经办人', trigger: 'change' }
+        pricingMethod: [
+          { required: true, message: '请选择计价方式', trigger: 'change' }
         ]
       },
 
@@ -223,7 +192,10 @@ export default {
       stageOptions: USER_ORDER_STAGE_OPTIONS,
 
       // 订单状态选项
-      statusOptions: USER_ORDER_STATUS_OPTIONS
+      statusOptions: USER_ORDER_STATUS_OPTIONS,
+
+      // 计价方式选项
+      pricingMethodOptions: PRICING_METHOD_OPTIONS
     }
   },
   mounted() {
@@ -263,10 +235,8 @@ export default {
             partyAName: data.partyAName || '',
             partyB: data.partyB || '',
             partyBName: data.partyBName || '',
-            processorId: data.processorId || '',
-            processorName: data.processorName || '',
-            imgUrl: data.imgUrl || '',
-            location: data.location || ''
+            pricingMethod: data.pricingMethod || PRICING_METHOD.GENERAL,
+            settlementTime: data.settlementTime || ''
           }
         }
       } catch (error) {
@@ -291,10 +261,8 @@ export default {
         partyAName: '',
         partyB: '',
         partyBName: '',
-        processorId: '',
-        processorName: '',
-        imgUrl: '',
-        location: ''
+        pricingMethod: PRICING_METHOD.GENERAL,
+        settlementTime: ''
       }
       if (this.$refs.form) {
         this.$refs.form.clearValidate()
@@ -303,6 +271,10 @@ export default {
 
     // 显示合同选择器
     showContractSelector() {
+      if (this.isEdit) {
+        this.$message.warning('编辑模式下无法修改合同')
+        return
+      }
       this.contractSelectorVisible = true
     },
 
@@ -313,52 +285,16 @@ export default {
         this.form.contractId = contract.id
         this.form.contractNo = contract.no
         this.form.contractName = contract.name
-        this.form.contractPartner = contract.partner
-        this.form.contractPartnerName = contract.partnerName
+        // 从合同数据中自动填充合作方
+        this.form.contractPartner = contract.partner || ''
+        this.form.contractPartnerName = contract.partnerName || ''
+        // 从合同数据中自动填充甲方
+        this.form.partyA = contract.partyA || ''
+        this.form.partyAName = contract.partyAName || ''
+        // 从合同数据中自动填充乙方
+        this.form.partyB = contract.partyB || ''
+        this.form.partyBName = contract.partyBName || ''
         this.$refs.form.validateField('contractId')
-      }
-    },
-
-    // 显示经办人选择器
-    showProcessorSelector() {
-      this.processorSelectorVisible = true
-    },
-
-    // 经办人选择确认
-    handleProcessorSelected(agents) {
-      if (agents && agents.length > 0) {
-        const agent = agents[0]
-        this.form.processorId = agent.id
-        this.form.processorName = agent.name || agent.accountName
-        this.$refs.form.validateField('processorId')
-      }
-    },
-
-    // 显示甲方选择器
-    showPartyASelector() {
-      this.partyASelectorVisible = true
-    },
-
-    // 甲方选择确认
-    handlePartyASelected(users) {
-      if (users && users.length > 0) {
-        const user = users[0]
-        this.form.partyA = user.id
-        this.form.partyAName = user.nickname || user.username
-      }
-    },
-
-    // 显示乙方选择器
-    showPartyBSelector() {
-      this.partyBSelectorVisible = true
-    },
-
-    // 乙方选择确认
-    handlePartyBSelected(users) {
-      if (users && users.length > 0) {
-        const user = users[0]
-        this.form.partyB = user.id
-        this.form.partyBName = user.nickname || user.username
       }
     },
 

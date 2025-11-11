@@ -17,6 +17,14 @@ export function getUserOrderDetail(params) {
   })
 }
 
+// 获取用户订单信息（包含各阶段订单信息）
+export function getUserOrderInfo(id) {
+  return request({
+    url: '/recycle/user/order/info/' + id,
+    method: 'get'
+  })
+}
+
 // 创建用户订单
 export function createUserOrder(data) {
   return request({
@@ -52,10 +60,20 @@ export function getRecycleOrderByParentId(parentId) {
 }
 
 // 结算用户订单
-export function settleUserOrder(orderId) {
+export function settleUserOrder(data) {
   return request({
-    url: '/recycle/user/order/settle/' + orderId,
-    method: 'get'
+    url: '/recycle/user/order/settle',
+    method: 'post',
+    data
+  })
+}
+
+// 提交交付
+export function submitDelivery(data) {
+  return request({
+    url: '/recycle/user/order/delivery',
+    method: 'post',
+    data
   })
 }
 

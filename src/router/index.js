@@ -181,6 +181,13 @@ export const constantRoutes = [
         hidden: true
       },
       {
+        path: 'userOrderRegister',
+        name: 'UserOrderRegister',
+        component: () => import('@/views/userOrder/userOrderRegister.vue'),
+        meta: { title: '登记订单信息', icon: 'form' },
+        hidden: true
+      },
+      {
         path: 'userOrderPurchase',
         name: 'UserOrderPurchase',
         component: () => import('@/views/userOrder/userOrderPurchase.vue'),
