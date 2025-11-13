@@ -93,6 +93,14 @@ export function generateAccountUsername(id, accountType) {
     }
   })
 }
+
+// 获取用户详情
+export function getUserDetail(id) {
+  return request({
+    url: `/wx/user/info/${id}`,
+    method: 'get'
+  })
+}
 // 获取后台配置的所有的身份列表
 export function getUseTypeList() {
   return request({

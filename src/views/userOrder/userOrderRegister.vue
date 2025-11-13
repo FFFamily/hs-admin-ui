@@ -31,6 +31,45 @@
         
         <el-row :gutter="20">
           <el-col :span="8">
+            <el-form-item label="订单总金额">
+              <el-input :value="formatAmount(orderInfo.totalAmount)" readonly disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="货物总金额">
+              <el-input :value="formatAmount(orderInfo.goodsTotalAmount)" readonly disabled />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="其他调价">
+              <el-input-number
+                v-model="purchaseForm.otherPriceAdjustment"
+                :precision="2"
+                :step="0.01"
+                :disabled="!canEdit"
+                controls-position="right"
+                style="width: 100%;"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="用户系数">
+              <el-input-number
+                v-model="purchaseForm.userCoefficient"
+                :precision="2"
+                :step="0.01"
+                :disabled="!canEdit"
+                controls-position="right"
+                style="width: 100%;"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="8">
             <el-form-item label="合同编号">
               <el-input v-model="orderInfo.contractNo" readonly disabled />
             </el-form-item>
@@ -159,33 +198,6 @@
             <el-col :span="12">
               <el-form-item label="分配站点" prop="siteName">
                 <el-input v-model="purchaseForm.siteName" :disabled="!canEdit" placeholder="请输入分配站点" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-          
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="订单总金额" prop="totalAmount">
-                <el-input-number
-                  v-model="purchaseForm.totalAmount"
-                  :disabled="!canEdit"
-                  :precision="2"
-                  :min="0"
-                  placeholder="请输入订单总金额"
-                  style="width: 100%;"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="货物总金额" prop="goodsTotalAmount">
-                <el-input-number
-                  v-model="purchaseForm.goodsTotalAmount"
-                  :disabled="!canEdit"
-                  :precision="2"
-                  :min="0"
-                  placeholder="请输入货物总金额"
-                  style="width: 100%;"
-                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -650,6 +662,8 @@ export default {
         paymentAccount: '',
         siteId: '',
         siteName: '',
+        otherPriceAdjustment: 0,
+        userCoefficient: 0,
         totalAmount: 0,
         goodsTotalAmount: 0,
         createTime: '',
@@ -757,6 +771,14 @@ export default {
       return stageMap[this.userOrderData.stage] || 0
     }
   },
+  watch: {
+    'purchaseForm.otherPriceAdjustment'(val) {
+      this.orderInfo.otherPriceAdjustment = val
+    },
+    'purchaseForm.userCoefficient'(val) {
+      this.orderInfo.userCoefficient = val
+    }
+  },
   mounted() {
     this.initData()
   },
@@ -821,11 +843,21 @@ export default {
             processorName: userOrder.processorName || '',
             location: userOrder.location || '',
             pricingMethod: userOrder.pricingMethod || '',
-            imgUrl: userOrder.imgUrl || ''
+            imgUrl: userOrder.imgUrl || '',
+            totalAmount: userOrder.totalAmount !== undefined ? userOrder.totalAmount : 0,
+            goodsTotalAmount: userOrder.goodsTotalAmount !== undefined ? userOrder.goodsTotalAmount : 0,
+            otherPriceAdjustment: userOrder.otherPriceAdjustment !== undefined ? userOrder.otherPriceAdjustment : 0,
+            userCoefficient: userOrder.userCoefficient !== undefined ? userOrder.userCoefficient : 0
           }
           
           // 加载采购阶段数据
           const purchaseOrder = data.purchaseOrder || {}
+          const otherPriceAdjustment = purchaseOrder.otherPriceAdjustment !== undefined
+            ? purchaseOrder.otherPriceAdjustment
+            : (userOrder.otherPriceAdjustment !== undefined ? userOrder.otherPriceAdjustment : 0)
+          const userCoefficient = purchaseOrder.userCoefficient !== undefined
+            ? purchaseOrder.userCoefficient
+            : (userOrder.userCoefficient !== undefined ? userOrder.userCoefficient : 0)
           this.purchaseForm = {
             orderNo: purchaseOrder.orderNo || purchaseOrder.no || '',
             identifyCode: purchaseOrder.identifyCode || purchaseOrder.code || '',
@@ -835,11 +867,15 @@ export default {
             paymentAccount: purchaseOrder.paymentAccount || '',
             siteId: purchaseOrder.siteId || '',
             siteName: purchaseOrder.siteName || '',
+            otherPriceAdjustment,
+            userCoefficient,
             totalAmount: purchaseOrder.totalAmount || 0,
             goodsTotalAmount: purchaseOrder.goodsTotalAmount || 0,
             createTime: purchaseOrder.createTime || '',
             orderNodeImg: purchaseOrder.orderNodeImg || ''
           }
+          this.orderInfo.otherPriceAdjustment = otherPriceAdjustment
+          this.orderInfo.userCoefficient = userCoefficient
           
           // 加载运输阶段数据
           const transportOrder = data.transportOrder || {}
@@ -1210,6 +1246,8 @@ export default {
             paymentAccount: this.purchaseForm.paymentAccount,
             siteId: this.purchaseForm.siteId,
             siteName: this.purchaseForm.siteName,
+            otherPriceAdjustment: this.purchaseForm.otherPriceAdjustment,
+            userCoefficient: this.purchaseForm.userCoefficient,
             totalAmount: this.purchaseForm.totalAmount,
             goodsTotalAmount: this.purchaseForm.goodsTotalAmount,
             orderNodeImg: this.purchaseForm.orderNodeImg
@@ -1468,6 +1506,18 @@ export default {
     // 获取计价方式显示文本
     getPricingMethodText(method) {
       return getPricingMethodTextFromConst(method)
+    },
+
+    // 格式化金额显示
+    formatAmount(amount) {
+      if (amount === null || amount === undefined || amount === '') {
+        return ''
+      }
+      const num = Number(amount)
+      if (Number.isNaN(num)) {
+        return amount
+      }
+      return num.toFixed(2)
     },
 
     // 显示图片URL（处理相对路径和绝对路径）

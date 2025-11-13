@@ -20,6 +20,43 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item label="订单总金额">
+              <el-input :value="formatAmount(form.totalAmount)" readonly disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="货物总金额">
+              <el-input :value="formatAmount(form.goodsTotalAmount)" readonly disabled />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="其他调价">
+              <el-input-number
+                v-model="form.otherPriceAdjustment"
+                :precision="2"
+                :step="0.01"
+                :controls="false"
+                style="width: 100%;"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="用户系数">
+              <el-input-number
+                v-model="form.userCoefficient"
+                :precision="2"
+                :step="0.01"
+                :controls="false"
+                disabled
+                style="width: 100%;"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="订单状态阶段">
               <el-select v-model="form.stage" placeholder="请选择订单状态阶段" style="width: 100%;" disabled>
                 <el-option
@@ -146,6 +183,7 @@ import {
   PRICING_METHOD_OPTIONS,
   PRICING_METHOD
 } from '@/constants/userOrder'
+import { getUserDetail } from '@/api/user'
 
 export default {
   name: 'UserOrderAdd',
@@ -158,6 +196,7 @@ export default {
       isEdit: false,
       orderId: null,
       contractSelectorVisible: false,
+      fetchingUserCoefficient: false,
 
       // 表单数据
       form: {
@@ -175,7 +214,11 @@ export default {
         partyB: '',
         partyBName: '',
         pricingMethod: PRICING_METHOD.GENERAL,
-        settlementTime: ''
+        settlementTime: '',
+        totalAmount: 0,
+        goodsTotalAmount: 0,
+        otherPriceAdjustment: 0,
+        userCoefficient: 0
       },
 
       // 表单验证规则
@@ -236,7 +279,11 @@ export default {
             partyB: data.partyB || '',
             partyBName: data.partyBName || '',
             pricingMethod: data.pricingMethod || PRICING_METHOD.GENERAL,
-            settlementTime: data.settlementTime || ''
+            settlementTime: data.settlementTime || '',
+            totalAmount: data.totalAmount || 0,
+            goodsTotalAmount: data.goodsTotalAmount || 0,
+            otherPriceAdjustment: data.otherPriceAdjustment || 0,
+            userCoefficient: data.userCoefficient || 0
           }
         }
       } catch (error) {
@@ -262,7 +309,11 @@ export default {
         partyB: '',
         partyBName: '',
         pricingMethod: PRICING_METHOD.GENERAL,
-        settlementTime: ''
+        settlementTime: '',
+        totalAmount: 0,
+        goodsTotalAmount: 0,
+        otherPriceAdjustment: 0,
+        userCoefficient: 0
       }
       if (this.$refs.form) {
         this.$refs.form.clearValidate()
@@ -295,7 +346,20 @@ export default {
         this.form.partyB = contract.partyB || ''
         this.form.partyBName = contract.partyBName || ''
         this.$refs.form.validateField('contractId')
+        this.fetchUserCoefficient(contract.partner)
       }
+    },
+
+    // 金额显示格式化
+    formatAmount(amount) {
+      if (amount === null || amount === undefined || amount === '') {
+        return ''
+      }
+      const num = Number(amount)
+      if (Number.isNaN(num)) {
+        return amount
+      }
+      return num.toFixed(2)
     },
 
     // 提交表单
@@ -327,6 +391,29 @@ export default {
     // 取消
     handleCancel() {
       this.$router.push({ name: 'UserOrderList' })
+    },
+
+    // 根据合作方ID获取用户系数
+    async fetchUserCoefficient(partnerId) {
+      if (!partnerId) {
+        this.form.userCoefficient = 0
+        return
+      }
+      if (this.fetchingUserCoefficient) return
+      this.fetchingUserCoefficient = true
+      try {
+        const res = await getUserDetail(partnerId)
+        const data = res && res.data ? res.data : {}
+        const coefficient = data.scoreFactor ?? data.userCoefficient ?? 0
+        const parsed = Number(coefficient)
+        this.form.userCoefficient = Number.isNaN(parsed) ? 0 : parsed
+      } catch (error) {
+        console.error('获取用户系数失败:', error)
+        this.form.userCoefficient = 0
+        this.$message.error('获取用户系数失败')
+      } finally {
+        this.fetchingUserCoefficient = false
+      }
     }
   }
 }
