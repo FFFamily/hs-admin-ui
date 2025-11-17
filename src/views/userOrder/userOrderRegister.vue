@@ -11,111 +11,94 @@
         <span>订单基本信息</span>
       </div>
       <el-form :model="orderInfo" label-width="120px">
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="订单编号">
-              <el-input v-model="orderInfo.no" readonly disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="结算时间">
-              <el-input v-model="orderInfo.settlementTime" readonly disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="订单状态阶段">
-              {{ getStageText(orderInfo.stage) }}
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="订单总金额">
-              <el-input :value="formatAmount(orderInfo.totalAmount)" readonly disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="货物总金额">
-              <el-input :value="formatAmount(orderInfo.goodsTotalAmount)" readonly disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="其他调价">
-              <el-input-number
-                v-model="purchaseForm.otherPriceAdjustment"
-                :precision="2"
-                :step="0.01"
-                :disabled="!canEdit"
-                controls-position="right"
-                style="width: 100%;"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="用户系数">
-              <el-input-number
-                v-model="purchaseForm.userCoefficient"
-                :precision="2"
-                :step="0.01"
-                :disabled="!canEdit"
-                controls-position="right"
-                style="width: 100%;"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="合同编号">
-              <el-input v-model="orderInfo.contractNo" readonly disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="合同名称">
-              <el-input v-model="orderInfo.contractName" readonly disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="合同伙伴">
-              <el-input v-model="orderInfo.contractPartnerName" readonly disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="甲方">
-              <el-input v-model="orderInfo.partyAName" readonly disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="乙方">
-              <el-input v-model="orderInfo.partyBName" readonly disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="合作方">
-              <el-input v-model="orderInfo.contractPartnerName" readonly disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="经办人">
-              <el-input v-model="orderInfo.processorName" readonly disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="计价方式">
-              <el-input :value="getPricingMethodText(orderInfo.pricingMethod)" readonly disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <div class="info-section">
+          <div class="section-title">订单信息</div>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <el-form-item label="订单编号">
+                <el-input v-model="orderInfo.no" readonly disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="订单状态阶段">
+                {{ getStageText(orderInfo.stage) }}
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="计价方式">
+                <el-input :value="getPricingMethodText(orderInfo.pricingMethod)" readonly disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <el-form-item label="结算时间">
+                <el-input v-model="orderInfo.settlementTime" readonly disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <div class="info-section">
+          <div class="section-title">金额信息</div>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <el-form-item label="订单总金额">
+                <el-input :value="formatAmount(orderInfo.totalAmount)" readonly disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="货物总金额">
+                <el-input :value="formatAmount(orderInfo.goodsTotalAmount)" readonly disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="其他调价">
+                <el-input :value="formatAmount(orderInfo.otherAdjustAmount)" readonly disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <el-form-item label="用户评级系数">
+                <el-input :value="formatAmount(orderInfo.accountCoefficient)" readonly disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <div class="info-section">
+          <div class="section-title">合同信息</div>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <el-form-item label="合同编号">
+                <el-input v-model="orderInfo.contractNo" readonly disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="合同名称">
+                <el-input v-model="orderInfo.contractName" readonly disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="合同伙伴">
+                <el-input v-model="orderInfo.contractPartnerName" readonly disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <el-form-item label="甲方">
+                <el-input v-model="orderInfo.partyAName" readonly disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="乙方">
+                <el-input v-model="orderInfo.partyBName" readonly disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
       </el-form>
     </el-card>
 
@@ -128,19 +111,20 @@
           @click.native="handleStepClick(0)"
         />
         <el-step
+          v-if="!isSimplePricing"
           title="运输"
           :class="{ 'step-clickable': 1 <= currentOrderStep, 'step-disabled': 1 > currentOrderStep }"
           @click.native="handleStepClick(1)"
         />
         <el-step
-          title="加工"
-          :class="{ 'step-clickable': 2 <= currentOrderStep, 'step-disabled': 2 > currentOrderStep }"
-          @click.native="handleStepClick(2)"
+          :title="isSimplePricing ? '加工' : '加工'"
+          :class="{ 'step-clickable': (isSimplePricing ? 1 : 2) <= currentOrderStep, 'step-disabled': (isSimplePricing ? 1 : 2) > currentOrderStep }"
+          @click.native="handleStepClick(isSimplePricing ? 1 : 2)"
         />
         <el-step
           title="入库"
-          :class="{ 'step-clickable': 3 <= currentOrderStep, 'step-disabled': 3 > currentOrderStep }"
-          @click.native="handleStepClick(3)"
+          :class="{ 'step-clickable': (isSimplePricing ? 2 : 3) <= currentOrderStep, 'step-disabled': (isSimplePricing ? 2 : 3) > currentOrderStep }"
+          @click.native="handleStepClick(isSimplePricing ? 2 : 3)"
         />
       </el-steps>
     </div>
@@ -196,8 +180,16 @@
           </el-row>
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="分配站点" prop="siteName">
-                <el-input v-model="purchaseForm.siteName" :disabled="!canEdit" placeholder="请输入分配站点" />
+              <el-form-item label="分配站点" prop="siteId">
+                <el-input
+                  v-model="purchaseForm.siteName"
+                  :disabled="!canEdit"
+                  placeholder="请选择分配站点"
+                  readonly
+                  @focus="showSiteSelector"
+                >
+                  <el-button slot="append" type="primary" :disabled="!canEdit" @click="showSiteSelector">选择站点</el-button>
+                </el-input>
               </el-form-item>
             </el-col>
           </el-row>
@@ -226,7 +218,7 @@
       </div>
 
       <!-- 运输阶段 -->
-      <div v-show="currentStage === 'transport'" class="stage-content">
+      <div v-if="!isSimplePricing" v-show="currentStage === 'transport'" class="stage-content">
         <h3 class="stage-title">
           <i class="el-icon-truck"></i> 运输信息
           <el-tag v-if="!canEdit" type="info" size="small" style="margin-left: 10px;">只读</el-tag>
@@ -443,6 +435,21 @@
             </el-col>
           </el-row>
           <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="加工经办人" prop="processorId">
+                <el-input
+                  v-model="warehousingForm.processorName"
+                  :disabled="!canEdit"
+                  placeholder="请选择加工经办人"
+                  readonly
+                  @focus="showWarehousingProcessorSelector"
+                >
+                  <el-button slot="append" type="primary" :disabled="!canEdit" @click="showWarehousingProcessorSelector">选择经办人</el-button>
+                </el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
             <!-- <el-col :span="12">
               <el-form-item label="入库日期" prop="warehousingDate">
                 <el-date-picker
@@ -540,6 +547,19 @@
               />
             </template>
           </el-table-column>
+          <el-table-column prop="goodPrice" label="货物单价" width="160" align="center">
+            <template slot-scope="scope">
+              <el-input-number
+                v-model="scope.row.goodPrice"
+                :disabled="!canEdit"
+                :min="0"
+                :precision="2"
+                controls-position="right"
+                placeholder="请输入货物单价"
+                style="width: 130px;"
+              />
+            </template>
+          </el-table-column>
           <el-table-column prop="goodRemark" label="货物备注" min-width="180">
             <template slot-scope="scope">
               <el-input :disabled="!canEdit" v-model="scope.row.goodRemark" placeholder="备注" />
@@ -553,7 +573,7 @@
     <div class="form-footer">
       <el-button @click="handleCancel">返回</el-button>
       <el-button v-if="canEdit" type="primary" :loading="submitLoading" @click="handleSubmit">保存当前阶段</el-button>
-      <el-button v-if="userOrderData.stage !== USER_ORDER_STAGE.COMPLETED" type="warning" :loading="settleLoading" @click="handleSettle">结算订单</el-button>
+      <el-button v-if="userOrderData.stage !== USER_ORDER_STAGE.PENDING_SETTLEMENT && userOrderData.stage !== USER_ORDER_STAGE.COMPLETED" type="warning" :loading="settleLoading" @click="handleSettle">结算订单</el-button>
     </div>
 
     <!-- 采购经办人选择器 -->
@@ -600,12 +620,28 @@
       @close="handleWarehousingGoodSelectorClose"
     />
 
+    <!-- 入库经办人选择器 -->
+    <agent-selector
+      :visible.sync="warehousingProcessorSelectorVisible"
+      title="选择加工经办人"
+      :multiple="false"
+      @confirm="handleWarehousingProcessorSelected"
+    />
+
     <!-- 仓库选择器 -->
     <warehouse-selector
       :visible.sync="warehouseSelectorVisible"
       title="选择仓库"
       :multiple="false"
       @confirm="handleWarehouseSelected"
+    />
+
+    <!-- 站点选择器 -->
+    <site-selector
+      :visible.sync="siteSelectorVisible"
+      title="选择站点"
+      :multiple="false"
+      @confirm="handleSiteSelected"
     />
   </div>
 </template>
@@ -615,6 +651,7 @@ import { getRecycleOrderByParentId, getUserOrderDetail, getUserOrderInfo, update
 import { createRecycle, updateRecycle } from '@/api/recycle'
 import AgentSelector from '@/components/AgentSelector'
 import WarehouseSelector from '@/components/WarehouseSelector'
+import SiteSelector from '@/components/SiteSelector'
 import ImageUploader from '@/components/ImageUploader'
 import BusinessScopeSelector from '@/components/BusinessScopeSelector'
 import {
@@ -631,6 +668,7 @@ export default {
   components: {
     AgentSelector,
     WarehouseSelector,
+    SiteSelector,
     ImageUploader,
     BusinessScopeSelector
   },
@@ -653,6 +691,7 @@ export default {
       
       // 采购阶段数据
       processorSelectorVisible: false,
+      siteSelectorVisible: false,
       purchaseForm: {
         orderNo: '',
         identifyCode: '',
@@ -729,6 +768,7 @@ export default {
       
       // 入库阶段数据
       warehouseSelectorVisible: false,
+      warehousingProcessorSelectorVisible: false,
       warehousingGoodSelectorVisible: false,
       warehousingCurrentRowIndex: -1,
       warehousingSelectedItems: [],
@@ -736,12 +776,17 @@ export default {
       warehousingForm: {
         orderNo: '',
         identifyCode: '',
+        processorId: '',
+        processorName: '',
         warehousingDate: '',
         warehouseId: '',
         warehouseName: '',
         warehousingNo: ''
       },
       warehousingRules: {
+        processorId: [
+          { required: true, message: '请选择加工经办人', trigger: 'change' }
+        ],
         warehousingDate: [
           { required: true, message: '请选择入库日期', trigger: 'change' }
         ],
@@ -755,20 +800,39 @@ export default {
     }
   },
   computed: {
+    // 是否为简单计价方式
+    isSimplePricing() {
+      return this.orderInfo.pricingMethod === 'simple'
+    },
     // 当前阶段是否可以编辑
     canEdit() {
       return this.currentStage === this.userOrderData.stage
     },
     // 当前订单所处的阶段索引
     currentOrderStep() {
-      const stageMap = {
-        [USER_ORDER_STAGE.PURCHASE]: 0,
-        [USER_ORDER_STAGE.TRANSPORT]: 1,
-        [USER_ORDER_STAGE.PROCESSING]: 2,
-        [USER_ORDER_STAGE.WAREHOUSING]: 3,
-        [USER_ORDER_STAGE.COMPLETED]: 3 // 完成阶段相当于走完了入库阶段，显示全部完成
+      if (this.isSimplePricing) {
+        // 简单计价：没有运输阶段
+        const stageMap = {
+          [USER_ORDER_STAGE.PURCHASE]: 0,
+          [USER_ORDER_STAGE.PROCESSING]: 1,
+          [USER_ORDER_STAGE.WAREHOUSING]: 2,
+          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 3,
+          [USER_ORDER_STAGE.COMPLETED]: 3
+        }
+        return stageMap[this.userOrderData.stage] || 0
+      } else {
+        // 一般计价：包含运输阶段
+        const stageMap = {
+          [USER_ORDER_STAGE.PURCHASE]: 0,
+          [USER_ORDER_STAGE.TRANSPORT]: 1,
+          [USER_ORDER_STAGE.PROCESSING]: 2,
+          [USER_ORDER_STAGE.WAREHOUSING]: 3,
+          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 4,
+          [USER_ORDER_STAGE.COMPLETED]: 4
+        }
+        
+        return stageMap[this.userOrderData.stage] || 0
       }
-      return stageMap[this.userOrderData.stage] || 0
     }
   },
   watch: {
@@ -802,17 +866,32 @@ export default {
 
     // 根据订单阶段设置当前显示阶段
     setCurrentStageByOrder() {
-      const stageMap = {
-        [USER_ORDER_STAGE.PURCHASE]: { stage: 'purchase', step: 0 },
-        [USER_ORDER_STAGE.TRANSPORT]: { stage: 'transport', step: 1 },
-        [USER_ORDER_STAGE.PROCESSING]: { stage: 'processing', step: 2 },
-        [USER_ORDER_STAGE.WAREHOUSING]: { stage: 'warehousing', step: 3 },
-        [USER_ORDER_STAGE.COMPLETED]: { stage: 'warehousing', step: 4 } // 完成阶段相当于走完了入库阶段，显示入库内容，步骤条全部完成
+      if (this.isSimplePricing) {
+        // 简单计价：没有运输阶段
+        const stageMap = {
+          [USER_ORDER_STAGE.PURCHASE]: { stage: 'purchase', step: 0 },
+          [USER_ORDER_STAGE.PROCESSING]: { stage: 'processing', step: 1 },
+          [USER_ORDER_STAGE.WAREHOUSING]: { stage: 'warehousing', step: 2 },
+          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: { stage: 'warehousing', step: 3 },
+          [USER_ORDER_STAGE.COMPLETED]: { stage: 'warehousing', step: 3 }
+        }
+        const config = stageMap[this.userOrderData.stage] || { stage: 'purchase', step: 0 }
+        this.currentStage = config.stage
+        this.activeStep = config.step
+      } else {
+        // 一般计价：包含运输阶段
+        const stageMap = {
+          [USER_ORDER_STAGE.PURCHASE]: { stage: 'purchase', step: 0 },
+          [USER_ORDER_STAGE.TRANSPORT]: { stage: 'transport', step: 1 },
+          [USER_ORDER_STAGE.PROCESSING]: { stage: 'processing', step: 2 },
+          [USER_ORDER_STAGE.WAREHOUSING]: { stage: 'warehousing', step: 3 },
+          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: { stage: 'warehousing', step: 4 },
+          [USER_ORDER_STAGE.COMPLETED]: { stage: 'warehousing', step: 4 }
+        }
+        const config = stageMap[this.userOrderData.stage] || { stage: 'purchase', step: 0 }
+        this.currentStage = config.stage
+        this.activeStep = config.step
       }
-      
-      const config = stageMap[this.userOrderData.stage] || { stage: 'purchase', step: 0 }
-      this.currentStage = config.stage
-      this.activeStep = config.step
     },
 
     // 加载用户订单信息（包含各阶段订单信息）
@@ -846,8 +925,8 @@ export default {
             imgUrl: userOrder.imgUrl || '',
             totalAmount: userOrder.totalAmount !== undefined ? userOrder.totalAmount : 0,
             goodsTotalAmount: userOrder.goodsTotalAmount !== undefined ? userOrder.goodsTotalAmount : 0,
-            otherPriceAdjustment: userOrder.otherPriceAdjustment !== undefined ? userOrder.otherPriceAdjustment : 0,
-            userCoefficient: userOrder.userCoefficient !== undefined ? userOrder.userCoefficient : 0
+            otherAdjustAmount: userOrder.otherAdjustAmount !== undefined ? userOrder.otherAdjustAmount : 0,
+            accountCoefficient: userOrder.accountCoefficient !== undefined ? userOrder.accountCoefficient : 0
           }
           
           // 加载采购阶段数据
@@ -913,6 +992,8 @@ export default {
           this.warehousingForm = {
             orderNo: storageOrder.orderNo || storageOrder.no || '',
             identifyCode: storageOrder.identifyCode || storageOrder.code || '',
+            processorId: storageOrder.processorId || '',
+            processorName: storageOrder.processorName || '',
             warehousingDate: storageOrder.warehousingDate || storageOrder.date || '',
             warehouseId: storageOrder.warehouseId || '',
             warehouseName: storageOrder.warehouseName || '',
@@ -941,9 +1022,18 @@ export default {
         this.$message.warning('只能查看当前阶段及之前的阶段信息')
         return
       }
-      const stageMap = ['purchase', 'transport', 'processing', 'warehousing']
-      this.currentStage = stageMap[step]
-      this.activeStep = step
+
+      if (this.isSimplePricing) {
+        // 简单计价：没有运输阶段
+        const stageMap = ['purchase', 'processing', 'warehousing']
+        this.currentStage = stageMap[step]
+        this.activeStep = step
+      } else {
+        // 一般计价：包含运输阶段
+        const stageMap = ['purchase', 'transport', 'processing', 'warehousing']
+        this.currentStage = stageMap[step]
+        this.activeStep = step
+      }
     },
 
   
@@ -966,6 +1056,27 @@ export default {
         this.purchaseForm.processorName = agent.name || agent.accountName
         if (this.$refs.purchaseForm) {
           this.$refs.purchaseForm.validateField('processorId')
+        }
+      }
+    },
+
+    // 显示站点选择器
+    showSiteSelector() {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      this.siteSelectorVisible = true
+    },
+
+    // 站点选择确认
+    handleSiteSelected(sites) {
+      if (sites && sites.length > 0) {
+        const site = sites[0]
+        this.purchaseForm.siteId = site.id
+        this.purchaseForm.siteName = site.name
+        if (this.$refs.purchaseForm) {
+          this.$refs.purchaseForm.validateField('siteId')
         }
       }
     },
@@ -1099,6 +1210,27 @@ export default {
     },
 
     // ====== 入库阶段方法 ======
+    // 显示入库经办人选择器
+    showWarehousingProcessorSelector() {
+      if (!this.canEdit) {
+        this.$message.warning('当前阶段不可编辑')
+        return
+      }
+      this.warehousingProcessorSelectorVisible = true
+    },
+
+    // 入库经办人选择确认
+    handleWarehousingProcessorSelected(agents) {
+      if (agents && agents.length > 0) {
+        const agent = agents[0]
+        this.warehousingForm.processorId = agent.id
+        this.warehousingForm.processorName = agent.name || agent.accountName
+        if (this.$refs.warehousingForm) {
+          this.$refs.warehousingForm.validateField('processorId')
+        }
+      }
+    },
+
     showWarehouseSelector() {
       if (!this.canEdit) {
         this.$message.warning('当前阶段不可编辑')
@@ -1139,6 +1271,7 @@ export default {
           currentRow.goodModel = selectedItem.goodModel || ''
           currentRow.goodCount = currentRow.goodCount || 1
           currentRow.goodWeight = currentRow.goodWeight || 0
+          currentRow.goodPrice = currentRow.goodPrice || 0
         }
       }
       this.warehousingGoodSelectorVisible = false
@@ -1163,6 +1296,7 @@ export default {
         goodModel: '',
         goodCount: 1,
         goodWeight: 0,
+        goodPrice: 0,
         goodRemark: ''
       }
       this.warehousingGoodItems.push(newItem)
@@ -1246,11 +1380,6 @@ export default {
             paymentAccount: this.purchaseForm.paymentAccount,
             siteId: this.purchaseForm.siteId,
             siteName: this.purchaseForm.siteName,
-            otherPriceAdjustment: this.purchaseForm.otherPriceAdjustment,
-            userCoefficient: this.purchaseForm.userCoefficient,
-            totalAmount: this.purchaseForm.totalAmount,
-            goodsTotalAmount: this.purchaseForm.goodsTotalAmount,
-            orderNodeImg: this.purchaseForm.orderNodeImg
           }
           
           await updateUserOrder(updateData)
@@ -1392,6 +1521,8 @@ export default {
             id: this.orderId,
             warehousingOrderNo: this.warehousingForm.orderNo,
             warehousingOrderCode: this.warehousingForm.identifyCode,
+            warehousingProcessorId: this.warehousingForm.processorId,
+            warehousingProcessorName: this.warehousingForm.processorName,
             warehousingDate: this.warehousingForm.warehousingDate,
             warehouseId: this.warehousingForm.warehouseId,
             warehouseName: this.warehousingForm.warehouseName,
@@ -1555,6 +1686,24 @@ export default {
 
   .basic-info-card {
     margin-bottom: 20px;
+
+    .info-section {
+      margin-bottom: 20px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #303133;
+        padding: 8px 12px;
+        background: #f5f7fa;
+        border-left: 3px solid #409EFF;
+        margin-bottom: 15px;
+      }
+    }
 
     .order-image-preview {
       display: flex;

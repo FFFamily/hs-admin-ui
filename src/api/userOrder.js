@@ -68,6 +68,15 @@ export function settleUserOrder(data) {
   })
 }
 
+// 确认结算
+export function confirmSettlement(data) {
+  return request({
+    url: '/recycle/user/order/confirmSettlement',
+    method: 'post',
+    data
+  })
+}
+
 // 提交交付
 export function submitDelivery(data) {
   return request({

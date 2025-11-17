@@ -34,7 +34,7 @@
           <el-col :span="12">
             <el-form-item label="其他调价">
               <el-input-number
-                v-model="form.otherPriceAdjustment"
+                v-model="form.otherAdjustAmount"
                 :precision="2"
                 :step="0.01"
                 :controls="false"
@@ -45,7 +45,7 @@
           <el-col :span="12">
             <el-form-item label="用户系数">
               <el-input-number
-                v-model="form.userCoefficient"
+                v-model="form.accountCoefficient"
                 :precision="2"
                 :step="0.01"
                 :controls="false"
@@ -217,8 +217,8 @@ export default {
         settlementTime: '',
         totalAmount: 0,
         goodsTotalAmount: 0,
-        otherPriceAdjustment: 0,
-        userCoefficient: 0
+        otherAdjustAmount: 0,
+        accountCoefficient: 0
       },
 
       // 表单验证规则
@@ -282,8 +282,8 @@ export default {
             settlementTime: data.settlementTime || '',
             totalAmount: data.totalAmount || 0,
             goodsTotalAmount: data.goodsTotalAmount || 0,
-            otherPriceAdjustment: data.otherPriceAdjustment || 0,
-            userCoefficient: data.userCoefficient || 0
+            otherAdjustAmount: data.otherAdjustAmount || 0,
+            accountCoefficient: data.accountCoefficient || 0
           }
         }
       } catch (error) {
@@ -312,8 +312,8 @@ export default {
         settlementTime: '',
         totalAmount: 0,
         goodsTotalAmount: 0,
-        otherPriceAdjustment: 0,
-        userCoefficient: 0
+        otherAdjustAmount: 0,
+        accountCoefficient: 0
       }
       if (this.$refs.form) {
         this.$refs.form.clearValidate()
@@ -396,21 +396,22 @@ export default {
     // 根据合作方ID获取用户系数
     async fetchUserCoefficient(partnerId) {
       if (!partnerId) {
-        this.form.userCoefficient = 0
+        this.form.accountCoefficient = 0
         return
       }
       if (this.fetchingUserCoefficient) return
       this.fetchingUserCoefficient = true
       try {
+        debugger
         const res = await getUserDetail(partnerId)
-        const data = res && res.data ? res.data : {}
-        const coefficient = data.scoreFactor ?? data.userCoefficient ?? 0
+        const data =  res.data 
+        const coefficient = data.scoreFactor
         const parsed = Number(coefficient)
-        this.form.userCoefficient = Number.isNaN(parsed) ? 0 : parsed
+        this.form.accountCoefficient = Number.isNaN(parsed) ? 0 : parsed
       } catch (error) {
         console.error('获取用户系数失败:', error)
-        this.form.userCoefficient = 0
-        this.$message.error('获取用户系数失败')
+        this.form.accountCoefficient = 0
+        this.$message.error('获取用户系数失败：' + error.message)
       } finally {
         this.fetchingUserCoefficient = false
       }

@@ -54,7 +54,11 @@
       border
       style="width: 100%"
     >
-      <el-table-column prop="no" label="订单编号" width="150" />
+      <el-table-column prop="no" label="订单编号" width="150">
+        <template slot-scope="scope">
+          <el-link type="primary" @click="handleEdit(scope.row)">{{ scope.row.no }}</el-link>
+        </template>
+      </el-table-column>
       <el-table-column prop="stage" label="订单状态阶段" width="120" align="center">
         <template slot-scope="scope">
           <el-tag :type="getStageTagType(scope.row.stage)" size="small">
@@ -64,17 +68,34 @@
       </el-table-column>
       <el-table-column prop="contractNo" label="合同编号" width="150" />
       <el-table-column prop="contractName" label="合同名称" min-width="180" show-overflow-tooltip />
+      <el-table-column prop="pricingMethod" label="计价方式" width="120" align="center">
+        <template slot-scope="scope">
+          {{ getPricingMethodText(scope.row.pricingMethod) }}
+        </template>
+      </el-table-column>
       <el-table-column prop="settlementTime" label="结算完成时间" width="180" >
         <template slot-scope="scope">
           {{ scope.row.settlementTime || '订单尚未完成' }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="300" fixed="right" align="center">
+      <el-table-column label="操作" width="400" fixed="right" align="center">
         <template slot-scope="scope">
-          <el-button size="mini" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
           <el-button size="mini" type="success" @click="handleRegisterInfo(scope.row)">登记信息</el-button>
-          <el-button size="mini" type="warning" @click="handleDelivery(scope.row)">交付</el-button>
+          <el-button v-if="!scope.row.deliveryStatus" size="mini" type="warning" @click="handleDelivery(scope.row)">交付</el-button>
+          <el-button v-if="scope.row.deliveryStatus" size="mini" type="info" @click="handleViewDelivery(scope.row)">查看交付</el-button>
+          <el-button v-if="scope.row.stage === 'pending_settlement'" size="mini" type="info" @click="handleSettle(scope.row)">确认结算</el-button>
+          <el-button v-if="scope.row.stage === 'completed'" size="mini" type="primary" @click="handleSupplementMaterials(scope.row)">补充材料</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+          <el-dropdown @command="(command) => handleMoreAction(command, scope.row)">
+            <el-button size="mini">
+              更多<i class="el-icon-arrow-down el-icon--right" />
+            </el-button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item command="previewSettlement">预览结算单</el-dropdown-item>
+              <el-dropdown-item command="previewApplication">预览申请单</el-dropdown-item>
+              <el-dropdown-item command="previewDelivery">预览交付单</el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </template>
       </el-table-column>
     </el-table>
@@ -91,17 +112,108 @@
       @current-change="handleCurrentChange"
     />
 
+    <!-- 确认结算对话框 -->
+    <el-dialog
+      title="确认订单结算"
+      :visible.sync="settlementDialogVisible"
+      width="500px"
+      @close="handleSettlementDialogClose"
+    >
+      <el-form
+        ref="settlementForm"
+        :model="settlementForm"
+        :rules="settlementRules"
+        label-width="120px"
+      >
+        <el-form-item label="订单编号">
+          <span>{{ currentOrder.no }}</span>
+        </el-form-item>
+        <el-form-item label="其他调价" prop="otherAdjustment">
+          <el-input-number
+            v-model="settlementForm.otherAdjustment"
+            :precision="2"
+            :step="0.01"
+            placeholder="请输入其他调价金额"
+            style="width: 100%;"
+          />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="settlementDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="settlementSubmitLoading" @click="handleSettlementSubmit">确认结算</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 补充材料对话框 -->
+    <el-dialog
+      title="补充材料"
+      :visible.sync="supplementDialogVisible"
+      width="600px"
+      @close="handleSupplementDialogClose"
+    >
+      <el-form
+        ref="supplementForm"
+        :model="supplementForm"
+        :rules="supplementRules"
+        label-width="120px"
+      >
+        <el-form-item label="结算单PDF" prop="settlementPdf">
+          <el-upload
+            :action="uploadAction"
+            :on-success="(res, file) => handleUploadSuccess(res, file, 'settlementPdf')"
+            :on-remove="() => handleUploadRemove('settlementPdf')"
+            :file-list="supplementForm.settlementPdfList"
+            :limit="1"
+            accept=".pdf"
+          >
+            <el-button size="small" type="primary">点击上传</el-button>
+            <div slot="tip" class="el-upload__tip">只能上传PDF文件，且不超过10MB</div>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="申请单PDF" prop="applicationPdf">
+          <el-upload
+            :action="uploadAction"
+            :on-success="(res, file) => handleUploadSuccess(res, file, 'applicationPdf')"
+            :on-remove="() => handleUploadRemove('applicationPdf')"
+            :file-list="supplementForm.applicationPdfList"
+            :limit="1"
+            accept=".pdf"
+          >
+            <el-button size="small" type="primary">点击上传</el-button>
+            <div slot="tip" class="el-upload__tip">只能上传PDF文件，且不超过10MB</div>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="交付单PDF" prop="deliveryPdf">
+          <el-upload
+            :action="uploadAction"
+            :on-success="(res, file) => handleUploadSuccess(res, file, 'deliveryPdf')"
+            :on-remove="() => handleUploadRemove('deliveryPdf')"
+            :file-list="supplementForm.deliveryPdfList"
+            :limit="1"
+            accept=".pdf"
+          >
+            <el-button size="small" type="primary">点击上传</el-button>
+            <div slot="tip" class="el-upload__tip">只能上传PDF文件，且不超过10MB</div>
+          </el-upload>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="supplementDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="supplementSubmitLoading" @click="handleSupplementSubmit">提交</el-button>
+      </div>
+    </el-dialog>
+
     <!-- 交付对话框 -->
     <el-dialog
-      :title="'订单交付 - ' + currentOrder.no"
+      :title="(deliveryViewMode ? '查看交付 - ' : '订单交付 - ') + currentOrder.no"
       :visible.sync="deliveryDialogVisible"
       width="700px"
       @close="handleDeliveryDialogClose"
     >
       <!-- 第一步：选择交付模式 -->
-      <div v-if="deliveryStep === 1">
+      <div v-if="deliveryStep === 1 && !deliveryViewMode">
         <h3>请选择交付模式</h3>
-        <el-radio-group v-model="deliveryMode" size="large" style="display: flex; flex-direction: column; gap: 20px;">
+        <el-radio-group v-model="deliveryMethod" size="large" style="display: flex; flex-direction: column; gap: 20px;">
           <el-radio label="online" border style="width: 50%; margin-left: 10px;">
             <span>线上交付</span>
             <p style=" color: #909399;">需填写交付时间、上传交付照片和签字照片</p>
@@ -117,25 +229,27 @@
       <div v-if="deliveryStep === 2">
         <!-- 线上交付表单 -->
         <el-form
-          v-if="deliveryMode === 'online'"
+          v-if="deliveryMethod === 'online'"
           ref="deliveryOnlineForm"
           :model="deliveryOnlineForm"
-          :rules="deliveryOnlineRules"
+          :rules="deliveryViewMode ? {} : deliveryOnlineRules"
           label-width="120px"
         >
           <el-form-item label="交付时间" prop="deliveryTime">
             <el-date-picker
               v-model="deliveryOnlineForm.deliveryTime"
+              :disabled="deliveryViewMode"
               type="datetime"
               placeholder="请选择交付时间"
               style="width: 100%;"
               value-format="yyyy-MM-dd HH:mm:ss"
             />
           </el-form-item>
-          
+
           <el-form-item label="交付照片" prop="deliveryPhoto">
             <ImageUploader
               v-model="deliveryOnlineForm.deliveryPhoto"
+              :disabled="deliveryViewMode"
               :multiple="false"
               :limit="1"
               action="/api/system/file/upload"
@@ -148,6 +262,7 @@
           <el-form-item label="合作方签字" prop="partnerSignature">
             <ImageUploader
               v-model="deliveryOnlineForm.partnerSignature"
+              :disabled="deliveryViewMode"
               :multiple="false"
               :limit="1"
               action="/api/system/file/upload"
@@ -156,10 +271,11 @@
               tips="支持JPG、PNG格式，大小不超过2MB"
             />
           </el-form-item>
-          
-          <el-form-item label="司机签字" prop="driverSignature">
+
+          <el-form-item label="经办人签字" prop="processorSignature">
             <ImageUploader
-              v-model="deliveryOnlineForm.driverSignature"
+              v-model="deliveryOnlineForm.processorSignature"
+              :disabled="deliveryViewMode"
               :multiple="false"
               :limit="1"
               action="/api/system/file/upload"
@@ -172,10 +288,10 @@
 
         <!-- 线下交付表单 -->
         <el-form
-          v-if="deliveryMode === 'offline'"
+          v-if="deliveryMethod === 'offline'"
           ref="deliveryOfflineForm"
           :model="deliveryOfflineForm"
-          :rules="deliveryOfflineRules"
+          :rules="deliveryViewMode ? {} : deliveryOfflineRules"
           label-width="120px"
         >
           <el-form-item label="交付单(PDF)" prop="deliveryDocument">
@@ -186,9 +302,10 @@
               :on-remove="handleDeliveryDocumentRemove"
               :file-list="deliveryDocumentList"
               :limit="1"
+              :disabled="deliveryViewMode"
               accept=".pdf"
             >
-              <el-button size="small" type="primary">点击上传</el-button>
+              <el-button size="small" type="primary" :disabled="deliveryViewMode">点击上传</el-button>
               <div slot="tip" class="el-upload__tip">只能上传PDF文件，且不超过10MB</div>
             </el-upload>
           </el-form-item>
@@ -196,10 +313,10 @@
       </div>
 
       <div slot="footer" class="dialog-footer">
-        <el-button @click="deliveryDialogVisible = false">取消</el-button>
-        <el-button v-if="deliveryStep === 1" type="primary" :disabled="!deliveryMode" @click="handleNextStep">下一步</el-button>
-        <el-button v-if="deliveryStep === 2" @click="deliveryStep = 1">上一步</el-button>
-        <el-button v-if="deliveryStep === 2" type="primary" :loading="deliverySubmitLoading" @click="handleDeliverySubmit">提交交付</el-button>
+        <el-button @click="deliveryDialogVisible = false">{{ deliveryViewMode ? '关闭' : '取消' }}</el-button>
+        <el-button v-if="deliveryStep === 1 && !deliveryViewMode" type="primary" :disabled="!deliveryMethod" @click="handleNextStep">下一步</el-button>
+        <el-button v-if="deliveryStep === 2 && !deliveryViewMode" @click="deliveryStep = 1">上一步</el-button>
+        <el-button v-if="deliveryStep === 2 && !deliveryViewMode" type="primary" :loading="deliverySubmitLoading" @click="handleDeliverySubmit">提交交付</el-button>
       </div>
     </el-dialog>
 
@@ -207,7 +324,7 @@
 </template>
 
 <script>
-import { getUserOrderListPage, deleteUserOrder, submitDelivery } from '@/api/userOrder'
+import { getUserOrderListPage, deleteUserOrder, submitDelivery, settleUserOrder,confirmSettlement } from '@/api/userOrder'
 import ImageUploader from '@/components/ImageUploader'
 import {
   USER_ORDER_STAGE_OPTIONS,
@@ -216,7 +333,8 @@ import {
   getUserOrderStageText,
   getUserOrderStageTagType,
   getUserOrderStatusText,
-  getUserOrderStatusTagType
+  getUserOrderStatusTagType,
+  getPricingMethodText
 } from '@/constants/userOrder'
 
 export default {
@@ -257,11 +375,47 @@ export default {
       // 订单状态选项
       statusOptions: USER_ORDER_STATUS_OPTIONS,
 
+      // 结算对话框
+      settlementDialogVisible: false,
+      settlementSubmitLoading: false,
+      settlementForm: {
+        otherAdjustment: 0
+      },
+      settlementRules: {
+        otherAdjustment: [
+          { required: true, message: '请输入其他调价金额', trigger: 'blur' }
+        ]
+      },
+
+      // 补充材料对话框
+      supplementDialogVisible: false,
+      supplementSubmitLoading: false,
+      supplementForm: {
+        settlementPdf: '',
+        applicationPdf: '',
+        deliveryPdf: '',
+        settlementPdfList: [],
+        applicationPdfList: [],
+        deliveryPdfList: []
+      },
+      supplementRules: {
+        settlementPdf: [
+          { required: true, message: '请上传结算单PDF', trigger: 'change' }
+        ],
+        applicationPdf: [
+          { required: true, message: '请上传申请单PDF', trigger: 'change' }
+        ],
+        deliveryPdf: [
+          { required: true, message: '请上传交付单PDF', trigger: 'change' }
+        ]
+      },
+
       // 交付对话框
       deliveryDialogVisible: false,
       deliveryStep: 1, // 1: 选择模式, 2: 填写信息
-      deliveryMode: '', // online/offline
+      deliveryMethod: '', // online/offline
       deliverySubmitLoading: false,
+      deliveryViewMode: false, // 是否为查看模式
       currentOrder: {},
       uploadAction: '/api/system/file/upload',
       
@@ -270,7 +424,7 @@ export default {
         deliveryTime: '',
         deliveryPhoto: '',
         partnerSignature: '',
-        driverSignature: ''
+        processorSignature: ''
       },
       deliveryOnlineRules: {
         deliveryTime: [
@@ -282,7 +436,7 @@ export default {
         partnerSignature: [
           { required: true, message: '请上传合作方签字', trigger: 'change' }
         ],
-        driverSignature: [
+        processorSignature: [
           { required: true, message: '请上传司机签字', trigger: 'change' }
         ]
       },
@@ -422,6 +576,11 @@ export default {
       return getUserOrderStatusTagType(status)
     },
 
+    // 获取计价方式文本
+    getPricingMethodText(method) {
+      return getPricingMethodText(method)
+    },
+
     // 显示图片URL（处理相对路径和绝对路径）
     displayUrl(url) {
       if (!url) return ''
@@ -439,9 +598,159 @@ export default {
       this.$router.push({ name: 'UserOrderAdd' })
     },
 
+    // 更多操作
+    handleMoreAction(command, row) {
+      if (command === 'previewSettlement') {
+        this.handlePreviewSettlement(row)
+      } else {
+        const actions = {
+          previewApplication: '预览申请单',
+          previewDelivery: '预览交付单'
+        }
+        this.$message.info(`${actions[command]}功能未开发`)
+      }
+    },
+
+    // 预览结算单
+    handlePreviewSettlement(row) {
+      this.$router.push({
+        path: `/order/settlement/${row.id}`,
+        query: {
+          type: 'userOrder'
+        }
+      })
+    },
+
+    // 确认结算
+    handleSettle(row) {
+      this.currentOrder = row
+      this.settlementForm.otherAdjustment = row.otherAdjustment || 0
+      this.settlementDialogVisible = true
+    },
+
+    // 关闭结算对话框
+    handleSettlementDialogClose() {
+      this.settlementForm = {
+        otherAdjustment: 0
+      }
+      if (this.$refs.settlementForm) {
+        this.$refs.settlementForm.clearValidate()
+      }
+    },
+
+    // 提交结算
+    async handleSettlementSubmit() {
+      if (!this.$refs.settlementForm) return
+
+      this.$refs.settlementForm.validate(async(valid) => {
+        if (!valid) return false
+
+        this.settlementSubmitLoading = true
+        try {
+          await confirmSettlement({
+            id: this.currentOrder.id,
+            otherAdjustment: this.settlementForm.otherAdjustment
+          })
+          this.$message.success('结算成功')
+          this.settlementDialogVisible = false
+          this.fetchList()
+        } catch (error) {
+          console.error('结算失败:', error)
+          this.$message.error('结算失败')
+        } finally {
+          this.settlementSubmitLoading = false
+        }
+      })
+    },
+
+    // 补充材料
+    handleSupplementMaterials(row) {
+      this.currentOrder = row
+      this.supplementDialogVisible = true
+    },
+
+    // 关闭补充材料对话框
+    handleSupplementDialogClose() {
+      this.supplementForm = {
+        settlementPdf: '',
+        applicationPdf: '',
+        deliveryPdf: '',
+        settlementPdfList: [],
+        applicationPdfList: [],
+        deliveryPdfList: []
+      }
+      if (this.$refs.supplementForm) {
+        this.$refs.supplementForm.clearValidate()
+      }
+    },
+
+    // 上传成功
+    handleUploadSuccess(response, file, field) {
+      if (response && response.data) {
+        this.supplementForm[field] = response.data.url || response.data
+        if (this.$refs.supplementForm) {
+          this.$refs.supplementForm.validateField(field)
+        }
+      }
+    },
+
+    // 移除上传
+    handleUploadRemove(field) {
+      this.supplementForm[field] = ''
+      this.supplementForm[field + 'List'] = []
+    },
+
+    // 提交补充材料
+    async handleSupplementSubmit() {
+      if (!this.$refs.supplementForm) return
+
+      this.$refs.supplementForm.validate(async(valid) => {
+        if (!valid) return false
+
+        this.supplementSubmitLoading = true
+        try {
+          // TODO: 调用补充材料API
+          this.$message.success('补充材料提交成功')
+          this.supplementDialogVisible = false
+          this.fetchList()
+        } catch (error) {
+          console.error('补充材料提交失败:', error)
+          this.$message.error('补充材料提交失败')
+        } finally {
+          this.supplementSubmitLoading = false
+        }
+      })
+    },
+
     // 交付订单
     handleDelivery(row) {
       this.currentOrder = row
+      this.deliveryViewMode = false
+      this.deliveryDialogVisible = true
+    },
+
+    // 查看交付
+    handleViewDelivery(row) {
+      this.currentOrder = row
+      this.deliveryViewMode = true
+      this.deliveryMethod = row.deliveryMethod || ''
+      if (row.deliveryMethod === 'online') {
+        this.deliveryOnlineForm = {
+          deliveryTime: row.deliveryTime || '',
+          deliveryPhoto: row.deliveryPhoto || '',
+          partnerSignature: row.partnerSignature || '',
+          processorSignature: row.processorSignature || ''
+        }
+        this.deliveryStep = 2
+      } else if (row.deliveryMethod === 'offline') {
+        this.deliveryOfflineForm = {
+          deliveryDocument: row.deliveryDocument || ''
+        }
+        if (row.deliveryDocument) {
+          this.deliveryDocumentList = [{ name: '交付单.pdf', url: row.deliveryDocument }]
+        }
+        this.deliveryStep = 2
+      }
       this.deliveryDialogVisible = true
     },
 
@@ -453,18 +762,19 @@ export default {
     // 关闭交付对话框
     handleDeliveryDialogClose() {
       this.deliveryStep = 1
-      this.deliveryMode = ''
+      this.deliveryMethod = ''
+      this.deliveryViewMode = false
       this.deliveryOnlineForm = {
         deliveryTime: '',
         deliveryPhoto: '',
         partnerSignature: '',
-        driverSignature: ''
+        processorSignature: ''
       }
       this.deliveryOfflineForm = {
         deliveryDocument: ''
       }
       this.deliveryDocumentList = []
-      
+
       if (this.$refs.deliveryOnlineForm) {
         this.$refs.deliveryOnlineForm.clearValidate()
       }
@@ -491,27 +801,27 @@ export default {
 
     // 提交交付
     async handleDeliverySubmit() {
-      const formRef = this.deliveryMode === 'online' ? 'deliveryOnlineForm' : 'deliveryOfflineForm'
-      
+      const formRef = this.deliveryMethod === 'online' ? 'deliveryOnlineForm' : 'deliveryOfflineForm'
+
       if (!this.$refs[formRef]) return
-      
+
       this.$refs[formRef].validate(async(valid) => {
         if (!valid) {
           return false
         }
-        
+
         this.deliverySubmitLoading = true
         try {
           const deliveryData = {
             orderId: this.currentOrder.id,
-            deliveryMode: this.deliveryMode
+            deliveryMethod: this.deliveryMethod
           }
-          
-          if (this.deliveryMode === 'online') {
+
+          if (this.deliveryMethod === 'online') {
             deliveryData.deliveryTime = this.deliveryOnlineForm.deliveryTime
             deliveryData.deliveryPhoto = this.deliveryOnlineForm.deliveryPhoto
             deliveryData.partnerSignature = this.deliveryOnlineForm.partnerSignature
-            deliveryData.driverSignature = this.deliveryOnlineForm.driverSignature
+            deliveryData.processorSignature = this.deliveryOnlineForm.processorSignature
           } else {
             deliveryData.deliveryDocument = this.deliveryOfflineForm.deliveryDocument
           }

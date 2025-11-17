@@ -193,6 +193,7 @@
 
 <script>
 import { generateSettlementPDF, getRecycleDetail } from '@/api/recycle'
+import { getUserOrderInfo } from '@/api/userOrder'
 import { parseTime } from '@/utils'
 import {
   getOrderTypeText,
@@ -204,6 +205,7 @@ export default {
   data() {
     return {
       orderId: null,
+      orderType: 'recycle',
       orderData: {},
       orderItems: [],
       generating: false
@@ -284,8 +286,9 @@ export default {
     }
   },
   created() {
-    // 从路由参数获取订单ID
+    // 从路由参数获取订单ID和类型
     this.orderId = this.$route.params.orderId || this.$route.query.orderId
+    this.orderType = this.$route.query.type || 'recycle'
 
     // 如果有orderId，则从API获取订单数据
     if (this.orderId) {
@@ -298,122 +301,71 @@ export default {
       if (!this.orderId) return
 
       try {
-        const response = await getRecycleDetail(this.orderId)
-        this.orderData = response.data || {}
+        let response
+        if (this.orderType === 'userOrder') {
+          // 用户订单
+          response = await getUserOrderInfo(this.orderId)
+          const data = response.data || {}
+          const userOrder = data.userOrder || {}
+          const storageOrder = data.storageOrder || {}
 
-        // 如果API返回的数据中没有items，则使用模拟数据
-        if (!this.orderData.items || this.orderData.items.length === 0) {
-          this.loadMockOrderItems()
+          // 构建订单数据
+          this.orderData = {
+            no: userOrder.no || '',
+            partyAName: userOrder.partyAName || '',
+            partyBName: userOrder.partyBName || '',
+            contractNo: userOrder.contractNo || '',
+            deliveryAddress: storageOrder.deliveryAddress || userOrder.deliveryAddress || '',
+            warehouseAddress: storageOrder.warehouseName || '',
+            startTime: userOrder.createTime || '',
+            endTime: userOrder.settlementTime || '',
+            processor: storageOrder.processorName || userOrder.processorName || '',
+            paymentAccount: userOrder.paymentAccount || '',
+            items: storageOrder.items || []
+          }
+
+          // 使用入库阶段的明细
+          if (this.orderData.items && this.orderData.items.length > 0) {
+            this.orderItems = this.orderData.items.map((item, index) => {
+              const quantity = Number(item.goodCount) || 0
+              const unitPrice = Number(item.goodPrice) || 0
+
+              return {
+                type: item.goodType || '货物',
+                name: item.goodName || '商品' + (index + 1),
+                specification: item.goodModel || '标准规格',
+                quantity: quantity,
+                unitPrice: unitPrice,
+                amount: quantity * unitPrice
+              }
+            })
+          }
         } else {
-          // 将API返回的items转换为PDF需要的格式
-          this.orderItems = this.orderData.items.map((item, index) => {
-            const quantity = Number(item.goodCount) || 0
-            const unitPrice = Number(item.goodPrice) || 0
+          // 回收订单
+          response = await getRecycleDetail(this.orderId)
+          this.orderData = response.data || {}
 
-            return {
-              type: item.goodType || '货物', // 直接使用订单明细中的货物类型
-              name: item.goodName || '商品' + (index + 1),
-              specification: item.goodModel || '标准规格',
-              quantity: quantity,
-              unitPrice: unitPrice,
-              amount: quantity * unitPrice // 金额 = 数量 × 单价
-            }
-          })
+          // 将API返回的items转换为PDF需要的格式
+          if (this.orderData.items && this.orderData.items.length > 0) {
+            this.orderItems = this.orderData.items.map((item, index) => {
+              const quantity = Number(item.goodCount) || 0
+              const unitPrice = Number(item.goodPrice) || 0
+
+              return {
+                type: item.goodType || '货物',
+                name: item.goodName || '商品' + (index + 1),
+                specification: item.goodModel || '标准规格',
+                quantity: quantity,
+                unitPrice: unitPrice,
+                amount: quantity * unitPrice
+              }
+            })
+          }
         }
       } catch (error) {
         console.error('获取订单数据失败:', error)
         this.$message.error('获取订单数据失败')
-        // 如果API调用失败，使用模拟数据
-        this.loadMockOrderData()
       }
-    },
-
-    // 加载模拟订单数据（作为备用）
-    loadMockOrderData() {
-      this.orderData = {
-        id: this.orderId,
-        no: 'RO' + this.orderId,
-        type: 'purchase',
-        status: 'processing',
-        contractNo: 'CT' + this.orderId,
-        contractName: '回收合同' + this.orderId,
-        partyA: '回收管理有限公司',
-        partyB: '合作方' + this.orderId,
-        processor: '经办人',
-        processorPhone: '13800138000',
-        startTime: new Date().toISOString(),
-        endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        warehouseAddress: '北京市朝阳区仓库地址',
-        deliveryAddress: '北京市朝阳区交付地址',
-        totalAmount: 100000,
-        items: [] // 初始化items数组，将在loadMockOrderItems中填充
-      }
-      this.loadMockOrderItems()
-    },
-
-    // 加载模拟订单明细数据
-    loadMockOrderItems() {
-      // 模拟原始订单明细数据（用于调价计算）
-      const mockItems = [
-        {
-          goodName: '废纸',
-          goodModel: 'A4纸',
-          goodCount: 1000,
-          goodWeight: 1.0,
-          goodPrice: 2.5,
-          ratingCoefficient: 0.08, // 8%评级系数
-          otherAdjustAmount: 100, // 其他调价100元
-          goodTotalPrice: 2500
-        },
-        {
-          goodName: '废塑料',
-          goodModel: 'PET瓶',
-          goodCount: 500,
-          goodWeight: 1.2,
-          goodPrice: 3.2,
-          ratingCoefficient: 0.05, // 5%评级系数
-          otherAdjustAmount: 50, // 其他调价50元
-          goodTotalPrice: 1600
-        },
-        {
-          goodName: '运输服务',
-          goodModel: '市内运输',
-          goodCount: 50,
-          goodWeight: 1.0,
-          goodPrice: 15,
-          ratingCoefficient: 0, // 运输服务无评级系数
-          otherAdjustAmount: 0, // 无其他调价
-          goodTotalPrice: 750
-        },
-        {
-          goodName: '废金属',
-          goodModel: '废铁',
-          goodCount: 200,
-          goodWeight: 0.8,
-          goodPrice: 1.8,
-          ratingCoefficient: 0.1, // 10%评级系数
-          otherAdjustAmount: 30, // 其他调价30元
-          goodTotalPrice: 360
-        }
-      ]
-
-      // 设置原始数据用于调价计算
-      this.orderData.items = mockItems
-
-      // 转换为表格显示格式
-      this.orderItems = mockItems.map(item => {
-        const quantity = Number(item.goodCount) || 0
-        const unitPrice = Number(item.goodPrice) || 0
-
-        return {
-          type: item.goodName.includes('运输') ? 'transport' : 'goods',
-          name: item.goodName,
-          specification: item.goodModel,
-          quantity: quantity,
-          unitPrice: unitPrice,
-          amount: quantity * unitPrice // 金额 = 数量 × 单价
-        }
-      })
     },
 
     // 获取项目类型显示文本

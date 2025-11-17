@@ -53,6 +53,12 @@ export const constantRoutes = [
         name: 'Address',
         component: () => import('@/views/system/address/index.vue'),
         meta: { title: '地址管理', icon: 'el-icon-location' }
+      },
+      {
+        path: 'site',
+        name: 'Site',
+        component: () => import('@/views/system/site/index.vue'),
+        meta: { title: '站点管理', icon: 'el-icon-office-building' }
       }
     ]
   },

@@ -4,6 +4,7 @@ export const USER_ORDER_STAGE = {
   TRANSPORT: 'transport',
   PROCESSING: 'processing',
   WAREHOUSING: 'warehousing',
+  PENDING_SETTLEMENT: 'pending_settlement',
   COMPLETED: 'completed'
 }
 
@@ -13,6 +14,7 @@ export const USER_ORDER_STAGE_OPTIONS = [
   { label: '运输', value: USER_ORDER_STAGE.TRANSPORT },
   { label: '加工', value: USER_ORDER_STAGE.PROCESSING },
   { label: '入库', value: USER_ORDER_STAGE.WAREHOUSING },
+  { label: '待结算', value: USER_ORDER_STAGE.PENDING_SETTLEMENT },
   { label: '完成', value: USER_ORDER_STAGE.COMPLETED }
 ]
 
@@ -39,6 +41,7 @@ export function getUserOrderStageText(stage) {
     [USER_ORDER_STAGE.TRANSPORT]: '运输',
     [USER_ORDER_STAGE.PROCESSING]: '加工',
     [USER_ORDER_STAGE.WAREHOUSING]: '入库',
+    [USER_ORDER_STAGE.PENDING_SETTLEMENT]: '待结算',
     [USER_ORDER_STAGE.COMPLETED]: '完成'
   }
   return textMap[stage] || stage || '--'
@@ -51,6 +54,7 @@ export function getUserOrderStageTagType(stage) {
     [USER_ORDER_STAGE.TRANSPORT]: 'primary',
     [USER_ORDER_STAGE.PROCESSING]: 'success',
     [USER_ORDER_STAGE.WAREHOUSING]: 'info',
+    [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 'warning',
     [USER_ORDER_STAGE.COMPLETED]: 'success'
   }
   return tagTypeMap[stage] || 'info'
