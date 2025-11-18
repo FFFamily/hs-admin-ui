@@ -150,6 +150,18 @@
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="运输方式" prop="transportMethod">
+              <el-select v-model="form.transportMethod" placeholder="请选择运输方式" style="width: 100%;">
+                <el-option
+                  v-for="item in transportMethodOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
         </el-row>
       </el-form>
 
@@ -218,7 +230,8 @@ export default {
         totalAmount: 0,
         goodsTotalAmount: 0,
         otherAdjustAmount: 0,
-        accountCoefficient: 0
+        accountCoefficient: 0,
+        transportMethod: ''
       },
 
       // 表单验证规则
@@ -228,6 +241,9 @@ export default {
         ],
         pricingMethod: [
           { required: true, message: '请选择计价方式', trigger: 'change' }
+        ],
+        transportMethod: [
+          { required: true, message: '请选择运输方式', trigger: 'change' }
         ]
       },
 
@@ -238,7 +254,13 @@ export default {
       statusOptions: USER_ORDER_STATUS_OPTIONS,
 
       // 计价方式选项
-      pricingMethodOptions: PRICING_METHOD_OPTIONS
+      pricingMethodOptions: PRICING_METHOD_OPTIONS,
+
+      // 运输方式选项
+      transportMethodOptions: [
+        { label: '送货上门', value: 'home_delivery' },
+        { label: '上门回收', value: 'door_to_door_recycle' }
+      ]
     }
   },
   mounted() {
@@ -283,7 +305,8 @@ export default {
             totalAmount: data.totalAmount || 0,
             goodsTotalAmount: data.goodsTotalAmount || 0,
             otherAdjustAmount: data.otherAdjustAmount || 0,
-            accountCoefficient: data.accountCoefficient || 0
+          accountCoefficient: data.accountCoefficient || 0,
+          transportMethod: data.transportMethod || ''
           }
         }
       } catch (error) {
@@ -313,7 +336,8 @@ export default {
         totalAmount: 0,
         goodsTotalAmount: 0,
         otherAdjustAmount: 0,
-        accountCoefficient: 0
+        accountCoefficient: 0,
+        transportMethod: ''
       }
       if (this.$refs.form) {
         this.$refs.form.clearValidate()
