@@ -111,20 +111,20 @@
           @click.native="handleStepClick(0)"
         />
         <el-step
-          v-if="!isSimplePricing"
+          v-if="hasTransportStage"
           title="运输"
           :class="{ 'step-clickable': 1 <= currentOrderStep, 'step-disabled': 1 > currentOrderStep }"
           @click.native="handleStepClick(1)"
         />
         <el-step
-          :title="isSimplePricing ? '加工' : '加工'"
-          :class="{ 'step-clickable': (isSimplePricing ? 1 : 2) <= currentOrderStep, 'step-disabled': (isSimplePricing ? 1 : 2) > currentOrderStep }"
-          @click.native="handleStepClick(isSimplePricing ? 1 : 2)"
+          title="加工"
+          :class="{ 'step-clickable': (hasTransportStage ? 2 : 1) <= currentOrderStep, 'step-disabled': (hasTransportStage ? 2 : 1) > currentOrderStep }"
+          @click.native="handleStepClick(hasTransportStage ? 2 : 1)"
         />
         <el-step
           title="入库"
-          :class="{ 'step-clickable': (isSimplePricing ? 2 : 3) <= currentOrderStep, 'step-disabled': (isSimplePricing ? 2 : 3) > currentOrderStep }"
-          @click.native="handleStepClick(isSimplePricing ? 2 : 3)"
+          :class="{ 'step-clickable': (hasTransportStage ? 3 : 2) <= currentOrderStep, 'step-disabled': (hasTransportStage ? 3 : 2) > currentOrderStep }"
+          @click.native="handleStepClick(hasTransportStage ? 3 : 2)"
         />
       </el-steps>
     </div>
@@ -218,7 +218,7 @@
       </div>
 
       <!-- 运输阶段 -->
-      <div v-if="!isSimplePricing" v-show="currentStage === 'transport'" class="stage-content">
+      <div v-if="hasTransportStage" v-show="currentStage === 'transport'" class="stage-content">
         <h3 class="stage-title">
           <i class="el-icon-truck"></i> 运输信息
           <el-tag v-if="!canEdit" type="info" size="small" style="margin-left: 10px;">只读</el-tag>
@@ -647,7 +647,7 @@
 </template>
 
 <script>
-import { getRecycleOrderByParentId, getUserOrderDetail, getUserOrderInfo, updateUserOrder, settleUserOrder } from '@/api/userOrder'
+import {  getUserOrderInfo, updateUserOrder, settleUserOrder } from '@/api/userOrder'
 import { createRecycle, updateRecycle } from '@/api/recycle'
 import AgentSelector from '@/components/AgentSelector'
 import WarehouseSelector from '@/components/WarehouseSelector'
@@ -800,9 +800,13 @@ export default {
     }
   },
   computed: {
-    // 是否为简单计价方式
-    isSimplePricing() {
-      return this.orderInfo.pricingMethod === 'simple'
+    // 是否存在运输阶段（非送货上门）
+    hasTransportStage() {
+      const method = this.userOrderData.transportMethod
+      if (!method) {
+        return true
+      }
+      return method !== 'home_delivery'
     },
     // 当前阶段是否可以编辑
     canEdit() {
@@ -810,18 +814,8 @@ export default {
     },
     // 当前订单所处的阶段索引
     currentOrderStep() {
-      if (this.isSimplePricing) {
-        // 简单计价：没有运输阶段
-        const stageMap = {
-          [USER_ORDER_STAGE.PURCHASE]: 0,
-          [USER_ORDER_STAGE.PROCESSING]: 1,
-          [USER_ORDER_STAGE.WAREHOUSING]: 2,
-          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 3,
-          [USER_ORDER_STAGE.COMPLETED]: 3
-        }
-        return stageMap[this.userOrderData.stage] || 0
-      } else {
-        // 一般计价：包含运输阶段
+      if (this.hasTransportStage) {
+        // 包含运输阶段
         const stageMap = {
           [USER_ORDER_STAGE.PURCHASE]: 0,
           [USER_ORDER_STAGE.TRANSPORT]: 1,
@@ -830,9 +824,17 @@ export default {
           [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 4,
           [USER_ORDER_STAGE.COMPLETED]: 4
         }
-        
         return stageMap[this.userOrderData.stage] || 0
       }
+      // 无运输阶段
+      const stageMap = {
+        [USER_ORDER_STAGE.PURCHASE]: 0,
+        [USER_ORDER_STAGE.PROCESSING]: 1,
+        [USER_ORDER_STAGE.WAREHOUSING]: 2,
+        [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 3,
+        [USER_ORDER_STAGE.COMPLETED]: 3
+      }
+      return stageMap[this.userOrderData.stage] || 0
     }
   },
   watch: {
@@ -866,20 +868,8 @@ export default {
 
     // 根据订单阶段设置当前显示阶段
     setCurrentStageByOrder() {
-      if (this.isSimplePricing) {
-        // 简单计价：没有运输阶段
-        const stageMap = {
-          [USER_ORDER_STAGE.PURCHASE]: { stage: 'purchase', step: 0 },
-          [USER_ORDER_STAGE.PROCESSING]: { stage: 'processing', step: 1 },
-          [USER_ORDER_STAGE.WAREHOUSING]: { stage: 'warehousing', step: 2 },
-          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: { stage: 'warehousing', step: 3 },
-          [USER_ORDER_STAGE.COMPLETED]: { stage: 'warehousing', step: 3 }
-        }
-        const config = stageMap[this.userOrderData.stage] || { stage: 'purchase', step: 0 }
-        this.currentStage = config.stage
-        this.activeStep = config.step
-      } else {
-        // 一般计价：包含运输阶段
+      if (this.hasTransportStage) {
+        // 包含运输阶段
         const stageMap = {
           [USER_ORDER_STAGE.PURCHASE]: { stage: 'purchase', step: 0 },
           [USER_ORDER_STAGE.TRANSPORT]: { stage: 'transport', step: 1 },
@@ -891,7 +881,20 @@ export default {
         const config = stageMap[this.userOrderData.stage] || { stage: 'purchase', step: 0 }
         this.currentStage = config.stage
         this.activeStep = config.step
+        return
       }
+
+      // 不包含运输阶段
+      const stageMap = {
+        [USER_ORDER_STAGE.PURCHASE]: { stage: 'purchase', step: 0 },
+        [USER_ORDER_STAGE.PROCESSING]: { stage: 'processing', step: 1 },
+        [USER_ORDER_STAGE.WAREHOUSING]: { stage: 'warehousing', step: 2 },
+        [USER_ORDER_STAGE.PENDING_SETTLEMENT]: { stage: 'warehousing', step: 3 },
+        [USER_ORDER_STAGE.COMPLETED]: { stage: 'warehousing', step: 3 }
+      }
+      const config = stageMap[this.userOrderData.stage] || { stage: 'purchase', step: 0 }
+      this.currentStage = config.stage
+      this.activeStep = config.step
     },
 
     // 加载用户订单信息（包含各阶段订单信息）
@@ -1023,17 +1026,18 @@ export default {
         return
       }
 
-      if (this.isSimplePricing) {
-        // 简单计价：没有运输阶段
-        const stageMap = ['purchase', 'processing', 'warehousing']
-        this.currentStage = stageMap[step]
-        this.activeStep = step
-      } else {
-        // 一般计价：包含运输阶段
+      if (this.hasTransportStage) {
+        // 包含运输阶段
         const stageMap = ['purchase', 'transport', 'processing', 'warehousing']
         this.currentStage = stageMap[step]
         this.activeStep = step
+        return
       }
+
+      // 不包含运输阶段
+      const stageMap = ['purchase', 'processing', 'warehousing']
+      this.currentStage = stageMap[step]
+      this.activeStep = step
     },
 
   
