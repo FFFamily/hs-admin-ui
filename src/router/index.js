@@ -356,6 +356,12 @@ export const constantRoutes = [
         component: () => import('@/views/system/dict/data.vue'),
         meta: { title: '字典数据', icon: 'el-icon-document' },
         hidden: true
+      },
+      {
+        path: 'file',
+        name: 'SystemFile',
+        component: () => import('@/views/system/file/index.vue'),
+        meta: { title: '文件管理', icon: 'el-icon-document' }
       }
     ]
   },
