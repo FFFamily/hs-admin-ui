@@ -82,6 +82,26 @@ export const constantRoutes = [
         meta: { title: '用户账号管理', icon: 'user' }
       },
       {
+        path: 'service-provider-user',
+        name: 'ServiceProviderUser',
+        component: () => import('@/views/system/accountServiceProvider/index.vue'),
+        meta: { title: '服务商账号管理', icon: 'user' }
+      },
+      {
+        path: 'service-provider-user/:userId/service-scope',
+        name: 'ServiceProviderUserScope',
+        component: () => import('@/views/system/serviceScope/index.vue'),
+        meta: { title: '服务范围管理', icon: 'el-icon-location' },
+        hidden: true
+      },
+      {
+        path: 'service-provider-user/:userId/customer',
+        name: 'ServiceProviderCustomer',
+        component: () => import('@/views/system/customer/index.vue'),
+        meta: { title: '客户管理', icon: 'el-icon-user' },
+        hidden: true
+      },
+      {
         path: 'processor',
         name: 'Processor',
         component: () => import('@/views/admin/processor/index.vue'),

@@ -162,6 +162,11 @@ export default {
     disabledUsers: {
       type: Array,
       default: () => []
+    },
+    // 业务类型过滤（supplier: 供应商, service_provider: 服务商）
+    businessType: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -208,6 +213,12 @@ export default {
         this.selectedUsers = [...newVal]
       },
       immediate: true
+    },
+    businessType() {
+      // 当业务类型变化时，如果弹窗已打开，重新加载数据
+      if (this.visible) {
+        this.initData()
+      }
     }
   },
   methods: {
@@ -225,6 +236,11 @@ export default {
         const params = {
           pageNum: this.currentPage,
           pageSize: this.pageSize
+        }
+        
+        // 如果传入了业务类型，添加到查询参数中
+        if (this.businessType) {
+          params.businessType = this.businessType
         }
 
         const response = await getUserPage(params)
@@ -246,11 +262,18 @@ export default {
       // 搜索时重置页码到第一页
       this.currentPage = 1
 
-      getUserPage({
+      const params = {
         ...this.searchParams,
         pageNum: this.currentPage,
         pageSize: this.pageSize
-      }).then(res => {
+      }
+      
+      // 如果传入了业务类型，添加到查询参数中
+      if (this.businessType) {
+        params.businessType = this.businessType
+      }
+
+      getUserPage(params).then(res => {
         if (res && res.data) {
           this.userList = res.data.records || []
           this.total = res.data.total || 0

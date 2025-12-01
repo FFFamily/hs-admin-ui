@@ -158,48 +158,39 @@
         label-width="120px"
       >
         <el-form-item label="结算单PDF" prop="settlementPdf">
-          <el-upload
-            :action="uploadAction"
-            :on-success="(res, file) => handleUploadSuccess(res, file, 'settlementPdf')"
-            :on-remove="() => handleUploadRemove('settlementPdf')"
-            :file-list="supplementForm.settlementPdfList"
+          <FileUploader
+            v-model="supplementForm.settlementPdf"
+            button-mode
             :limit="1"
             accept=".pdf"
-          >
-            <el-button size="small" type="primary">点击上传</el-button>
-            <div slot="tip" class="el-upload__tip">只能上传PDF文件，且不超过10MB</div>
-          </el-upload>
+            tips="只能上传PDF文件，且不超过10MB"
+            @input="() => handleFileChange('settlementPdf')"
+          />
         </el-form-item>
         <el-form-item label="申请单PDF" prop="applicationPdf">
-          <el-upload
-            :action="uploadAction"
-            :on-success="(res, file) => handleUploadSuccess(res, file, 'applicationPdf')"
-            :on-remove="() => handleUploadRemove('applicationPdf')"
-            :file-list="supplementForm.applicationPdfList"
+          <FileUploader
+            v-model="supplementForm.applicationPdf"
+            button-mode
             :limit="1"
             accept=".pdf"
-          >
-            <el-button size="small" type="primary">点击上传</el-button>
-            <div slot="tip" class="el-upload__tip">只能上传PDF文件，且不超过10MB</div>
-          </el-upload>
+            tips="只能上传PDF文件，且不超过10MB"
+            @input="() => handleFileChange('applicationPdf')"
+          />
         </el-form-item>
         <el-form-item label="交付单PDF" prop="deliveryPdf">
-          <el-upload
-            :action="uploadAction"
-            :on-success="(res, file) => handleUploadSuccess(res, file, 'deliveryPdf')"
-            :on-remove="() => handleUploadRemove('deliveryPdf')"
-            :file-list="supplementForm.deliveryPdfList"
+          <FileUploader
+            v-model="supplementForm.deliveryPdf"
+            button-mode
             :limit="1"
             accept=".pdf"
-          >
-            <el-button size="small" type="primary">点击上传</el-button>
-            <div slot="tip" class="el-upload__tip">只能上传PDF文件，且不超过10MB</div>
-          </el-upload>
+            tips="只能上传PDF文件，且不超过10MB"
+            @input="() => handleFileChange('deliveryPdf')"
+          />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="supplementDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="supplementSubmitLoading" @click="handleSupplementSubmit">提交</el-button>
+        <el-button type="primary" :loading="supplementSubmitLoading" @click="handleSupplementSubmit">提交材料</el-button>
       </div>
     </el-dialog>
 
@@ -288,7 +279,7 @@
 
         <!-- 线下交付表单 -->
         <el-form
-          v-if="deliveryMethod === 'offline'"
+          v-else-if="deliveryMethod === 'offline'"
           ref="deliveryOfflineForm"
           :model="deliveryOfflineForm"
           :rules="deliveryViewMode ? {} : deliveryOfflineRules"
@@ -310,6 +301,12 @@
             </el-upload>
           </el-form-item>
         </el-form>
+
+        <!-- 没有交付信息时的提示 -->
+        <div v-else-if="deliveryViewMode && !deliveryMethod" style="text-align: center; padding: 40px 0; color: #909399;">
+          <i class="el-icon-info" style="font-size: 48px; margin-bottom: 16px;"></i>
+          <p>该订单暂无交付信息</p>
+        </div>
       </div>
 
       <div slot="footer" class="dialog-footer">
@@ -324,8 +321,9 @@
 </template>
 
 <script>
-import { getUserOrderListPage, deleteUserOrder, submitDelivery, settleUserOrder,confirmSettlement } from '@/api/userOrder'
+import { getUserOrderListPage, deleteUserOrder, submitDelivery, settleUserOrder,confirmSettlement, saveOrderMaterials } from '@/api/userOrder'
 import ImageUploader from '@/components/ImageUploader'
+import FileUploader from '@/components/FileUploader'
 import {
   USER_ORDER_STAGE_OPTIONS,
   USER_ORDER_STATUS_OPTIONS,
@@ -340,7 +338,8 @@ import {
 export default {
   name: 'UserOrderList',
   components: {
-    ImageUploader
+    ImageUploader,
+    FileUploader
   },
   data() {
     return {
@@ -393,10 +392,7 @@ export default {
       supplementForm: {
         settlementPdf: '',
         applicationPdf: '',
-        deliveryPdf: '',
-        settlementPdfList: [],
-        applicationPdfList: [],
-        deliveryPdfList: []
+        deliveryPdf: ''
       },
       supplementRules: {
         settlementPdf: [
@@ -666,6 +662,11 @@ export default {
     // 补充材料
     handleSupplementMaterials(row) {
       this.currentOrder = row
+      this.supplementForm = {
+        settlementPdf: row.settlementPdf || '',
+        applicationPdf: row.applicationPdf || '',
+        deliveryPdf: row.deliveryPdf || ''
+      }
       this.supplementDialogVisible = true
     },
 
@@ -674,30 +675,17 @@ export default {
       this.supplementForm = {
         settlementPdf: '',
         applicationPdf: '',
-        deliveryPdf: '',
-        settlementPdfList: [],
-        applicationPdfList: [],
-        deliveryPdfList: []
+        deliveryPdf: ''
       }
       if (this.$refs.supplementForm) {
         this.$refs.supplementForm.clearValidate()
       }
     },
 
-    // 上传成功
-    handleUploadSuccess(response, file, field) {
-      if (response && response.data) {
-        this.supplementForm[field] = response.data.url || response.data
-        if (this.$refs.supplementForm) {
-          this.$refs.supplementForm.validateField(field)
-        }
+    handleFileChange(field) {
+      if (this.$refs.supplementForm) {
+        this.$refs.supplementForm.validateField(field)
       }
-    },
-
-    // 移除上传
-    handleUploadRemove(field) {
-      this.supplementForm[field] = ''
-      this.supplementForm[field + 'List'] = []
     },
 
     // 提交补充材料
@@ -709,7 +697,13 @@ export default {
 
         this.supplementSubmitLoading = true
         try {
-          // TODO: 调用补充材料API
+          const payload = {
+            orderId: this.currentOrder.id,
+            settlementPdf: this.supplementForm.settlementPdf,
+            applicationPdf: this.supplementForm.applicationPdf,
+            deliveryPdf: this.supplementForm.deliveryPdf
+          }
+          await saveOrderMaterials(payload)
           this.$message.success('补充材料提交成功')
           this.supplementDialogVisible = false
           this.fetchList()
@@ -734,7 +728,10 @@ export default {
       this.currentOrder = row
       this.deliveryViewMode = true
       this.deliveryMethod = row.deliveryMethod || ''
+      
+      // 根据交付方式显示对应的交付信息
       if (row.deliveryMethod === 'online') {
+        // 线上交付：显示交付时间、交付照片、合作方签字、经办人签字
         this.deliveryOnlineForm = {
           deliveryTime: row.deliveryTime || '',
           deliveryPhoto: row.deliveryPhoto || '',
@@ -743,14 +740,22 @@ export default {
         }
         this.deliveryStep = 2
       } else if (row.deliveryMethod === 'offline') {
+        // 线下交付：显示交付单PDF
         this.deliveryOfflineForm = {
           deliveryDocument: row.deliveryDocument || ''
         }
         if (row.deliveryDocument) {
           this.deliveryDocumentList = [{ name: '交付单.pdf', url: row.deliveryDocument }]
+        } else {
+          this.deliveryDocumentList = []
         }
         this.deliveryStep = 2
+      } else {
+        // 如果没有交付方式，默认显示第一步（但查看模式下不应该出现这种情况）
+        // 如果确实没有交付方式，直接显示第二步，让用户知道没有交付信息
+        this.deliveryStep = 2
       }
+      
       this.deliveryDialogVisible = true
     },
 

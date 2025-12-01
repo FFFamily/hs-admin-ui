@@ -18,6 +18,11 @@
             <el-avatar v-else icon="el-icon-user-solid" :size="50" />
           </template>
         </el-table-column>
+        <el-table-column label="业务类型" prop="businessType" width="120" align="center">
+          <template slot-scope="scope">
+            <span>{{ getBusinessTypeText(scope.row.businessType) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="username" label="账号" width="200" />
         <el-table-column prop="nickname" label="账号名称" width="200" />
         <el-table-column prop="accountTypeId" label="账号类型" width="200">
@@ -43,6 +48,14 @@
               @click="handleStatusChange(scope.row)"
             >
               {{ scope.row.status === 'use' ? '停用' : '启用' }}
+            </el-button>
+            <el-button
+              v-if="scope.row.businessType !== 'service_provider'"
+              size="mini"
+              type="warning"
+              @click="handleChangeBusinessType(scope.row)"
+            >
+              转为服务商
             </el-button>
             <!-- <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button> -->
           </template>
@@ -124,7 +137,8 @@
 // 这里的接口方法请后续补充联动
 import {
   getUserPage, createWxUser, updateWxUser, changeWxUserStatus,
-  deleteWxUser, changeWxUserType, generateAccountUsername, getUseTypeList
+  deleteWxUser, changeWxUserType, generateAccountUsername, getUseTypeList,
+  changeWxUserBusinessType
 } from '@/api/user'
 import { getAccountTypeList } from '@/api/accountType'
 import ImageUploader from '@/components/ImageUploader/index.vue'
@@ -145,7 +159,8 @@ export default {
       search: {
         username: '',
         type: '',
-        phone: ''
+        phone: '',
+        businessType: ''
       },
       loading: false,
       dialogVisible: false,
@@ -153,6 +168,7 @@ export default {
       form: {
         id: undefined,
         type: '',
+        businessType: 'supplier',
         username: '',
         password: '',
         avatar: '',
@@ -212,6 +228,7 @@ export default {
       this.form = {
         id: null,
         type: '',
+        businessType: 'supplier',
         username: '',
         password: '',
         avatar: '',
@@ -316,6 +333,29 @@ export default {
     },
     getUseType(id) {
       return this.useTypeList.find(item => item.key === id)?.value
+    },
+    // 用户业务类型文案
+    getBusinessTypeText(businessType) {
+      if (businessType === 'supplier') {
+        return '供应商'
+      }
+      if (businessType === 'service_provider') {
+        return '服务商'
+      }
+      return '未设置'
+    },
+    // 转为服务商
+    handleChangeBusinessType(row) {
+      this.$confirm('确认将该账号从供应商转为服务商吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        return changeWxUserBusinessType(row.id, 'service_provider')
+      }).then(() => {
+        this.$message.success('已成功转为服务商')
+        this.fetchList()
+      }).catch(() => {})
     },
     // 获取完整的头像URL
     getAvatarUrl(avatar) {

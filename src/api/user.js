@@ -69,8 +69,19 @@ export function changeWxUserType(userId, type) {
     url: '/wx/user/changeUseType',
     method: 'put',
     params: {
-      userId: userId,
+      userId,
       useType: type
+    }
+  })
+}
+// 变更用户业务类型（供应商 / 服务商）
+export function changeWxUserBusinessType(userId, businessType) {
+  return request({
+    url: '/wx/user/changeAccountBusinessType',
+    method: 'put',
+    params: {
+      id: userId,
+      businessType
     }
   })
 }

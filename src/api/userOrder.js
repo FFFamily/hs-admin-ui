@@ -86,3 +86,12 @@ export function submitDelivery(data) {
   })
 }
 
+// 保存补充材料
+export function saveOrderMaterials(data) {
+  return request({
+    url: '/recycle/user/order/materials',
+    method: 'post',
+    data
+  })
+}
+

@@ -60,7 +60,7 @@ export default {
     value: {
       // 单文件：String，多文件：Array<String>
       type: [String, Array],
-      default: () => []
+      default: () => ''
     },
     multiple: {
       type: Boolean,
@@ -110,12 +110,6 @@ export default {
       type: String,
       default: () => process.env.VUE_APP_BASE_URL || ''
     },
-    emitRaw: {
-      // 是否向外部输出后端返回的原始 fileUrl（相对/接口地址）。
-      // 若为 false，则向外部输出拼接后的完整可访问 URL。
-      type: Boolean,
-      default: true
-    },
     buttonMode: {
       // 是否使用按钮模式
       type: Boolean,
@@ -155,16 +149,6 @@ export default {
       const path = String(rawUrl).startsWith('/') ? rawUrl : `/${rawUrl}`
       return `${base}${path}`
     },
-    toRawUrlFromDisplay(displayUrl) {
-      if (!displayUrl) return ''
-      if (!this.baseUrl) return displayUrl
-      const base = (this.baseUrl || '').replace(/\/$/, '')
-      if (displayUrl.startsWith(base)) {
-        const maybe = displayUrl.slice(base.length)
-        return maybe.startsWith('/') ? maybe : `/${maybe}`
-      }
-      return displayUrl
-    },
     beforeUpload(file) {
       const isLt = file.size / 1024 / 1024 < this.maxSizeMB
 
@@ -188,7 +172,7 @@ export default {
         this.$message.error('上传返回数据缺少文件地址')
         return
       }
-      const emitValue = this.emitRaw ? rawUrl : this.resolveDisplayUrl(rawUrl)
+      const emitValue = this.resolveDisplayUrl(rawUrl)
       if (this.multiple) {
         const current = Array.isArray(this.value) ? this.value.slice() : []
         current.push(emitValue)
@@ -210,14 +194,10 @@ export default {
     },
     onRemove(file, fileList) {
       if (this.multiple) {
-        const urls = (fileList || []).map(item => {
-          // 优先使用我们放进去的 rawUrl，其次用 response，再次从显示 URL 反推原始路径
-          return item.rawUrl || (item.response && item.response.data && (item.response.data.fileUrl || item.response.data.url)) || this.toRawUrlFromDisplay(item.url)
-        })
-        const mapped = (this.emitRaw ? urls : urls.map(u => this.resolveDisplayUrl(u))).filter(Boolean)
-        this.$emit('input', mapped)
+        const urls = (fileList || []).map(item => item.url).filter(Boolean)
+        this.$emit('input', urls)
       } else {
-        this.$emit('input', this.emitRaw ? '' : '')
+        this.$emit('input', '')
       }
       this.$emit('remove', file, fileList)
     },
