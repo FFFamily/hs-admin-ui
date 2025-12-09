@@ -107,3 +107,79 @@ export function getPricingMethodText(method) {
   return textMap[method] || method || '--'
 }
 
+// 结算状态枚举
+export const SETTLEMENT_STATUS = {
+  NOT_SETTLED: 'not_settled',
+  WAITING_CONFIRMATION: 'waiting_confirmation',
+  SETTLED: 'settled',
+  REJECTED: 'rejected',
+  AUTO_SETTLED: 'auto_settled'
+}
+
+// 结算状态选项
+export const SETTLEMENT_STATUS_OPTIONS = [
+  { label: '未结算', value: SETTLEMENT_STATUS.NOT_SETTLED },
+  { label: '待客户确认', value: SETTLEMENT_STATUS.WAITING_CONFIRMATION },
+  { label: '已结算', value: SETTLEMENT_STATUS.SETTLED },
+  { label: '已驳回', value: SETTLEMENT_STATUS.REJECTED },
+  { label: '超时自动结算', value: SETTLEMENT_STATUS.AUTO_SETTLED }
+]
+
+// 获取结算状态显示文本
+export function getSettlementStatusText(status) {
+  const textMap = {
+    [SETTLEMENT_STATUS.NOT_SETTLED]: '未结算',
+    [SETTLEMENT_STATUS.WAITING_CONFIRMATION]: '待客户确认',
+    [SETTLEMENT_STATUS.SETTLED]: '已结算',
+    [SETTLEMENT_STATUS.REJECTED]: '已驳回',
+    [SETTLEMENT_STATUS.AUTO_SETTLED]: '超时自动结算'
+  }
+  return textMap[status] || status || '--'
+}
+
+// 获取结算状态标签类型
+export function getSettlementStatusTagType(status) {
+  const tagTypeMap = {
+    [SETTLEMENT_STATUS.NOT_SETTLED]: 'info',
+    [SETTLEMENT_STATUS.WAITING_CONFIRMATION]: 'warning',
+    [SETTLEMENT_STATUS.SETTLED]: 'success',
+    [SETTLEMENT_STATUS.REJECTED]: 'danger',
+    [SETTLEMENT_STATUS.AUTO_SETTLED]: 'success'
+  }
+  return tagTypeMap[status] || 'info'
+}
+
+// 交付状态枚举
+export const DELIVERY_STATUS = {
+  NOT_DELIVERED: 'not_delivered',
+  DELIVERED: 'delivered',
+  NO_NEED: 'no_need'
+}
+
+// 交付状态选项
+export const DELIVERY_STATUS_OPTIONS = [
+  { label: '未交付', value: DELIVERY_STATUS.NOT_DELIVERED },
+  { label: '已交付', value: DELIVERY_STATUS.DELIVERED },
+  { label: '无需交付', value: DELIVERY_STATUS.NO_NEED }
+]
+
+// 获取交付状态显示文本
+export function getDeliveryStatusText(status) {
+  const textMap = {
+    [DELIVERY_STATUS.NOT_DELIVERED]: '未交付',
+    [DELIVERY_STATUS.DELIVERED]: '已交付',
+    [DELIVERY_STATUS.NO_NEED]: '无需交付'
+  }
+  return textMap[status] || status || '--'
+}
+
+// 获取交付状态标签类型
+export function getDeliveryStatusTagType(status) {
+  const tagTypeMap = {
+    [DELIVERY_STATUS.NOT_DELIVERED]: 'warning',
+    [DELIVERY_STATUS.DELIVERED]: 'success',
+    [DELIVERY_STATUS.NO_NEED]: 'info'
+  }
+  return tagTypeMap[status] || 'info'
+}
+

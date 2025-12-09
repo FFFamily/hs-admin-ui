@@ -54,11 +54,13 @@
       border
       style="width: 100%"
     >
-      <el-table-column prop="no" label="订单编号" width="150">
+      <el-table-column prop="no" label="订单编号" width="180">
         <template slot-scope="scope">
           <el-link type="primary" @click="handleEdit(scope.row)">{{ scope.row.no }}</el-link>
         </template>
       </el-table-column>
+      <el-table-column prop="contractNo" label="合同编号" width="150" />
+      <el-table-column prop="contractName" label="合同名称" width="150" show-overflow-tooltip />
       <el-table-column prop="stage" label="订单状态阶段" width="120" align="center">
         <template slot-scope="scope">
           <el-tag :type="getStageTagType(scope.row.stage)" size="small">
@@ -66,24 +68,32 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="contractNo" label="合同编号" width="150" />
-      <el-table-column prop="contractName" label="合同名称" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="pricingMethod" label="计价方式" width="120" align="center">
+
+      <el-table-column prop="settlementStatus" label="结算状态" width="120" align="center">
         <template slot-scope="scope">
-          {{ getPricingMethodText(scope.row.pricingMethod) }}
+          <el-tag :type="getSettlementStatusTagType(scope.row.settlementStatus)" size="small">
+            {{ getSettlementStatusText(scope.row.settlementStatus) }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="settlementTime" label="结算完成时间" width="180" >
+      <el-table-column prop="deliveryStatus" label="交付状态" width="120" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="getDeliveryStatusTagType(scope.row.deliveryStatus)" size="small">
+            {{ getDeliveryStatusText(scope.row.deliveryStatus) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <!-- <el-table-column prop="settlementTime" label="结算完成时间" width="180" >
         <template slot-scope="scope">
           {{ scope.row.settlementTime || '订单尚未完成' }}
         </template>
-      </el-table-column>
-      <el-table-column label="操作" width="400" fixed="right" align="center">
+      </el-table-column> -->
+      <el-table-column label="操作" width="400" fixed="right">
         <template slot-scope="scope">
           <el-button size="mini" type="success" @click="handleRegisterInfo(scope.row)">登记信息</el-button>
-          <el-button v-if="!scope.row.deliveryStatus" size="mini" type="warning" @click="handleDelivery(scope.row)">交付</el-button>
-          <el-button v-if="scope.row.deliveryStatus" size="mini" type="info" @click="handleViewDelivery(scope.row)">查看交付</el-button>
-          <el-button v-if="scope.row.stage === 'pending_settlement'" size="mini" type="info" @click="handleSettle(scope.row)">确认结算</el-button>
+          <el-button v-if="scope.row.deliveryStatus === DELIVERY_STATUS.NOT_DELIVERED" size="mini" type="warning" @click="handleDelivery(scope.row)">交付</el-button>
+          <el-button v-if="scope.row.deliveryStatus === DELIVERY_STATUS.DELIVERED" size="mini" type="info" @click="handleViewDelivery(scope.row)">查看交付</el-button>
+          <el-button v-if="scope.row.stage === 'pending_settlement' || scope.row.settlementStatus === 'rejected'" size="mini" type="info" @click="handleSettle(scope.row)">确认结算</el-button>
           <el-button v-if="scope.row.stage === 'completed'" size="mini" type="primary" @click="handleSupplementMaterials(scope.row)">补充材料</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           <el-dropdown @command="(command) => handleMoreAction(command, scope.row)">
@@ -332,7 +342,11 @@ import {
   getUserOrderStageTagType,
   getUserOrderStatusText,
   getUserOrderStatusTagType,
-  getPricingMethodText
+  getSettlementStatusText,
+  getSettlementStatusTagType,
+  getDeliveryStatusText,
+  getDeliveryStatusTagType,
+  DELIVERY_STATUS
 } from '@/constants/userOrder'
 
 export default {
@@ -344,6 +358,7 @@ export default {
   data() {
     return {
       loading: false,
+      DELIVERY_STATUS, // 交付状态枚举
 
       // 搜索表单
       searchForm: {
@@ -572,9 +587,24 @@ export default {
       return getUserOrderStatusTagType(status)
     },
 
-    // 获取计价方式文本
-    getPricingMethodText(method) {
-      return getPricingMethodText(method)
+    // 获取结算状态文本
+    getSettlementStatusText(status) {
+      return getSettlementStatusText(status)
+    },
+
+    // 获取结算状态标签类型
+    getSettlementStatusTagType(status) {
+      return getSettlementStatusTagType(status)
+    },
+
+    // 获取交付状态文本
+    getDeliveryStatusText(status) {
+      return getDeliveryStatusText(status)
+    },
+
+    // 获取交付状态标签类型
+    getDeliveryStatusTagType(status) {
+      return getDeliveryStatusTagType(status)
     },
 
     // 显示图片URL（处理相对路径和绝对路径）
