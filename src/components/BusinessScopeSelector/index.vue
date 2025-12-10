@@ -200,7 +200,8 @@ export default {
       },
       currentPage: 1,
       total: 0,
-      loading: false
+      loading: false,
+      searchTimer: null // 防抖定时器
     }
   },
   computed: {
@@ -232,6 +233,12 @@ export default {
       immediate: true
     }
   },
+  beforeDestroy() {
+    // 清除防抖定时器
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer)
+    }
+  },
   methods: {
     // 初始化数据
     async initData() {
@@ -258,6 +265,17 @@ export default {
           params.isShow = 'Y'
         }
 
+        // 添加搜索条件
+        if (this.searchForm.goodType && this.searchForm.goodType.trim()) {
+          params.goodType = this.searchForm.goodType.trim()
+        }
+        if (this.searchForm.goodName && this.searchForm.goodName.trim()) {
+          params.goodName = this.searchForm.goodName.trim()
+        }
+        if (this.searchForm.goodModel && this.searchForm.goodModel.trim()) {
+          params.goodModel = this.searchForm.goodModel.trim()
+        }
+
         const response = await getBusinessScopePage(params)
         if (response && response.data) {
           this.businessScopeList = response.data.records || []
@@ -272,24 +290,20 @@ export default {
       }
     },
 
-    // 搜索处理
+    // 搜索处理（带防抖）
     handleSearch() {
-      if (!this.searchForm.goodType.trim() &&
-          !this.searchForm.goodName.trim() &&
-          !this.searchForm.goodModel.trim()) {
-        this.filteredBusinessScopeList = [...this.businessScopeList]
-        return
+      // 清除之前的定时器
+      if (this.searchTimer) {
+        clearTimeout(this.searchTimer)
       }
 
-      this.filteredBusinessScopeList = this.businessScopeList.filter(item => {
-        const goodType = this.searchForm.goodType.toLowerCase()
-        const goodName = this.searchForm.goodName.toLowerCase()
-        const goodModel = this.searchForm.goodModel.toLowerCase()
+      // 重置到第一页
+      this.currentPage = 1
 
-        return (!goodType || (item.goodType && item.goodType.toLowerCase().includes(goodType))) &&
-               (!goodName || (item.goodName && item.goodName.toLowerCase().includes(goodName))) &&
-               (!goodModel || (item.goodModel && item.goodModel.toLowerCase().includes(goodModel)))
-      })
+      // 设置防抖，500ms 后调用接口
+      this.searchTimer = setTimeout(() => {
+        this.fetchBusinessScopeList()
+      }, 500)
     },
 
     // 分页处理
