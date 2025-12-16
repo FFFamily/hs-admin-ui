@@ -59,10 +59,10 @@
         <el-table-column prop="nickname" label="用户名称" min-width="120" />
 
         <!-- 用户类型列 -->
-        <el-table-column prop="useType" label="用户类型" width="100" align="center">
+        <el-table-column prop="useType" label="用户类型" width="200" align="center">
           <template slot-scope="scope">
-            <el-tag :type="scope.row.type === 'person' ? 'primary' : 'success'" size="mini">
-              {{ useTypeText(scope.row.type) }}
+            <el-tag type="info" size="mini">
+              {{ useTypeText(scope.row.type || scope.row.accountTypeId) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -119,6 +119,7 @@
 
 <script>
 import { getUserPage } from '@/api/user'
+import { getAccountTypeList } from '@/api/accountType'
 
 export default {
   name: 'UserSelector',
@@ -183,7 +184,8 @@ export default {
       total: 0,
       searchForm: {},
       loading: false,
-      defaultAvatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+      defaultAvatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png',
+      accountTypes: [] // 账号类型列表
     }
   },
   computed: {
@@ -226,7 +228,20 @@ export default {
     async initData() {
       this.searchKeyword = ''
       this.currentPage = 1
+      await this.fetchAccountTypes()
       await this.fetchUserList()
+    },
+
+    // 获取账号类型列表
+    async fetchAccountTypes() {
+      try {
+        const response = await getAccountTypeList()
+        if (response && response.data) {
+          this.accountTypes = response.data || []
+        }
+      } catch (error) {
+        console.error('获取账号类型列表失败:', error)
+      }
     },
 
     // 获取用户列表
@@ -331,10 +346,11 @@ export default {
     },
 
     // 用户类型文本转换
-    useTypeText(useType) {
-      if (useType === 'person') return '用户'
-      if (useType === 'company') return '企业'
-      return '未知'
+    useTypeText(accountTypeId) {
+      if (!accountTypeId) return '未知'
+      // 根据账号类型ID查找对应的类型名称
+      const accountType = this.accountTypes.find(item => item.id === accountTypeId)
+      return accountType ? accountType.typeName : '未知'
     },
 
     // 状态文本转换

@@ -8,19 +8,21 @@
         <el-button type="success" icon="el-icon-plus" style="margin-left: 10px;" @click="handleAdd">新增抬头</el-button>
       </div>
       <el-table v-loading="loading" :data="list" style="width: 100%; margin-top: 20px;" border>
-        <el-table-column prop="title" label="发票抬头名称" width="180" />
-        <el-table-column prop="taxNumber" label="纳税人识别号" width="180" />
-        <el-table-column prop="registeredAddress" label="注册地址" width="200" />
-        <el-table-column prop="phone" label="联系电话" width="150" />
-        <el-table-column prop="bankName" label="开户行" width="180" />
-        <el-table-column prop="bankCode" label="联行号" width="150" />
-        <el-table-column prop="isDefault" label="默认开票信息" width="120">
+        <el-table-column prop="accountName" label="账户" width="180" />
+        <el-table-column prop="isDefault" label="是否默认" width="80">
           <template slot-scope="scope">
             <el-tag :type="scope.row.isDefault === '1' ? 'success' : 'info'">
               {{ scope.row.isDefault === '1' ? '是' : '否' }}
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="title" label="发票抬头名称" width="180" />
+        <el-table-column prop="taxNumber" label="纳税人识别号" width="180" />
+        <el-table-column prop="registeredAddress" label="注册地址" width="200" />
+        <el-table-column prop="phone" label="联系电话" width="150" />
+        <el-table-column prop="bankName" label="开户行" width="180" />
+        <el-table-column prop="bankCode" label="联行号" width="150" />
+        
         <el-table-column label="操作" width="160" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>

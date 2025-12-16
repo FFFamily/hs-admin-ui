@@ -60,3 +60,38 @@ export function batchCreateInvoice(data) {
     data
   })
 }
+
+// 获取发票抬头分页列表
+export function getInvoiceTitlePage(params) {
+  return request({
+    url: '/invoice-head/page',
+    method: 'get',
+    params
+  })
+}
+
+// 创建发票抬头
+export function createInvoiceTitle(data) {
+  return request({
+    url: '/invoice-head/create',
+    method: 'post',
+    data
+  })
+}
+
+// 更新发票抬头
+export function updateInvoiceTitle(data) {
+  return request({
+    url: '/invoice-head/update',
+    method: 'put',
+    data
+  })
+}
+
+// 删除发票抬头
+export function deleteInvoiceTitle(id) {
+  return request({
+    url: `/invoice-head/delete/${id}`,
+    method: 'delete'
+  })
+}

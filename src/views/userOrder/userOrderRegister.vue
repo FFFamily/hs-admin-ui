@@ -572,7 +572,7 @@
     <!-- 底部按钮 -->
     <div class="form-footer">
       <el-button @click="handleCancel">返回</el-button>
-      <el-button v-if="canEdit" type="primary" :loading="submitLoading" @click="handleSubmit">保存当前阶段</el-button>
+      <!-- <el-button v-if="canEdit" type="primary" :loading="submitLoading" @click="handleSubmit">保存当前阶段</el-button> -->
       <el-button v-if="userOrderData.stage !== USER_ORDER_STAGE.PENDING_SETTLEMENT && userOrderData.stage !== USER_ORDER_STAGE.COMPLETED" type="warning" :loading="settleLoading" @click="handleSettle">结算订单</el-button>
     </div>
 

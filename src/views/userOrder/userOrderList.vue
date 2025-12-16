@@ -458,7 +458,18 @@ export default {
       },
       deliveryOfflineRules: {
         deliveryDocument: [
-          { required: true, message: '请上传交付单', trigger: 'change' }
+          { 
+            required: true, 
+            message: '请上传交付单', 
+            trigger: 'change',
+            validator: (rule, value, callback) => {
+              if (!value || value === '') {
+                callback(new Error('请上传交付单'))
+              } else {
+                callback()
+              }
+            }
+          }
         ]
       },
       deliveryDocumentList: []
@@ -819,19 +830,41 @@ export default {
     },
 
     // 交付单上传成功
-    handleDeliveryDocumentSuccess(response, file) {
-      if (response && response.data) {
-        this.deliveryOfflineForm.deliveryDocument = response.data.url || response.data
-        if (this.$refs.deliveryOfflineForm) {
-          this.$refs.deliveryOfflineForm.validateField('deliveryDocument')
+    handleDeliveryDocumentSuccess(response, file, fileList) {
+      console.log('交付单上传响应:', response)
+      
+      if (response && (response.code === 200 || response.code === '200') && response.data) {
+        // 尝试多种可能的URL字段
+        const fileUrl = response.data.fileUrl || response.data.url || ''
+        
+        if (fileUrl) {
+          this.deliveryOfflineForm.deliveryDocument = fileUrl
+          // 更新文件列表以正确显示
+          this.deliveryDocumentList = fileList || []
+          
+          // 触发表单验证
+          if (this.$refs.deliveryOfflineForm) {
+            this.$refs.deliveryOfflineForm.validateField('deliveryDocument')
+          }
+          
+          this.$message.success('交付单上传成功')
+        } else {
+          this.$message.error('上传返回数据缺少文件地址')
         }
+      } else {
+        this.$message.error('上传失败：' + (response?.msg || response?.message || '未知错误'))
       }
     },
 
     // 交付单移除
-    handleDeliveryDocumentRemove() {
+    handleDeliveryDocumentRemove(file, fileList) {
       this.deliveryOfflineForm.deliveryDocument = ''
-      this.deliveryDocumentList = []
+      this.deliveryDocumentList = fileList || []
+      
+      // 触发表单验证，清除验证错误
+      if (this.$refs.deliveryOfflineForm) {
+        this.$refs.deliveryOfflineForm.validateField('deliveryDocument')
+      }
     },
 
     // 提交交付
@@ -839,6 +872,14 @@ export default {
       const formRef = this.deliveryMethod === 'online' ? 'deliveryOnlineForm' : 'deliveryOfflineForm'
 
       if (!this.$refs[formRef]) return
+
+      // 对于线下交付，先检查文件是否已上传
+      if (this.deliveryMethod === 'offline') {
+        if (!this.deliveryOfflineForm.deliveryDocument || this.deliveryOfflineForm.deliveryDocument === '') {
+          this.$message.warning('请先上传交付单PDF文件')
+          return
+        }
+      }
 
       this.$refs[formRef].validate(async(valid) => {
         if (!valid) {
@@ -859,6 +900,7 @@ export default {
             deliveryData.processorSignature = this.deliveryOnlineForm.processorSignature
           } else {
             deliveryData.deliveryDocument = this.deliveryOfflineForm.deliveryDocument
+            console.log('提交线下交付数据:', deliveryData)
           }
           
           await submitDelivery(deliveryData)

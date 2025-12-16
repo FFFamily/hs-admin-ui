@@ -52,13 +52,13 @@
 
     <!-- 分页组件 -->
     <el-pagination
-      :current-page-num="pagination.pageNum"
-      :page-num-sizes="[10, 20, 50, 100]"
-      :page-num-page-size="pagination.pageSize"
+      :current-page="pagination.pageNum"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="pagination.pageSize"
       :total="pagination.total"
       layout="total, sizes, prev, pager, next, jumper"
       style="margin-top: 20px; text-align: right;"
-      @pageSize-change="handleSizeChange"
+      @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
     />
 
