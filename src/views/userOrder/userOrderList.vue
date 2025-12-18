@@ -96,7 +96,7 @@
           <el-button v-if="scope.row.stage === 'pending_settlement' || scope.row.settlementStatus === 'rejected'" size="mini" type="info" @click="handleSettle(scope.row)">确认结算</el-button>
           <el-button v-if="scope.row.stage === 'completed'" size="mini" type="primary" @click="handleSupplementMaterials(scope.row)">补充材料</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-          <el-dropdown @command="(command) => handleMoreAction(command, scope.row)">
+          <!-- <el-dropdown @command="(command) => handleMoreAction(command, scope.row)">
             <el-button size="mini">
               更多<i class="el-icon-arrow-down el-icon--right" />
             </el-button>
@@ -105,7 +105,7 @@
               <el-dropdown-item command="previewApplication">预览申请单</el-dropdown-item>
               <el-dropdown-item command="previewDelivery">预览交付单</el-dropdown-item>
             </el-dropdown-menu>
-          </el-dropdown>
+          </el-dropdown> -->
         </template>
       </el-table-column>
     </el-table>
@@ -173,6 +173,7 @@
             button-mode
             :limit="1"
             accept=".pdf"
+            :prepend-base-url="false"
             tips="只能上传PDF文件，且不超过10MB"
             @input="() => handleFileChange('settlementPdf')"
           />
@@ -183,6 +184,7 @@
             button-mode
             :limit="1"
             accept=".pdf"
+            :prepend-base-url="false"
             tips="只能上传PDF文件，且不超过10MB"
             @input="() => handleFileChange('applicationPdf')"
           />
@@ -193,6 +195,7 @@
             button-mode
             :limit="1"
             accept=".pdf"
+            :prepend-base-url="false"
             tips="只能上传PDF文件，且不超过10MB"
             @input="() => handleFileChange('deliveryPdf')"
           />
@@ -295,20 +298,17 @@
           :rules="deliveryViewMode ? {} : deliveryOfflineRules"
           label-width="120px"
         >
-          <el-form-item label="交付单(PDF)" prop="deliveryDocument">
-            <el-upload
-              class="upload-demo"
-              :action="uploadAction"
-              :on-success="handleDeliveryDocumentSuccess"
-              :on-remove="handleDeliveryDocumentRemove"
-              :file-list="deliveryDocumentList"
-              :limit="1"
+          <el-form-item label="交付单(PDF)" prop="deliveryPDF">
+            <FileUploader
+              v-model="deliveryOfflineForm.deliveryPDF"
               :disabled="deliveryViewMode"
+              button-mode
+              :limit="1"
               accept=".pdf"
-            >
-              <el-button size="small" type="primary" :disabled="deliveryViewMode">点击上传</el-button>
-              <div slot="tip" class="el-upload__tip">只能上传PDF文件，且不超过10MB</div>
-            </el-upload>
+              :prepend-base-url="false"
+              tips="只能上传PDF文件，且不超过10MB"
+              @input="() => handleDeliveryPDFChange()"
+            />
           </el-form-item>
         </el-form>
 
@@ -324,6 +324,83 @@
         <el-button v-if="deliveryStep === 1 && !deliveryViewMode" type="primary" :disabled="!deliveryMethod" @click="handleNextStep">下一步</el-button>
         <el-button v-if="deliveryStep === 2 && !deliveryViewMode" @click="deliveryStep = 1">上一步</el-button>
         <el-button v-if="deliveryStep === 2 && !deliveryViewMode" type="primary" :loading="deliverySubmitLoading" @click="handleDeliverySubmit">提交交付</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 查看交付对话框 (新增) -->
+    <el-dialog
+      :title="'查看交付 - ' + currentOrder.no"
+      :visible.sync="viewDeliveryDialogVisible"
+      width="700px"
+      @close="handleViewDeliveryDialogClose"
+    >
+      <div>
+        <!-- 线上交付展示 -->
+        <el-form
+          v-if="deliveryMethod === 'online'"
+          label-width="120px"
+        >
+          <el-form-item label="交付时间">
+            <el-input :value="deliveryOnlineForm.deliveryTime" disabled style="width: 100%;" />
+          </el-form-item>
+
+          <el-form-item label="交付照片">
+            <ImageUploader
+              v-model="deliveryOnlineForm.deliveryPhoto"
+              disabled
+              :multiple="false"
+              :limit="1"
+              list-type="picture-card"
+            />
+          </el-form-item>
+          
+          <el-form-item label="合作方签字">
+            <ImageUploader
+              v-model="deliveryOnlineForm.partnerSignature"
+              disabled
+              :multiple="false"
+              :limit="1"
+              list-type="picture-card"
+            />
+          </el-form-item>
+
+          <el-form-item label="经办人签字">
+            <ImageUploader
+              v-model="deliveryOnlineForm.processorSignature"
+              disabled
+              :multiple="false"
+              :limit="1"
+              list-type="picture-card"
+            />
+          </el-form-item>
+        </el-form>
+
+        <!-- 线下交付展示 -->
+        <el-form
+          v-else-if="deliveryMethod === 'offline'"
+          label-width="120px"
+        >
+          <el-form-item label="交付单(PDF)">
+             <el-button 
+               type="primary" 
+               size="small" 
+               icon="el-icon-document"
+               @click="handleViewPdf(deliveryOfflineForm.deliveryPDF)"
+             >
+               查看文件
+             </el-button>
+          </el-form-item>
+        </el-form>
+
+        <!-- 无信息提示 -->
+        <div v-else style="text-align: center; padding: 40px 0; color: #909399;">
+          <i class="el-icon-info" style="font-size: 48px; margin-bottom: 16px;"></i>
+          <p>该订单暂无交付信息</p>
+        </div>
+      </div>
+
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="viewDeliveryDialogVisible = false">关闭</el-button>
       </div>
     </el-dialog>
 
@@ -423,12 +500,12 @@ export default {
 
       // 交付对话框
       deliveryDialogVisible: false,
+      viewDeliveryDialogVisible: false, // 新增：查看交付对话框显示状态
       deliveryStep: 1, // 1: 选择模式, 2: 填写信息
       deliveryMethod: '', // online/offline
       deliverySubmitLoading: false,
-      deliveryViewMode: false, // 是否为查看模式
+      deliveryViewMode: false, // 是否为查看模式 (deprecated for view, but can be kept for compatibility if needed inside shared logic, generally we separate it now)
       currentOrder: {},
-      uploadAction: '/api/system/file/upload',
       
       // 线上交付表单
       deliveryOnlineForm: {
@@ -454,10 +531,10 @@ export default {
       
       // 线下交付表单
       deliveryOfflineForm: {
-        deliveryDocument: ''
+        deliveryPDF: ''
       },
       deliveryOfflineRules: {
-        deliveryDocument: [
+        deliveryPDF: [
           { 
             required: true, 
             message: '请上传交付单', 
@@ -471,8 +548,7 @@ export default {
             }
           }
         ]
-      },
-      deliveryDocumentList: []
+      }
     }
   },
   mounted() {
@@ -767,7 +843,7 @@ export default {
     // 查看交付
     handleViewDelivery(row) {
       this.currentOrder = row
-      this.deliveryViewMode = true
+      // this.deliveryViewMode = true // No longer using the shared dialog for viewing
       this.deliveryMethod = row.deliveryMethod || ''
       
       // 根据交付方式显示对应的交付信息
@@ -779,25 +855,39 @@ export default {
           partnerSignature: row.partnerSignature || '',
           processorSignature: row.processorSignature || ''
         }
-        this.deliveryStep = 2
       } else if (row.deliveryMethod === 'offline') {
         // 线下交付：显示交付单PDF
         this.deliveryOfflineForm = {
-          deliveryDocument: row.deliveryDocument || ''
+          deliveryPDF: row.deliveryPdf || row.deliveryPDF || ''
         }
-        if (row.deliveryDocument) {
-          this.deliveryDocumentList = [{ name: '交付单.pdf', url: row.deliveryDocument }]
-        } else {
-          this.deliveryDocumentList = []
-        }
-        this.deliveryStep = 2
-      } else {
-        // 如果没有交付方式，默认显示第一步（但查看模式下不应该出现这种情况）
-        // 如果确实没有交付方式，直接显示第二步，让用户知道没有交付信息
-        this.deliveryStep = 2
       }
       
-      this.deliveryDialogVisible = true
+      this.viewDeliveryDialogVisible = true
+    },
+
+    // 关闭查看交付对话框
+    handleViewDeliveryDialogClose() {
+      this.viewDeliveryDialogVisible = false
+      this.deliveryMethod = ''
+      this.deliveryOnlineForm = {
+        deliveryTime: '',
+        deliveryPhoto: '',
+        partnerSignature: '',
+        processorSignature: ''
+      }
+      this.deliveryOfflineForm = {
+        deliveryPDF: ''
+      }
+    },
+
+    // 查看PDF文件
+    handleViewPdf(url) {
+      if (!url) {
+        this.$message.warning('暂无文件')
+        return
+      }
+      const fullUrl = process.env.VUE_APP_BASE_URL + url
+      window.open(fullUrl, '_blank')
     },
 
     // 进入下一步
@@ -817,9 +907,8 @@ export default {
         processorSignature: ''
       }
       this.deliveryOfflineForm = {
-        deliveryDocument: ''
+        deliveryPDF: ''
       }
-      this.deliveryDocumentList = []
 
       if (this.$refs.deliveryOnlineForm) {
         this.$refs.deliveryOnlineForm.clearValidate()
@@ -829,41 +918,10 @@ export default {
       }
     },
 
-    // 交付单上传成功
-    handleDeliveryDocumentSuccess(response, file, fileList) {
-      console.log('交付单上传响应:', response)
-      
-      if (response && (response.code === 200 || response.code === '200') && response.data) {
-        // 尝试多种可能的URL字段
-        const fileUrl = response.data.fileUrl || response.data.url || ''
-        
-        if (fileUrl) {
-          this.deliveryOfflineForm.deliveryDocument = fileUrl
-          // 更新文件列表以正确显示
-          this.deliveryDocumentList = fileList || []
-          
-          // 触发表单验证
-          if (this.$refs.deliveryOfflineForm) {
-            this.$refs.deliveryOfflineForm.validateField('deliveryDocument')
-          }
-          
-          this.$message.success('交付单上传成功')
-        } else {
-          this.$message.error('上传返回数据缺少文件地址')
-        }
-      } else {
-        this.$message.error('上传失败：' + (response?.msg || response?.message || '未知错误'))
-      }
-    },
-
-    // 交付单移除
-    handleDeliveryDocumentRemove(file, fileList) {
-      this.deliveryOfflineForm.deliveryDocument = ''
-      this.deliveryDocumentList = fileList || []
-      
-      // 触发表单验证，清除验证错误
+    // 交付单文件变化
+    handleDeliveryPDFChange() {
       if (this.$refs.deliveryOfflineForm) {
-        this.$refs.deliveryOfflineForm.validateField('deliveryDocument')
+        this.$refs.deliveryOfflineForm.validateField('deliveryPDF')
       }
     },
 
@@ -872,14 +930,6 @@ export default {
       const formRef = this.deliveryMethod === 'online' ? 'deliveryOnlineForm' : 'deliveryOfflineForm'
 
       if (!this.$refs[formRef]) return
-
-      // 对于线下交付，先检查文件是否已上传
-      if (this.deliveryMethod === 'offline') {
-        if (!this.deliveryOfflineForm.deliveryDocument || this.deliveryOfflineForm.deliveryDocument === '') {
-          this.$message.warning('请先上传交付单PDF文件')
-          return
-        }
-      }
 
       this.$refs[formRef].validate(async(valid) => {
         if (!valid) {
@@ -899,7 +949,7 @@ export default {
             deliveryData.partnerSignature = this.deliveryOnlineForm.partnerSignature
             deliveryData.processorSignature = this.deliveryOnlineForm.processorSignature
           } else {
-            deliveryData.deliveryDocument = this.deliveryOfflineForm.deliveryDocument
+            deliveryData.deliveryPDF = this.deliveryOfflineForm.deliveryPDF
             console.log('提交线下交付数据:', deliveryData)
           }
           

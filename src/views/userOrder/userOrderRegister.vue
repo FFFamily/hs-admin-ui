@@ -117,14 +117,9 @@
           @click.native="handleStepClick(1)"
         />
         <el-step
-          title="加工"
+          title="加工/入库"
           :class="{ 'step-clickable': (hasTransportStage ? 2 : 1) <= currentOrderStep, 'step-disabled': (hasTransportStage ? 2 : 1) > currentOrderStep }"
           @click.native="handleStepClick(hasTransportStage ? 2 : 1)"
-        />
-        <el-step
-          title="入库"
-          :class="{ 'step-clickable': (hasTransportStage ? 3 : 2) <= currentOrderStep, 'step-disabled': (hasTransportStage ? 3 : 2) > currentOrderStep }"
-          @click.native="handleStepClick(hasTransportStage ? 3 : 2)"
         />
       </el-steps>
     </div>
@@ -415,158 +410,7 @@
         </el-table>
       </div>
 
-      <!-- 入库阶段 -->
-      <div v-show="currentStage === 'warehousing'" class="stage-content">
-        <h3 class="stage-title">
-          <i class="el-icon-box"></i> 入库信息
-          <el-tag v-if="!canEdit" type="info" size="small" style="margin-left: 10px;">只读</el-tag>
-        </h3>
-        <el-form ref="warehousingForm" :model="warehousingForm" :rules="canEdit ? warehousingRules : {}" label-width="120px">
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="对应订单编号">
-                <el-input v-model="warehousingForm.orderNo" placeholder="系统自动生成" readonly disabled />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="对应订单识别码">
-                <el-input v-model="warehousingForm.identifyCode" placeholder="系统自动生成" readonly disabled />
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="加工经办人" prop="processorId">
-                <el-input
-                  v-model="warehousingForm.processorName"
-                  :disabled="!canEdit"
-                  placeholder="请选择加工经办人"
-                  readonly
-                  @focus="showWarehousingProcessorSelector"
-                >
-                  <el-button slot="append" type="primary" :disabled="!canEdit" @click="showWarehousingProcessorSelector">选择经办人</el-button>
-                </el-input>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20">
-            <!-- <el-col :span="12">
-              <el-form-item label="入库日期" prop="warehousingDate">
-                <el-date-picker
-                  v-model="warehousingForm.warehousingDate"
-                  :disabled="!canEdit"
-                  type="date"
-                  placeholder="请选择入库日期"
-                  style="width: 100%;"
-                />
-              </el-form-item>
-            </el-col> -->
-          </el-row>
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="仓库" prop="warehouseId">
-                <el-input
-                  v-model="warehousingForm.warehouseName"
-                  :disabled="!canEdit"
-                  placeholder="请选择仓库"
-                  readonly
-                  @focus="showWarehouseSelector"
-                >
-                  <el-button slot="append" type="primary" :disabled="!canEdit" @click="showWarehouseSelector">选择仓库</el-button>
-                </el-input>
-              </el-form-item>
-            </el-col>
-            <!-- <el-col :span="12">
-              <el-form-item label="入库单号" prop="warehousingNo">
-                <el-input v-model="warehousingForm.warehousingNo" :disabled="!canEdit" placeholder="请输入入库单号" />
-              </el-form-item>
-            </el-col> -->
-          </el-row>
-        </el-form>
 
-        <!-- 货物明细 -->
-        <el-form>
-          <el-form-item>
-            <el-button type="primary" :disabled="!canEdit" @click="addWarehousingGoodItem">新增行</el-button>
-            <el-button type="danger" :disabled="!canEdit || warehousingSelectedItems.length === 0" @click="deleteWarehousingSelectedItems">删除行</el-button>
-          </el-form-item>
-        </el-form>
-
-        <el-table
-          v-loading="loading"
-          :data="warehousingGoodItems"
-          border
-          fit
-          style="width: 100%"
-          @selection-change="handleWarehousingSelectionChange"
-        >
-          <el-table-column type="selection" width="55" align="center" :selectable="() => canEdit" />
-          <el-table-column prop="goodNo" label="货物编号" fixed="left" width="180" align="center">
-            <template slot-scope="scope">
-              <el-input :disabled="!canEdit" v-model="scope.row.goodNo" placeholder="选择货物" readonly>
-                <el-button slot="append" icon="el-icon-search" :disabled="!canEdit" @click="openWarehousingGoodSelector(scope.$index)" />
-              </el-input>
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodType" label="货物分类" width="160" align="center">
-            <template slot-scope="scope">
-              <el-input :disabled="true" v-model="scope.row.goodType" placeholder="无分类" />
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodName" label="货物名称" min-width="160" show-overflow-tooltip>
-            <template slot-scope="scope">
-              <el-input :disabled="true" v-model="scope.row.goodName" placeholder="无名称" />
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodModel" label="货物型号" width="140" align="center">
-            <template slot-scope="scope">
-              <el-input :disabled="true" v-model="scope.row.goodModel" placeholder="无型号" />
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodCount" label="货物数量" width="155" align="center">
-            <template slot-scope="scope">
-              <el-input-number
-                v-model="scope.row.goodCount"
-                :disabled="!canEdit"
-                style="width:130px;"
-                :min="1"
-                :precision="0"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodWeight" label="货物重量(kg)" width="160" align="center">
-            <template slot-scope="scope">
-              <el-input-number
-                v-model="scope.row.goodWeight"
-                :disabled="!canEdit"
-                :min="0"
-                :precision="2"
-                controls-position="right"
-                placeholder="请输入货物重量"
-                style="width: 130px;"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodPrice" label="货物单价" width="160" align="center">
-            <template slot-scope="scope">
-              <el-input-number
-                v-model="scope.row.goodPrice"
-                :disabled="!canEdit"
-                :min="0"
-                :precision="2"
-                controls-position="right"
-                placeholder="请输入货物单价"
-                style="width: 130px;"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodRemark" label="货物备注" min-width="180">
-            <template slot-scope="scope">
-              <el-input :disabled="!canEdit" v-model="scope.row.goodRemark" placeholder="备注" />
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
     </el-card>
 
     <!-- 底部按钮 -->
@@ -608,32 +452,6 @@
       :only-show-enabled="true"
       @confirm="handleProcessingGoodSelected"
       @close="handleProcessingGoodSelectorClose"
-    />
-
-    <!-- 入库货物选择器 -->
-    <business-scope-selector
-      :visible.sync="warehousingGoodSelectorVisible"
-      title="选择货物"
-      :multiple="false"
-      :only-show-enabled="true"
-      @confirm="handleWarehousingGoodSelected"
-      @close="handleWarehousingGoodSelectorClose"
-    />
-
-    <!-- 入库经办人选择器 -->
-    <agent-selector
-      :visible.sync="warehousingProcessorSelectorVisible"
-      title="选择加工经办人"
-      :multiple="false"
-      @confirm="handleWarehousingProcessorSelected"
-    />
-
-    <!-- 仓库选择器 -->
-    <warehouse-selector
-      :visible.sync="warehouseSelectorVisible"
-      title="选择仓库"
-      :multiple="false"
-      @confirm="handleWarehouseSelected"
     />
 
     <!-- 站点选择器 -->
@@ -766,37 +584,7 @@ export default {
         ]
       },
       
-      // 入库阶段数据
-      warehouseSelectorVisible: false,
-      warehousingProcessorSelectorVisible: false,
-      warehousingGoodSelectorVisible: false,
-      warehousingCurrentRowIndex: -1,
-      warehousingSelectedItems: [],
-      warehousingGoodItems: [],
-      warehousingForm: {
-        orderNo: '',
-        identifyCode: '',
-        processorId: '',
-        processorName: '',
-        warehousingDate: '',
-        warehouseId: '',
-        warehouseName: '',
-        warehousingNo: ''
-      },
-      warehousingRules: {
-        processorId: [
-          { required: true, message: '请选择加工经办人', trigger: 'change' }
-        ],
-        warehousingDate: [
-          { required: true, message: '请选择入库日期', trigger: 'change' }
-        ],
-        warehouseId: [
-          { required: true, message: '请选择仓库', trigger: 'change' }
-        ],
-        warehousingNo: [
-          { required: true, message: '请输入入库单号', trigger: 'blur' }
-        ]
-      }
+
     }
   },
   computed: {
@@ -820,9 +608,8 @@ export default {
           [USER_ORDER_STAGE.PURCHASE]: 0,
           [USER_ORDER_STAGE.TRANSPORT]: 1,
           [USER_ORDER_STAGE.PROCESSING]: 2,
-          [USER_ORDER_STAGE.WAREHOUSING]: 3,
-          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 4,
-          [USER_ORDER_STAGE.COMPLETED]: 4
+          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 3,
+          [USER_ORDER_STAGE.COMPLETED]: 3
         }
         return stageMap[this.userOrderData.stage] || 0
       }
@@ -830,9 +617,8 @@ export default {
       const stageMap = {
         [USER_ORDER_STAGE.PURCHASE]: 0,
         [USER_ORDER_STAGE.PROCESSING]: 1,
-        [USER_ORDER_STAGE.WAREHOUSING]: 2,
-        [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 3,
-        [USER_ORDER_STAGE.COMPLETED]: 3
+        [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 2,
+        [USER_ORDER_STAGE.COMPLETED]: 2
       }
       return stageMap[this.userOrderData.stage] || 0
     }
@@ -874,9 +660,8 @@ export default {
           [USER_ORDER_STAGE.PURCHASE]: { stage: 'purchase', step: 0 },
           [USER_ORDER_STAGE.TRANSPORT]: { stage: 'transport', step: 1 },
           [USER_ORDER_STAGE.PROCESSING]: { stage: 'processing', step: 2 },
-          [USER_ORDER_STAGE.WAREHOUSING]: { stage: 'warehousing', step: 3 },
-          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: { stage: 'warehousing', step: 4 },
-          [USER_ORDER_STAGE.COMPLETED]: { stage: 'warehousing', step: 4 }
+          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: { stage: 'processing', step: 3 },
+          [USER_ORDER_STAGE.COMPLETED]: { stage: 'processing', step: 3 }
         }
         const config = stageMap[this.userOrderData.stage] || { stage: 'purchase', step: 0 }
         this.currentStage = config.stage
@@ -888,9 +673,8 @@ export default {
       const stageMap = {
         [USER_ORDER_STAGE.PURCHASE]: { stage: 'purchase', step: 0 },
         [USER_ORDER_STAGE.PROCESSING]: { stage: 'processing', step: 1 },
-        [USER_ORDER_STAGE.WAREHOUSING]: { stage: 'warehousing', step: 2 },
-        [USER_ORDER_STAGE.PENDING_SETTLEMENT]: { stage: 'warehousing', step: 3 },
-        [USER_ORDER_STAGE.COMPLETED]: { stage: 'warehousing', step: 3 }
+        [USER_ORDER_STAGE.PENDING_SETTLEMENT]: { stage: 'processing', step: 2 },
+        [USER_ORDER_STAGE.COMPLETED]: { stage: 'processing', step: 2 }
       }
       const config = stageMap[this.userOrderData.stage] || { stage: 'purchase', step: 0 }
       this.currentStage = config.stage
@@ -990,25 +774,6 @@ export default {
             this.processingGoodItems = []
           }
           
-          // 加载入库阶段数据（storageOrder）
-          const storageOrder = data.storageOrder || {}
-          this.warehousingForm = {
-            orderNo: storageOrder.orderNo || storageOrder.no || '',
-            identifyCode: storageOrder.identifyCode || storageOrder.code || '',
-            processorId: storageOrder.processorId || '',
-            processorName: storageOrder.processorName || '',
-            warehousingDate: storageOrder.warehousingDate || storageOrder.date || '',
-            warehouseId: storageOrder.warehouseId || '',
-            warehouseName: storageOrder.warehouseName || '',
-            warehousingNo: storageOrder.warehousingNo || storageOrder.no || ''
-          }
-          
-          // 加载入库货物明细
-          if (storageOrder.items && storageOrder.items.length > 0) {
-            this.warehousingGoodItems = storageOrder.items.map(item => ({ ...item }))
-          } else {
-            this.warehousingGoodItems = []
-          }
         }
       } catch (error) {
         console.error('获取订单信息失败:', error)
@@ -1028,14 +793,14 @@ export default {
 
       if (this.hasTransportStage) {
         // 包含运输阶段
-        const stageMap = ['purchase', 'transport', 'processing', 'warehousing']
+        const stageMap = ['purchase', 'transport', 'processing']
         this.currentStage = stageMap[step]
         this.activeStep = step
         return
       }
 
       // 不包含运输阶段
-      const stageMap = ['purchase', 'processing', 'warehousing']
+      const stageMap = ['purchase', 'processing']
       this.currentStage = stageMap[step]
       this.activeStep = step
     },
@@ -1213,132 +978,6 @@ export default {
       this.processingSelectedItems = selection
     },
 
-    // ====== 入库阶段方法 ======
-    // 显示入库经办人选择器
-    showWarehousingProcessorSelector() {
-      if (!this.canEdit) {
-        this.$message.warning('当前阶段不可编辑')
-        return
-      }
-      this.warehousingProcessorSelectorVisible = true
-    },
-
-    // 入库经办人选择确认
-    handleWarehousingProcessorSelected(agents) {
-      if (agents && agents.length > 0) {
-        const agent = agents[0]
-        this.warehousingForm.processorId = agent.id
-        this.warehousingForm.processorName = agent.name || agent.accountName
-        if (this.$refs.warehousingForm) {
-          this.$refs.warehousingForm.validateField('processorId')
-        }
-      }
-    },
-
-    showWarehouseSelector() {
-      if (!this.canEdit) {
-        this.$message.warning('当前阶段不可编辑')
-        return
-      }
-      this.warehouseSelectorVisible = true
-    },
-
-    handleWarehouseSelected(warehouses) {
-      if (warehouses && warehouses.length > 0) {
-        this.warehousingForm.warehouseId = warehouses[0].id
-        this.warehousingForm.warehouseName = warehouses[0].warehouseName
-        if (this.$refs.warehousingForm) {
-          this.$refs.warehousingForm.validateField('warehouseId')
-        }
-      }
-    },
-
-    // 打开入库货物选择器
-    openWarehousingGoodSelector(rowIndex) {
-      if (!this.canEdit) {
-        this.$message.warning('当前阶段不可编辑')
-        return
-      }
-      this.warehousingCurrentRowIndex = rowIndex
-      this.warehousingGoodSelectorVisible = true
-    },
-
-    // 入库货物选择确认
-    handleWarehousingGoodSelected(selectedItems) {
-      if (selectedItems && selectedItems.length > 0 && this.warehousingCurrentRowIndex >= 0) {
-        const selectedItem = selectedItems[0]
-        const currentRow = this.warehousingGoodItems[this.warehousingCurrentRowIndex]
-        if (currentRow) {
-          currentRow.goodNo = selectedItem.no || ''
-          currentRow.goodType = selectedItem.goodType || ''
-          currentRow.goodName = selectedItem.goodName || ''
-          currentRow.goodModel = selectedItem.goodModel || ''
-          currentRow.goodCount = currentRow.goodCount || 1
-          currentRow.goodWeight = currentRow.goodWeight || 0
-          currentRow.goodPrice = currentRow.goodPrice || 0
-        }
-      }
-      this.warehousingGoodSelectorVisible = false
-    },
-
-    // 关闭入库货物选择器
-    handleWarehousingGoodSelectorClose() {
-      this.warehousingGoodSelectorVisible = false
-      this.warehousingCurrentRowIndex = -1
-    },
-
-    // 新增入库货物行
-    addWarehousingGoodItem() {
-      if (!this.canEdit) {
-        this.$message.warning('当前阶段不可编辑')
-        return
-      }
-      const newItem = {
-        goodNo: '',
-        goodType: '',
-        goodName: '',
-        goodModel: '',
-        goodCount: 1,
-        goodWeight: 0,
-        goodPrice: 0,
-        goodRemark: ''
-      }
-      this.warehousingGoodItems.push(newItem)
-      this.$message.success('新增行成功')
-    },
-
-    // 删除选中的入库货物行
-    deleteWarehousingSelectedItems() {
-      if (!this.canEdit) {
-        this.$message.warning('当前阶段不可编辑')
-        return
-      }
-      if (this.warehousingSelectedItems.length === 0) {
-        this.$message.warning('请先选择要删除的行')
-        return
-      }
-
-      this.$confirm(`确定要删除选中的 ${this.warehousingSelectedItems.length} 行数据吗？`, '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        this.warehousingSelectedItems.forEach(selectedItem => {
-          const index = this.warehousingGoodItems.findIndex(item => item === selectedItem)
-          if (index > -1) {
-            this.warehousingGoodItems.splice(index, 1)
-          }
-        })
-        this.warehousingSelectedItems = []
-        this.$message.success('删除成功')
-      }).catch(() => {})
-    },
-
-    // 处理入库货物表格选择变化
-    handleWarehousingSelectionChange(selection) {
-      this.warehousingSelectedItems = selection
-    },
-
     // ====== 提交方法 ======
     async handleSubmit() {
       if (!this.canEdit) {
@@ -1356,9 +995,6 @@ export default {
           break
         case 'processing':
           await this.submitProcessing()
-          break
-        case 'warehousing':
-          await this.submitWarehousing()
           break
       }
     },
@@ -1491,63 +1127,6 @@ export default {
       })
     },
 
-    // 提交入库信息
-    async submitWarehousing() {
-      if (!this.$refs.warehousingForm) return
-      
-      this.$refs.warehousingForm.validate(async(valid) => {
-        if (!valid) {
-          return false
-        }
-
-        // 验证货物明细
-        if (this.warehousingGoodItems.length === 0) {
-          this.$message.warning('请至少添加一条货物明细')
-          return
-        }
-
-        for (let i = 0; i < this.warehousingGoodItems.length; i++) {
-          const item = this.warehousingGoodItems[i]
-          if (!item.goodNo) {
-            this.$message.warning(`第 ${i + 1} 行的货物编号不能为空`)
-            return
-          }
-          if (!item.goodCount || item.goodCount <= 0) {
-            this.$message.warning(`第 ${i + 1} 行的货物数量必须大于0`)
-            return
-          }
-        }
-
-        this.submitLoading = true
-        try {
-          // 更新用户订单的入库信息
-          const updateData = {
-            id: this.orderId,
-            warehousingOrderNo: this.warehousingForm.orderNo,
-            warehousingOrderCode: this.warehousingForm.identifyCode,
-            warehousingProcessorId: this.warehousingForm.processorId,
-            warehousingProcessorName: this.warehousingForm.processorName,
-            warehousingDate: this.warehousingForm.warehousingDate,
-            warehouseId: this.warehousingForm.warehouseId,
-            warehouseName: this.warehousingForm.warehouseName,
-            warehousingNo: this.warehousingForm.warehousingNo,
-            warehousingGoodItems: this.warehousingGoodItems.map(item => ({ ...item }))
-          }
-          
-          await updateUserOrder(updateData)
-          this.$message.success('保存成功')
-          
-          // 重新加载数据
-          await this.loadUserOrderInfo(this.orderId)
-        } catch (error) {
-          console.error('保存失败:', error)
-          this.$message.error('保存失败')
-        } finally {
-          this.submitLoading = false
-        }
-      })
-    },
-
     // 取消
     handleCancel() {
       this.$router.push({ name: 'UserOrderList' })
@@ -1588,14 +1167,6 @@ export default {
               id: this.orderId,
               ...this.processingForm,
               items: this.processingGoodItems.map(item => ({ ...item }))
-            }
-            break
-          case 'warehousing':
-            // 入库阶段：传递入库表单数据和货物明细
-            settleData = {
-              id: this.orderId,
-              ...this.warehousingForm,
-              items: this.warehousingGoodItems.map(item => ({ ...item }))
             }
             break
           default:

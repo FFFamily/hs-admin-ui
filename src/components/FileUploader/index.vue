@@ -20,17 +20,30 @@
     >
       <template v-if="buttonMode">
         <div class="button-group">
-          <el-button type="primary" icon="el-icon-upload2">
-            {{ hasFile ? '重新上传' : '上传文件' }}
-          </el-button>
-          <el-button
-            v-if="hasFile"
-            type="success"
-            icon="el-icon-view"
-            @click="handlePreviewFile"
-          >
-            查看
-          </el-button>
+          <!-- 如果禁用且有文件，只显示查看按钮 -->
+          <template v-if="disabled && hasFile">
+            <el-button
+              type="success"
+              icon="el-icon-view"
+              @click="handlePreviewFile"
+            >
+              查看
+            </el-button>
+          </template>
+          <!-- 否则显示上传按钮和查看按钮（如果有文件） -->
+          <template v-else>
+            <el-button type="primary" icon="el-icon-upload2">
+              {{ hasFile ? '重新上传' : '上传文件' }}
+            </el-button>
+            <el-button
+              v-if="hasFile"
+              type="success"
+              icon="el-icon-view"
+              @click="handlePreviewFile"
+            >
+              查看
+            </el-button>
+          </template>
         </div>
       </template>
       <template v-else>
@@ -114,6 +127,11 @@ export default {
       // 是否使用按钮模式
       type: Boolean,
       default: false
+    },
+    prependBaseUrl: {
+      // 是否拼接 baseUrl 前缀，默认拼接
+      type: Boolean,
+      default: true
     }
   },
   computed: {
@@ -135,7 +153,12 @@ export default {
       if (this.multiple) {
         return Array.isArray(this.value) && this.value.length > 0
       }
-      return typeof this.value === 'string' && this.value !== ''
+      // 单文件模式：检查值是否存在且不为空
+      if (this.value === null || this.value === undefined) {
+        return false
+      }
+      const strValue = String(this.value).trim()
+      return strValue !== '' && strValue !== 'null' && strValue !== 'undefined'
     }
   },
   methods: {
@@ -145,6 +168,8 @@ export default {
     resolveDisplayUrl(rawUrl) {
       if (!rawUrl) return ''
       if (this.isAbsoluteUrl(rawUrl)) return rawUrl
+      // 如果不需要拼接 baseUrl，直接返回原始 URL
+      if (!this.prependBaseUrl) return rawUrl
       const base = (this.baseUrl || '').replace(/\/$/, '')
       const path = String(rawUrl).startsWith('/') ? rawUrl : `/${rawUrl}`
       return `${base}${path}`
@@ -172,7 +197,8 @@ export default {
         this.$message.error('上传返回数据缺少文件地址')
         return
       }
-      const emitValue = this.resolveDisplayUrl(rawUrl)
+      // 根据 prependBaseUrl 决定是否拼接 baseUrl
+      const emitValue = this.prependBaseUrl ? this.resolveDisplayUrl(rawUrl) : rawUrl
       if (this.multiple) {
         const current = Array.isArray(this.value) ? this.value.slice() : []
         current.push(emitValue)
@@ -194,7 +220,12 @@ export default {
     },
     onRemove(file, fileList) {
       if (this.multiple) {
-        const urls = (fileList || []).map(item => item.url).filter(Boolean)
+        // 根据 prependBaseUrl 决定使用 rawUrl 还是 url
+        // 如果 prependBaseUrl 为 false，value 中存储的是原始 URL，应该使用 rawUrl
+        // 如果 prependBaseUrl 为 true，value 中存储的是拼接后的 URL，应该使用 url
+        const urls = (fileList || []).map(item => {
+          return this.prependBaseUrl ? item.url : (item.rawUrl || item.url)
+        }).filter(Boolean)
         this.$emit('input', urls)
       } else {
         this.$emit('input', '')
@@ -228,8 +259,13 @@ export default {
         return
       }
 
-      // 构建完整的文件URL
-      const fullUrl = this.resolveDisplayUrl(fileUrl)
+      // 构建完整的文件URL（预览时总是拼接 baseUrl 以便访问）
+      let fullUrl = fileUrl
+      if (!this.isAbsoluteUrl(fileUrl)) {
+        const base = (this.baseUrl || '').replace(/\/$/, '')
+        const path = String(fileUrl).startsWith('/') ? fileUrl : `/${fileUrl}`
+        fullUrl = `${base}${path}`
+      }
 
       // 在新窗口中打开PDF文件
       window.open(fullUrl, '_blank')
