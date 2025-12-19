@@ -402,6 +402,19 @@
               />
             </template>
           </el-table-column>
+          <el-table-column prop="goodPrice" label="货物单价(元)" width="160" align="center">
+            <template slot-scope="scope">
+              <el-input-number
+                v-model="scope.row.goodPrice"
+                :disabled="true"
+                :min="0"
+                :precision="2"
+                controls-position="right"
+                placeholder="自动带出"
+                style="width: 130px;"
+              />
+            </template>
+          </el-table-column>
           <el-table-column prop="goodRemark" label="货物备注" min-width="180">
             <template slot-scope="scope">
               <el-input :disabled="!canEdit" v-model="scope.row.goodRemark" placeholder="备注" />
@@ -601,26 +614,24 @@ export default {
       return this.currentStage === this.userOrderData.stage
     },
     // 当前订单所处的阶段索引
+    // 规则：只要不是「采购 / 运输 / 加工」这三个阶段，其余阶段一律展示为最后一个阶段
     currentOrderStep() {
+      const stage = this.userOrderData.stage
+
       if (this.hasTransportStage) {
-        // 包含运输阶段
-        const stageMap = {
-          [USER_ORDER_STAGE.PURCHASE]: 0,
-          [USER_ORDER_STAGE.TRANSPORT]: 1,
-          [USER_ORDER_STAGE.PROCESSING]: 2,
-          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 3,
-          [USER_ORDER_STAGE.COMPLETED]: 3
-        }
-        return stageMap[this.userOrderData.stage] || 0
+        // 包含运输阶段：步骤索引 0=采购, 1=运输, 2=加工/入库，其余全部归为 2
+        if (stage === USER_ORDER_STAGE.PURCHASE) return 0
+        if (stage === USER_ORDER_STAGE.TRANSPORT) return 1
+        if (stage === USER_ORDER_STAGE.PROCESSING) return 2
+        // 其他（入库、待确认、待结算、完成等）全部视为最后一步
+        return 2
       }
-      // 无运输阶段
-      const stageMap = {
-        [USER_ORDER_STAGE.PURCHASE]: 0,
-        [USER_ORDER_STAGE.PROCESSING]: 1,
-        [USER_ORDER_STAGE.PENDING_SETTLEMENT]: 2,
-        [USER_ORDER_STAGE.COMPLETED]: 2
-      }
-      return stageMap[this.userOrderData.stage] || 0
+
+      // 不包含运输阶段：只有 0=采购, 1=加工/入库，其余全部归为 1（最后一步）
+      if (stage === USER_ORDER_STAGE.PURCHASE) return 0
+      if (stage === USER_ORDER_STAGE.PROCESSING) return 1
+      // 其他阶段一律按最后一步处理
+      return 1
     }
   },
   watch: {
@@ -653,32 +664,39 @@ export default {
     },
 
     // 根据订单阶段设置当前显示阶段
+    // 规则同上：非「采购 / 运输 / 加工」阶段，界面统一停留在最后一个阶段（加工/入库）
     setCurrentStageByOrder() {
+      const stage = this.userOrderData.stage
+
       if (this.hasTransportStage) {
-        // 包含运输阶段
-        const stageMap = {
-          [USER_ORDER_STAGE.PURCHASE]: { stage: 'purchase', step: 0 },
-          [USER_ORDER_STAGE.TRANSPORT]: { stage: 'transport', step: 1 },
-          [USER_ORDER_STAGE.PROCESSING]: { stage: 'processing', step: 2 },
-          [USER_ORDER_STAGE.PENDING_SETTLEMENT]: { stage: 'processing', step: 3 },
-          [USER_ORDER_STAGE.COMPLETED]: { stage: 'processing', step: 3 }
+        // 包含运输阶段：0=采购, 1=运输, 2=加工/入库
+        if (stage === USER_ORDER_STAGE.PURCHASE) {
+          this.currentStage = 'purchase'
+          this.activeStep = 0
+          return
         }
-        const config = stageMap[this.userOrderData.stage] || { stage: 'purchase', step: 0 }
-        this.currentStage = config.stage
-        this.activeStep = config.step
+        if (stage === USER_ORDER_STAGE.TRANSPORT) {
+          this.currentStage = 'transport'
+          this.activeStep = 1
+          return
+        }
+        // 只要不是采购或运输阶段，一律展示到加工/入库这一步，
+        // 且步骤条上所有步骤都显示为已完成（active 设为步骤数 3）
+        this.currentStage = 'processing'
+        this.activeStep = 3
         return
       }
 
-      // 不包含运输阶段
-      const stageMap = {
-        [USER_ORDER_STAGE.PURCHASE]: { stage: 'purchase', step: 0 },
-        [USER_ORDER_STAGE.PROCESSING]: { stage: 'processing', step: 1 },
-        [USER_ORDER_STAGE.PENDING_SETTLEMENT]: { stage: 'processing', step: 2 },
-        [USER_ORDER_STAGE.COMPLETED]: { stage: 'processing', step: 2 }
+      // 不包含运输阶段：0=采购, 1=加工/入库
+      if (stage === USER_ORDER_STAGE.PURCHASE) {
+        this.currentStage = 'purchase'
+        this.activeStep = 0
+        return
       }
-      const config = stageMap[this.userOrderData.stage] || { stage: 'purchase', step: 0 }
-      this.currentStage = config.stage
-      this.activeStep = config.step
+      // 其余阶段（包括加工本身）都视为加工/入库这一步，
+      // 且步骤条上所有步骤都显示为已完成（active 设为步骤数 2）
+      this.currentStage = 'processing'
+      this.activeStep = 2
     },
 
     // 加载用户订单信息（包含各阶段订单信息）
@@ -758,8 +776,8 @@ export default {
             
           }
           
-          // 加载加工阶段数据
-          const processingOrder = data.processingOrder || {}
+          // 加载加工/入库阶段数据（后端返回字段为 storageOrder，兼容旧的 processingOrder）
+          const processingOrder = data.storageOrder || data.processingOrder || {}
           this.processingForm = {
             orderNo: processingOrder.orderNo || processingOrder.no || '',
             identifyCode: processingOrder.identifyCode || processingOrder.code || '',
@@ -767,7 +785,7 @@ export default {
             processorName: processingOrder.processorName || ''
           }
           
-          // 加载加工货物明细
+          // 加载加工/入库货物明细
           if (processingOrder.items && processingOrder.items.length > 0) {
             this.processingGoodItems = processingOrder.items.map(item => ({ ...item }))
           } else {
@@ -916,6 +934,8 @@ export default {
           currentRow.goodModel = selectedItem.goodModel || ''
           currentRow.goodCount = currentRow.goodCount || 1
           currentRow.goodWeight = currentRow.goodWeight || 0
+          // 货物单价：从经营范围的公示价格带入到加工明细的 goodPrice 字段
+          currentRow.goodPrice = selectedItem.publicPrice || 0
         }
       }
       this.processingGoodSelectorVisible = false
@@ -940,6 +960,7 @@ export default {
         goodModel: '',
         goodCount: 1,
         goodWeight: 0,
+        goodPrice: 0,
         goodRemark: ''
       }
       this.processingGoodItems.push(newItem)

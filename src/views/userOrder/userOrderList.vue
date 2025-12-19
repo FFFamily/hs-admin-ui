@@ -54,7 +54,7 @@
       border
       style="width: 100%"
     >
-      <el-table-column prop="no" label="订单编号" width="180">
+      <el-table-column prop="no" label="订单编号" width="200">
         <template slot-scope="scope">
           <el-link type="primary" @click="handleEdit(scope.row)">{{ scope.row.no }}</el-link>
         </template>
@@ -91,10 +91,11 @@
       <el-table-column label="操作" width="400" fixed="right">
         <template slot-scope="scope">
           <el-button size="mini" type="success" @click="handleRegisterInfo(scope.row)">登记信息</el-button>
+          <el-button size="mini" type="primary" @click="handleSupplementMaterials(scope.row)">材料</el-button>
           <el-button v-if="scope.row.deliveryStatus === DELIVERY_STATUS.NOT_DELIVERED" size="mini" type="warning" @click="handleDelivery(scope.row)">交付</el-button>
           <el-button v-if="scope.row.deliveryStatus === DELIVERY_STATUS.DELIVERED" size="mini" type="info" @click="handleViewDelivery(scope.row)">查看交付</el-button>
           <el-button v-if="scope.row.stage === 'pending_settlement' || scope.row.settlementStatus === 'rejected'" size="mini" type="info" @click="handleSettle(scope.row)">确认结算</el-button>
-          <el-button v-if="scope.row.stage === 'completed'" size="mini" type="primary" @click="handleSupplementMaterials(scope.row)">补充材料</el-button>
+        
           <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           <!-- <el-dropdown @command="(command) => handleMoreAction(command, scope.row)">
             <el-button size="mini">
@@ -154,9 +155,9 @@
       </div>
     </el-dialog>
 
-    <!-- 补充材料对话框 -->
+    <!-- 材料对话框 -->
     <el-dialog
-      title="补充材料"
+      title="材料"
       :visible.sync="supplementDialogVisible"
       width="600px"
       @close="handleSupplementDialogClose"
