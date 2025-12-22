@@ -57,6 +57,18 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item label="用户评分">
+              <el-input
+                v-model="form.accountRatingLevel"
+                placeholder="系统自动生成"
+                readonly
+                disabled
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="订单状态阶段">
               <el-select v-model="form.stage" placeholder="请选择订单状态阶段" style="width: 100%;" disabled>
                 <el-option
@@ -231,6 +243,7 @@ export default {
         goodsTotalAmount: 0,
         otherAdjustAmount: 0,
         accountCoefficient: 0,
+        accountRatingLevel: '',
         transportMethod: ''
       },
 
@@ -306,6 +319,7 @@ export default {
             goodsTotalAmount: data.goodsTotalAmount || 0,
             otherAdjustAmount: data.otherAdjustAmount || 0,
           accountCoefficient: data.accountCoefficient || 0,
+          accountRatingLevel: data.accountRatingLevel || '',
           transportMethod: data.transportMethod || ''
           }
         }
@@ -337,6 +351,7 @@ export default {
         goodsTotalAmount: 0,
         otherAdjustAmount: 0,
         accountCoefficient: 0,
+        accountRatingLevel: '',
         transportMethod: ''
       }
       if (this.$refs.form) {
@@ -421,20 +436,23 @@ export default {
     async fetchUserCoefficient(partnerId) {
       if (!partnerId) {
         this.form.accountCoefficient = 0
+        this.form.accountRatingLevel = ''
         return
       }
       if (this.fetchingUserCoefficient) return
       this.fetchingUserCoefficient = true
       try {
-        debugger
         const res = await getUserDetail(partnerId)
         const data =  res.data 
         const coefficient = data.scoreFactor
         const parsed = Number(coefficient)
         this.form.accountCoefficient = Number.isNaN(parsed) ? 0 : parsed
+        // 赋值用户评分
+        this.form.accountRatingLevel = data.score || ''
       } catch (error) {
         console.error('获取用户系数失败:', error)
         this.form.accountCoefficient = 0
+        this.form.accountRatingLevel = ''
         this.$message.error('获取用户系数失败：' + error.message)
       } finally {
         this.fetchingUserCoefficient = false

@@ -284,21 +284,6 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="货物重量(kg)" prop="goodsWeight">
-                <el-input-number
-                  v-model="transportForm.goodsWeight"
-                  :disabled="!canEdit"
-                  :precision="2"
-                  :step="1"
-                  :min="0"
-                  placeholder="请输入货物重量"
-                  style="width: 100%;"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
         </el-form>
       </div>
 
@@ -573,9 +558,6 @@ export default {
         ],
         deliveryAddress: [
           { required: true, message: '请输入运输终点', trigger: 'blur' }
-        ],
-        goodsWeight: [
-          { required: true, message: '请输入货物重量', trigger: 'blur' }
         ]
       },
       
@@ -1077,8 +1059,7 @@ export default {
             transportStartTime: this.transportForm.startTime,
             transportEndTime: this.transportForm.endTime,
             transportpickupAddress: this.transportForm.pickupAddress,
-            transportdeliveryAddress: this.transportForm.deliveryAddress,
-            transportGoodsWeight: this.transportForm.goodsWeight
+            transportdeliveryAddress: this.transportForm.deliveryAddress
           }
           
           await updateUserOrder(updateData)

@@ -59,7 +59,7 @@
           <el-link type="primary" @click="handleEdit(scope.row)">{{ scope.row.no }}</el-link>
         </template>
       </el-table-column>
-      <el-table-column prop="contractNo" label="合同编号" width="150" />
+      <el-table-column prop="contractNo" label="合同编号" width="200" />
       <el-table-column prop="contractName" label="合同名称" width="150" show-overflow-tooltip />
       <el-table-column prop="stage" label="订单状态阶段" width="120" align="center">
         <template slot-scope="scope">
@@ -96,7 +96,7 @@
           <el-button v-if="scope.row.deliveryStatus === DELIVERY_STATUS.DELIVERED" size="mini" type="info" @click="handleViewDelivery(scope.row)">查看交付</el-button>
           <el-button v-if="scope.row.stage === 'pending_settlement' || scope.row.settlementStatus === 'rejected'" size="mini" type="info" @click="handleSettle(scope.row)">确认结算</el-button>
         
-          <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+          <el-button v-if="scope.row.stage === USER_ORDER_STAGE.PURCHASE" size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           <!-- <el-dropdown @command="(command) => handleMoreAction(command, scope.row)">
             <el-button size="mini">
               更多<i class="el-icon-arrow-down el-icon--right" />
@@ -139,9 +139,9 @@
         <el-form-item label="订单编号">
           <span>{{ currentOrder.no }}</span>
         </el-form-item>
-        <el-form-item label="其他调价" prop="otherAdjustment">
+        <el-form-item label="其他调价" prop="otherAdjustAmount">
           <el-input-number
-            v-model="settlementForm.otherAdjustment"
+            v-model="settlementForm.otherAdjustAmount"
             :precision="2"
             :step="0.01"
             placeholder="请输入其他调价金额"
@@ -437,6 +437,7 @@ export default {
     return {
       loading: false,
       DELIVERY_STATUS, // 交付状态枚举
+      USER_ORDER_STAGE, // 订单阶段枚举
 
       // 搜索表单
       searchForm: {
@@ -471,10 +472,10 @@ export default {
       settlementDialogVisible: false,
       settlementSubmitLoading: false,
       settlementForm: {
-        otherAdjustment: 0
+        otherAdjustAmount: 0
       },
       settlementRules: {
-        otherAdjustment: [
+        otherAdjustAmount: [
           { required: true, message: '请输入其他调价金额', trigger: 'blur' }
         ]
       },
@@ -738,14 +739,14 @@ export default {
     // 确认结算
     handleSettle(row) {
       this.currentOrder = row
-      this.settlementForm.otherAdjustment = row.otherAdjustment || 0
+      this.settlementForm.otherAdjustAmount = row.otherAdjustAmount || 0
       this.settlementDialogVisible = true
     },
 
     // 关闭结算对话框
     handleSettlementDialogClose() {
       this.settlementForm = {
-        otherAdjustment: 0
+        otherAdjustAmount: 0
       }
       if (this.$refs.settlementForm) {
         this.$refs.settlementForm.clearValidate()
@@ -763,7 +764,7 @@ export default {
         try {
           await confirmSettlement({
             id: this.currentOrder.id,
-            otherAdjustment: this.settlementForm.otherAdjustment
+            otherAdjustAmount: this.settlementForm.otherAdjustAmount
           })
           this.$message.success('结算成功')
           this.settlementDialogVisible = false
