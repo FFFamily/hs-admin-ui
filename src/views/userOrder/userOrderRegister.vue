@@ -759,7 +759,7 @@ export default {
           }
           
           // 加载加工/入库阶段数据（后端返回字段为 storageOrder，兼容旧的 processingOrder）
-          const processingOrder = data.storageOrder || data.processingOrder || {}
+          const processingOrder = data.processingOrder || {}
           this.processingForm = {
             orderNo: processingOrder.orderNo || processingOrder.no || '',
             identifyCode: processingOrder.identifyCode || processingOrder.code || '',
