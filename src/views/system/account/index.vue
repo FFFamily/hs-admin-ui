@@ -116,7 +116,16 @@
           <el-input v-model="form.score" />
         </el-form-item>
         <el-form-item label="评级系数" prop="scoreFactor">
-          <el-input v-model="form.scoreFactor" />
+          <el-input-number
+            v-model="form.scoreFactor"
+            :min="0"
+            :max="1"
+            :step="0.01"
+            :precision="2"
+            :controls="false"
+            placeholder="0-1，最多2位小数"
+            style="width: 100%;"
+          />
         </el-form-item>
         <el-form-item label="积分" prop="point">
           <el-input v-model="form.point" disabled placeholder="积分初始值为0" />
@@ -149,6 +158,28 @@ export default {
     ImageUploader
   },
   data() {
+    const validateScoreFactor = (rule, value, callback) => {
+      if (value === '' || value === null || value === undefined) {
+        callback()
+        return
+      }
+      const num = Number(value)
+      if (Number.isNaN(num)) {
+        callback(new Error('评级系数只能输入0-1的小数'))
+        return
+      }
+      if (num < 0 || num > 1) {
+        callback(new Error('评级系数必须在0到1之间'))
+        return
+      }
+      const scaled = Math.round(num * 100)
+      if (Math.abs(num * 100 - scaled) > 1e-8) {
+        callback(new Error('评级系数最多保留2位小数'))
+        return
+      }
+      callback()
+    }
+
     return {
       useTypeList: [],
       accountTypes: [],
@@ -175,6 +206,7 @@ export default {
         // phone: '',
         // idCard: '',
         score: '',
+        scoreFactor: null,
         taxNumber: '',
         bankName: '',
         bankAccount: '',
@@ -189,7 +221,8 @@ export default {
         // type: [{ required: true, message: '请选择用户类型', trigger: 'change' }],
         accountTypeId: [{ required: true, message: '请选择用户类型', trigger: 'change' }],
         username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-        password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+        password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+        scoreFactor: [{ validator: validateScoreFactor, trigger: 'blur' }]
       },
       updateRules: {
         ...this.rules
@@ -235,6 +268,7 @@ export default {
         phone: '',
         idCard: '',
         score: '',
+        scoreFactor: null,
         taxNumber: '',
         bankName: '',
         bankAccount: '',
@@ -252,7 +286,10 @@ export default {
     },
     handleEdit(row) {
       this.dialogTitle = '编辑用户'
-      this.form = { ...row }
+      this.form = {
+        ...row,
+        scoreFactor: this.normalizeScoreFactor(row.scoreFactor)
+      }
       this.dialogVisible = true
     },
     handleEditPassword(row) {
@@ -368,6 +405,11 @@ export default {
       const baseUrl = (process.env.VUE_APP_BASE_URL || '').replace(/\/$/, '')
       const path = avatar.startsWith('/') ? avatar : `/${avatar}`
       return `${baseUrl}${path}`
+    },
+    normalizeScoreFactor(value) {
+      if (value === '' || value === null || value === undefined) return null
+      const num = Number(value)
+      return Number.isNaN(num) ? null : num
     }
   }
 }
