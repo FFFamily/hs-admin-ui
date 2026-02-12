@@ -369,21 +369,10 @@
                 v-model="scope.row.goodCount"
                 :disabled="!canEdit"
                 style="width:130px;"
-                :min="1"
-                :precision="0"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column prop="goodWeight" label="货物重量(kg)" width="160" align="center">
-            <template slot-scope="scope">
-              <el-input-number
-                v-model="scope.row.goodWeight"
-                :disabled="!canEdit"
-                :min="0"
+                :min="0.01"
+                :step="0.01"
                 :precision="2"
-                controls-position="right"
-                placeholder="请输入货物重量"
-                style="width: 130px;"
+                @change="onProcessingItemFieldChange(scope.row)"
               />
             </template>
           </el-table-column>
@@ -398,6 +387,11 @@
                 placeholder="自动带出"
                 style="width: 130px;"
               />
+            </template>
+          </el-table-column>
+          <el-table-column prop="goodTotalPrice" label="货物总价(元)" width="160" align="center">
+            <template slot-scope="scope">
+              <span>{{ formatAmount(scope.row.goodTotalPrice) }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="goodRemark" label="货物备注" min-width="180">
@@ -769,7 +763,14 @@ export default {
           
           // 加载加工/入库货物明细
           if (processingOrder.items && processingOrder.items.length > 0) {
-            this.processingGoodItems = processingOrder.items.map(item => ({ ...item }))
+            this.processingGoodItems = processingOrder.items.map(item => {
+              const row = { ...item }
+              // 加工/入库阶段不再维护重量字段
+              delete row.goodWeight
+              row.goodCount = row.goodCount !== undefined && row.goodCount !== null ? row.goodCount : 1
+              row.goodTotalPrice = this.calcProcessingTotal(row)
+              return row
+            })
           } else {
             this.processingGoodItems = []
           }
@@ -914,10 +915,10 @@ export default {
           currentRow.goodType = selectedItem.goodType || ''
           currentRow.goodName = selectedItem.goodName || ''
           currentRow.goodModel = selectedItem.goodModel || ''
-          currentRow.goodCount = currentRow.goodCount || 1
-          currentRow.goodWeight = currentRow.goodWeight || 0
+          currentRow.goodCount = currentRow.goodCount !== undefined && currentRow.goodCount !== null ? currentRow.goodCount : 1
           // 货物单价：从经营范围的公示价格带入到加工明细的 goodPrice 字段
           currentRow.goodPrice = selectedItem.publicPrice || 0
+          currentRow.goodTotalPrice = this.calcProcessingTotal(currentRow)
         }
       }
       this.processingGoodSelectorVisible = false
@@ -941,12 +942,25 @@ export default {
         goodName: '',
         goodModel: '',
         goodCount: 1,
-        goodWeight: 0,
         goodPrice: 0,
+        goodTotalPrice: 0,
         goodRemark: ''
       }
       this.processingGoodItems.push(newItem)
       this.$message.success('新增行成功')
+    },
+
+    // 编辑明细时联动总价（加工/入库：总价=数量*单价）
+    onProcessingItemFieldChange(row) {
+      row.goodTotalPrice = this.calcProcessingTotal(row)
+    },
+
+    // 加工/入库阶段计算货物总价：货物总价 = 数量 * 单价
+    calcProcessingTotal(item) {
+      const price = Number(item.goodPrice) || 0
+      const count = Number(item.goodCount) || 0
+      const total = price * count
+      return Number(total.toFixed(2))
     },
 
     // 删除选中的加工货物行
@@ -1112,7 +1126,12 @@ export default {
             processingOrderCode: this.processingForm.identifyCode,
             processingProcessorId: this.processingForm.processorId,
             processingProcessorName: this.processingForm.processorName,
-            processingGoodItems: this.processingGoodItems.map(item => ({ ...item }))
+            processingGoodItems: this.processingGoodItems.map(item => {
+              const rest = { ...(item || {}) }
+              delete rest.goodWeight
+              rest.goodTotalPrice = this.calcProcessingTotal(rest)
+              return rest
+            })
           }
           
           await updateUserOrder(updateData)
@@ -1168,7 +1187,12 @@ export default {
             settleData = {
               id: this.orderId,
               ...this.processingForm,
-              items: this.processingGoodItems.map(item => ({ ...item }))
+              items: this.processingGoodItems.map(item => {
+                const rest = { ...(item || {}) }
+                delete rest.goodWeight
+                rest.goodTotalPrice = this.calcProcessingTotal(rest)
+                return rest
+              })
             }
             break
           default:
@@ -1381,4 +1405,3 @@ export default {
   }
 }
 </style>
-
